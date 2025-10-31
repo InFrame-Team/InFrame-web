@@ -4,6 +4,7 @@ import MobileApp from "./pages/MobileApp";
 import Name from "./pages/auth/signup/Name";
 import Nickname from "./pages/auth/signup/Nickname";
 import Account from "./pages/auth/signup/Account";
+import Success from "./pages/auth/signup/Success";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/signup/name" element={<Name />} />
         <Route path="/signup/nickname" element={<Nickname />} />
         <Route path="/signup/account" element={<Account />} />
+        <Route path="/signup/success" element={<Success />} />
       </Routes>
     </BrowserRouter>
   );
