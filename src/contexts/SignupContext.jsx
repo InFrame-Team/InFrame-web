@@ -7,6 +7,8 @@ const defaultState = {
   password: "",
   agreeRequired: false, // 서버 전송 X, 검증용
   agreeOptional: false, // 서버 전송 X
+  nicknameChecked: null,
+  nicknameCheckMsg: "",
 };
 
 const SignupContext = createContext(null);

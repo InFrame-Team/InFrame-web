@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
 import { useSignup } from "../../../contexts/SignupContext";
@@ -7,16 +7,15 @@ import { checkNickname } from "../../../apis/auth";
 export default function Nickname() {
   const navigate = useNavigate();
   const { data, setData } = useSignup();
+  const [loading, setLoading] = React.useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [checked, setChecked] = useState(null);
-  const [msg, setMsg] = useState("");
-
-  // 닉네임 입력 시 이전 상태 초기화
+  // 닉네임 입력 시 이전 확인 결과 리셋
   const onChangeNickname = (e) => {
-    setData({ nickname: e.target.value });
-    setChecked(null);
-    setMsg("");
+    setData({
+      nickname: e.target.value,
+      nicknameChecked: null,
+      nicknameCheckMsg: "",
+    });
   };
 
   // 닉네임 중복확인
@@ -27,29 +26,31 @@ export default function Nickname() {
     try {
       setLoading(true);
       const res = await checkNickname(nickname);
-      setChecked(res.available);
-      setMsg(res.message);
+      setData({
+        nicknameChecked: res.available,
+        nicknameCheckMsg: res.message,
+      });
     } catch (error) {
-      setChecked(false);
-      setMsg(error.message);
+      setData({
+        nicknameChecked: false,
+        nicknameCheckMsg: error.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // 다음 단계 이동
   const goNext = () => {
-    if (checked !== true) return;
+    if (data.nicknameChecked !== true) return;
     navigate("/signup/account");
   };
 
-  // 다음 버튼 활성화 조건
-  const isNextEnabled = checked === true;
+  const isNextEnabled = data.nicknameChecked === true;
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] relative">
-        {/* 뒤로가기 버튼 */}
+        {/* 뒤로가기 */}
         <header className="sticky top-0 z-10 bg-white">
           <div className="px-4 py-3">
             <button
@@ -84,30 +85,36 @@ export default function Nickname() {
               type="button"
               onClick={onCheck}
               disabled={
-                loading || !data.nickname.trim() || checked === true // 중복확인 통과 시 비활성화
+                loading ||
+                !data.nickname.trim() ||
+                data.nicknameChecked === true
               }
               className={`ml-2 mr-1 px-[14px] py-1.5 mb-2 text-[13px] font-semibold rounded-full border ${
-                checked === true
+                data.nicknameChecked === true
                   ? "bg-[#E9E9EC] text-[#99A0B0] cursor-not-allowed"
                   : "text-[#F13030] border-[#F13030] bg-white hover:opacity-80"
               }`}
             >
-              {loading ? "확인중..." : "중복확인"}
+              {loading
+                ? "확인중..."
+                : data.nicknameChecked === true
+                ? "확인완료"
+                : "중복확인"}
             </button>
           </div>
 
           {/* 결과 메시지 */}
-          {msg && (
+          {data.nicknameCheckMsg && (
             <p
               className={`mt-2 ml-1 text-[13px] ${
-                checked === true
+                data.nicknameChecked === true
                   ? "text-green-600"
-                  : checked === false
+                  : data.nicknameChecked === false
                   ? "text-red-600"
                   : "text-gray-500"
               }`}
             >
-              {msg}
+              {data.nicknameCheckMsg}
             </p>
           )}
         </main>

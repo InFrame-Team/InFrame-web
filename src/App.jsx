@@ -5,7 +5,7 @@ import Name from "./pages/auth/signup/Name";
 import Nickname from "./pages/auth/signup/Nickname";
 import Account from "./pages/auth/signup/Account";
 import Success from "./pages/auth/signup/Success";
-import { SignupProvider } from "./contexts/SignupContext";
+import SignupLayout from "./pages/auth/signup/SignupLayout";
 
 export default function App() {
   return (
@@ -13,19 +13,12 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/app" element={<MobileApp />} />
-        <Route
-          path="/signup/*"
-          element={
-            <SignupProvider>
-              <Routes>
-                <Route path="name" element={<Name />} />
-                <Route path="nickname" element={<Nickname />} />
-                <Route path="account" element={<Account />} />
-                <Route path="success" element={<Success />} />
-              </Routes>
-            </SignupProvider>
-          }
-        />
+        <Route path="/signup" element={<SignupLayout />}>
+          <Route path="name" element={<Name />} />
+          <Route path="nickname" element={<Nickname />} />
+          <Route path="account" element={<Account />} />
+          <Route path="success" element={<Success />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
