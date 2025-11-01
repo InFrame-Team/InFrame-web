@@ -1,29 +1,59 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
 import checkIcon from "../../../assets/checkIcon.png";
 import checkedIcon from "../../../assets/checkedIcon.png";
+import { useSignup } from "../../../contexts/SignupContext";
+import { signup } from "../../../apis/auth.jsx";
+
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const hasText = (v) => v.trim().length > 0;
 
 export default function Account() {
   const navigate = useNavigate();
+  const { data, setData, reset } = useSignup();
+  const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
-  // 입력값, 동의 상태
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [agreeRequired, setAgreeRequired] = useState(false);
-  const [agreeOptional, setAgreeOptional] = useState(false);
-
-  // 버튼 활성화 조건: 이메일 입력 + 비밀번호 입력 + 필수 동의 체크
   const isNextEnabled = useMemo(() => {
-    const hasEmail = email.trim().length > 0;
-    const hasPassword = password.trim().length > 0;
-    return hasEmail && hasPassword && agreeRequired;
-  }, [email, password, agreeRequired]);
+    return isEmail(data.email) && hasText(data.password) && data.agreeRequired;
+  }, [data.email, data.password, data.agreeRequired]);
+
+  const submit = async () => {
+    if (!isNextEnabled) return;
+    setEmailError("");
+
+    try {
+      setLoading(true);
+      const res = await signup({
+        email: data.email,
+        password: data.password,
+        nickname: data.nickname,
+        name: data.name,
+      });
+
+      if (!res.success) {
+        // 409면 이메일 중복 메시지 표시
+        if (res.status === 409) {
+          setEmailError(res.message);
+          return;
+        } else {
+          alert(res.message);
+          return;
+        }
+      }
+      reset();
+      navigate("/signup/success");
+    } catch (e) {
+      alert("회원가입 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] relative">
-        {/* 뒤로가기 버튼 */}
         <header className="sticky top-0 z-10 bg-white">
           <div className="px-4 py-3">
             <button
@@ -35,46 +65,42 @@ export default function Account() {
             </button>
           </div>
         </header>
-
-        {/* 본문 */}
         <main className="px-5 pt-12 pb-28">
           <h1 className="text-[26px] font-bold text-[#3A3A3A]">회원가입</h1>
 
           <label className="mt-12 pl-1 block text-[15px] text-[#3A3A3A] font-medium">
             이메일 주소 <span className="text-[#F13030]">*</span>
           </label>
-
-          {/* 이메일 입력란 */}
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={data.email}
+            onChange={(e) => setData({ email: e.target.value })}
             autoComplete="email"
             className="mt-2 w-full bg-transparent border-0 border-b border-[#E9E9E9] outline-none px-1 py-2 text-[15px] text-[#3A3A3A]"
           />
+          {emailError && (
+            <p className="text-[#F13030] text-[13px] mt-1 ml-1">{emailError}</p>
+          )}
 
           <label className="mt-12 pl-1 block text-[15px] text-[#3A3A3A] font-medium">
             비밀번호 <span className="text-[#F13030]">*</span>
           </label>
-
-          {/* 비밀번호 입력란 */}
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={data.password}
+            onChange={(e) => setData({ password: e.target.value })}
             autoComplete="new-password"
             className="mt-2 w-full bg-transparent border-0 border-b border-[#E9E9E9] outline-none px-1 py-2 text-[15px] text-[#3A3A3A]"
           />
 
-          {/* 약관 동의 영역 */}
+          {/* 약관 */}
           <div className="mt-10 space-y-5">
-            {/* 필수 동의 */}
             <div
               className="flex items-center gap-2 cursor-pointer"
-              onClick={() => setAgreeRequired(!agreeRequired)}
+              onClick={() => setData({ agreeRequired: !data.agreeRequired })}
             >
               <img
-                src={agreeRequired ? checkedIcon : checkIcon}
+                src={data.agreeRequired ? checkedIcon : checkIcon}
                 alt="check"
                 className="w-6 h-6"
               />
@@ -83,13 +109,12 @@ export default function Account() {
               </p>
             </div>
 
-            {/* 선택 동의 */}
             <div
               className="flex items-center gap-2 cursor-pointer"
-              onClick={() => setAgreeOptional(!agreeOptional)}
+              onClick={() => setData({ agreeOptional: !data.agreeOptional })}
             >
               <img
-                src={agreeOptional ? checkedIcon : checkIcon}
+                src={data.agreeOptional ? checkedIcon : checkIcon}
                 alt="check"
                 className="w-6 h-6"
               />
@@ -100,19 +125,19 @@ export default function Account() {
           </div>
         </main>
 
-        {/* 다음 버튼 */}
+        {/* 제출 버튼 */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-6 pb-6 pt-3">
           <button
             type="button"
-            disabled={!isNextEnabled}
-            onClick={() => navigate("/signup/success")}
+            disabled={!isNextEnabled || loading}
+            onClick={submit}
             className={`w-full rounded-[8px] text-white text-[14px] font-semibold py-3 transition ${
               isNextEnabled
                 ? "bg-[#F13030] hover:bg-[#e02d2d] active:bg-[#e02d2d]"
                 : "bg-[#F5B7B7] cursor-not-allowed"
             }`}
           >
-            다음
+            {loading ? "가입 중..." : "다음"}
           </button>
         </div>
       </div>
