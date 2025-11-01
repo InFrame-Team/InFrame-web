@@ -95,11 +95,7 @@ export default function Nickname() {
                   : "text-[#F13030] border-[#F13030] bg-white hover:opacity-80"
               }`}
             >
-              {loading
-                ? "확인중..."
-                : data.nicknameChecked === true
-                ? "확인완료"
-                : "중복확인"}
+              {loading ? "확인중..." : "중복확인"}
             </button>
           </div>
 

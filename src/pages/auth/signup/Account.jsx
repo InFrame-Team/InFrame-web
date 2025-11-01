@@ -43,7 +43,7 @@ export default function Account() {
         }
       }
       reset();
-      navigate("/signup/success");
+      navigate("/signup/onboarding");
     } catch (e) {
       alert("회원가입 중 오류가 발생했습니다.");
     } finally {
