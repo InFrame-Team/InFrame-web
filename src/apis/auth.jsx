@@ -38,3 +38,21 @@ export async function checkNickname(nickname) {
     );
   }
 }
+
+// 이메일 로그인
+export async function signin({ email, password }) {
+  try {
+    const { data } = await api.post("/auth/sign-in", { email, password });
+    return { success: true, data };
+  } catch (error) {
+    const status = error.response?.status;
+    const message =
+      error.response?.data?.message ||
+      (status === 404
+        ? "해당 유저를 찾을 수 없습니다."
+        : status === 400
+        ? "입력값을 확인해주세요."
+        : "로그인 중 오류가 발생했습니다.");
+    return { success: false, status, message };
+  }
+}

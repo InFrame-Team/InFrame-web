@@ -6,8 +6,11 @@ import kakaoIcon from "../../../assets/kakaoIcon.png";
 import naverIcon from "../../../assets/naverIcon.png";
 import vector1 from "../../../assets/vector1.png";
 import vector2 from "../../../assets/vector2.png";
+import { useNavigate } from "react-router-dom";
 
 export default function SigninEntry() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] relative overflow-hidden">
@@ -60,6 +63,7 @@ export default function SigninEntry() {
             {/* 이메일 로그인 */}
             <button
               type="button"
+              onClick={() => navigate("/signin/email")}
               className="w-full h-[48px] rounded-[10px] bg-white border border-[#E5E5E5] text-[15px] text-[#3A3A3A] font-medium flex items-center justify-center gap-2"
             >
               <img src={mainIcon} alt="이메일 아이콘" className="w-4 h-4" />
