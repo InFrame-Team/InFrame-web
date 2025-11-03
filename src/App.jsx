@@ -6,6 +6,7 @@ import Nickname from "./pages/auth/signup/Nickname";
 import Account from "./pages/auth/signup/Account";
 import SignupLayout from "./pages/auth/signup/SignupLayout";
 import Onboarding from "./pages/auth/signup/Onboarding";
+import SigninEntry from "./pages/auth/signin/SigninEntry";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/app" element={<MobileApp />} />
+        <Route path="/signin" element={<SigninEntry />} />
         <Route path="/signup" element={<SignupLayout />}>
           <Route path="name" element={<Name />} />
           <Route path="nickname" element={<Nickname />} />
