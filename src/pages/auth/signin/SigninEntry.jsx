@@ -94,6 +94,7 @@ export default function SigninEntry() {
 
           <button
             type="button"
+            onClick={() => navigate("/signup/name")}
             className="mt-6 block mx-auto text-[13px] text-[#555558] underline"
           >
             회원가입
