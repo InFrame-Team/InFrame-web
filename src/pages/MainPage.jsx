@@ -14,7 +14,9 @@ export default function MainPage() {
   const goMessages = () => navigate("/messages");
   const goNotifications = () => navigate("/notifications");
 
-  const goCategory = (key) => navigate(`/category/${key}`);
+  // ✅ 변경: category 페이지가 아니라 인물지도(/map)로 이동하면서 category 쿼리 전달
+  const goCategory = (key) => navigate(`/map?category=${key}`);
+
   const goHostMore = () => navigate("/host/ezisub");
 
   const [likedMap, setLikedMap] = useState({}); // (기존 유지)
