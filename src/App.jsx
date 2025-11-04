@@ -10,6 +10,7 @@ import SigninEntry from "./pages/auth/signin/SigninEntry";
 import SigninEmail from "./pages/auth/signin/SigninEmail";
 import AuthProvider from "./contexts/AuthProvider";
 import OAuthRedirect from "./pages/auth/OAuthRedirect";
+import ExperienceDetail from "./pages/experiences/ExperienceDetail";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
+          <Route path="/experiences/:id" element={<ExperienceDetail />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
