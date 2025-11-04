@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import BottomTab from "../components/BottomTab";
+
 import { FiMessageCircle } from "react-icons/fi";
 import { PiBellSimple } from "react-icons/pi";
 import { CiHeart } from "react-icons/ci";
@@ -305,121 +308,8 @@ export default function MainPage() {
           </section>
         </main>
 
-        {/* 하단 탭 바 */}
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200">
-          <div className="grid grid-cols-5 text-[11px]">
-            {[
-              { label: "홈", icon: HomeIcon, onClick: () => navigate("/") },
-              {
-                label: "즐겨찾기",
-                icon: HeartIcon,
-                onClick: () => navigate("/favorites"),
-              },
-              {
-                label: "인물지도",
-                icon: MapPinIcon,
-                onClick: () => navigate("/map"),
-              },
-              {
-                label: "예약하기",
-                icon: CalendarIcon,
-                onClick: () => navigate("/booking"),
-              },
-              {
-                label: "마이페이지",
-                icon: UserIcon,
-                onClick: () => navigate("/me"),
-              },
-            ].map((t, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={t.onClick}
-                className="py-2 flex flex-col items-center gap-1 text-neutral-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-              >
-                <t.icon />
-                <span>{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
+        <BottomTab />
       </div>
     </div>
-  );
-}
-
-/* ===== icons ===== */
-function UserIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <circle cx="12" cy="7" r="4" />
-      <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
-    </svg>
-  );
-}
-function HomeIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 10v10h14V10" />
-    </svg>
-  );
-}
-function HeartIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M20.8 11c1.5-3.8-2.8-7.6-6.5-4.7L12 8l-2.3-1.7C6 3.4 1.7 7.2 3.2 11c1.1 2.8 4.4 5.4 8.8 9 4.4-3.6 7.7-6.2 8.8-9z" />
-    </svg>
-  );
-}
-function MapPinIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z" />
-      <circle cx="12" cy="10" r="2.5" />
-    </svg>
-  );
-}
-function CalendarIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M16 3v4M8 3v4M3 10h18" />
-    </svg>
   );
 }

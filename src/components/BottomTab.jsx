@@ -1,0 +1,44 @@
+import { useLocation, useNavigate } from "react-router-dom";
+import { HiHome } from "react-icons/hi";
+import { MdStars } from "react-icons/md";
+import { IoLocationSharp } from "react-icons/io5";
+import { FaSquareCheck, FaUser } from "react-icons/fa6";
+
+export default function BottomTab() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const tabs = [
+    { label: "홈", icon: HiHome, path: "/app" },
+    { label: "탐색", icon: MdStars, path: "/explore" },
+    { label: "인물지도", icon: IoLocationSharp, path: "/map" },
+    { label: "예약하기", icon: FaSquareCheck, path: "/booking" },
+    { label: "마이페이지", icon: FaUser, path: "/me" },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-20">
+      <div className="grid grid-cols-5 text-[10px]">
+        {tabs.map((t, i) => {
+          const isActive = location.pathname.startsWith(t.path);
+          const Icon = t.icon;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => navigate(t.path)}
+              className={`py-2 flex flex-col items-center gap-1 transition-colors duration-150 ${
+                isActive
+                  ? "text-[#222222]"
+                  : "text-[#c5c5c5] hover:text-[#222222]"
+              }`}
+            >
+              <Icon size={23} />
+              <span className={isActive ? "font-semibold" : ""}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
