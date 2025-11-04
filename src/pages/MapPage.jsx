@@ -6,6 +6,9 @@ import BottomTab from "../components/BottomTab";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { TbAdjustmentsHorizontal } from "react-icons/tb";
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import { LuCrosshair } from "react-icons/lu";
+import { BiSolidMessageDetail } from "react-icons/bi";
+import { IoLocationSharp } from "react-icons/io5";
 
 const CATEGORY_ITEMS = [
   { key: "artisan", label: "장인" },
@@ -24,7 +27,7 @@ const HOSTS = [
     lat: 35.82075,
     lng: 128.7415,
     distance: 114,
-    price: "1인 50,000원 ~",
+    price: "50,000원 ~",
     reviews: 129,
     avatar: "/host-potter.png",
   },
@@ -37,7 +40,7 @@ const HOSTS = [
     lat: 35.8223,
     lng: 128.7432,
     distance: 420,
-    price: "1인 40,000원 ~",
+    price: "40,000원 ~",
     reviews: 28,
     avatar: "/host-planner.png",
   },
@@ -50,7 +53,7 @@ const HOSTS = [
     lat: 35.8218,
     lng: 128.7385,
     distance: 650,
-    price: "1인 35,000원 ~",
+    price: "35,000원 ~",
     reviews: 82,
     avatar: "/host-perfumer.png",
   },
@@ -63,7 +66,7 @@ const HOSTS = [
     lat: 35.8234,
     lng: 128.7398,
     distance: 900,
-    price: "1인 30,000원 ~",
+    price: "30,000원 ~",
     reviews: 52,
     avatar: "/host-consultant.png",
   },
@@ -76,11 +79,46 @@ const HOSTS = [
     lat: 35.8188,
     lng: 128.7423,
     distance: 1200,
-    price: "1인 45,000원 ~",
+    price: "45,000원 ~",
     reviews: 63,
     avatar: "/host-wood.png",
   },
 ];
+
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function ensureMyLocationStyles() {
+  if (document.getElementById("my-location-pulse-style")) return;
+  const style = document.createElement("style");
+  style.id = "my-location-pulse-style";
+  style.innerHTML = `
+    @keyframes my-location-pulse {
+      0% {
+        transform: translate(-50%, -50%) scale(0.6);
+        opacity: 0.7;
+      }
+      70% {
+        transform: translate(-50%, -50%) scale(1.3);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.3);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 export default function MapPage() {
   const mapRef = useRef(null);
@@ -88,6 +126,9 @@ export default function MapPage() {
   const hostOverlaysRef = useRef({});
   const labelListRef = useRef(null);
   const labelItemRefs = useRef({});
+  const myLocationOverlayRef = useRef(null);
+  const myPositionRef = useRef(null);
+  const initialSelectRef = useRef(true);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,6 +144,110 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHostId, setSelectedHostId] = useState(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [myLocation, setMyLocation] = useState(null);
+
+  const createMyLocationOverlay = (lat, lng) => {
+    const { kakao } = window;
+    const map = mapInstanceRef.current;
+    if (!map || !kakao || !kakao.maps) return;
+
+    ensureMyLocationStyles();
+
+    const pos = new kakao.maps.LatLng(lat, lng);
+
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.width = "40px";
+    container.style.height = "40px";
+
+    const pulse = document.createElement("div");
+    pulse.style.position = "absolute";
+    pulse.style.top = "50%";
+    pulse.style.left = "50%";
+    pulse.style.width = "30px";
+    pulse.style.height = "30px";
+    pulse.style.borderRadius = "50%";
+    pulse.style.background = "rgba(66,133,244,0.35)";
+    pulse.style.animation = "my-location-pulse 1.8s ease-out infinite";
+
+    const halo = document.createElement("div");
+    halo.style.position = "absolute";
+    halo.style.top = "50%";
+    halo.style.left = "50%";
+    halo.style.width = "24px";
+    halo.style.height = "24px";
+    halo.style.borderRadius = "50%";
+    halo.style.background = "rgba(66,133,244,0.25)";
+    halo.style.transform = "translate(-50%, -50%)";
+
+    const dot = document.createElement("div");
+    dot.style.position = "absolute";
+    dot.style.top = "50%";
+    dot.style.left = "50%";
+    dot.style.width = "14px";
+    dot.style.height = "14px";
+    dot.style.borderRadius = "50%";
+    dot.style.background = "#4285F4";
+    dot.style.border = "3px solid #ffffff";
+    dot.style.transform = "translate(-50%, -50%)";
+
+    container.appendChild(pulse);
+    container.appendChild(halo);
+    container.appendChild(dot);
+
+    const overlay = new kakao.maps.CustomOverlay({
+      position: pos,
+      content: container,
+      yAnchor: 0.5,
+      xAnchor: 0.5,
+      zIndex: 10,
+    });
+
+    overlay.setMap(map);
+    myLocationOverlayRef.current = overlay;
+  };
+
+  const handleMoveToMyLocation = () => {
+    const { kakao } = window;
+    const map = mapInstanceRef.current;
+    if (!map || !kakao || !kakao.maps) return;
+
+    if (myPositionRef.current) {
+      const { lat, lng } = myPositionRef.current;
+      const pos = new kakao.maps.LatLng(lat, lng);
+      map.panTo(pos);
+      if (myLocationOverlayRef.current) {
+        myLocationOverlayRef.current.setPosition(pos);
+      } else {
+        createMyLocationOverlay(lat, lng);
+      }
+      return;
+    }
+
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        myPositionRef.current = { lat, lng };
+        setMyLocation({ lat, lng });
+
+        const pos = new kakao.maps.LatLng(lat, lng);
+        map.panTo(pos);
+
+        if (myLocationOverlayRef.current) {
+          myLocationOverlayRef.current.setPosition(pos);
+        } else {
+          createMyLocationOverlay(lat, lng);
+        }
+      },
+      (err) => {
+        console.warn("내 위치 재요청 실패", err);
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  };
 
   const displayedHosts = useMemo(() => {
     let filtered = activeCategory
@@ -120,8 +265,21 @@ export default function MapPage() {
       });
     }
 
-    return [...filtered].sort((a, b) => a.distance - b.distance);
-  }, [activeCategory, searchQuery]);
+    const withDistance = filtered.map((h) => {
+      if (myLocation) {
+        const d = haversineDistance(
+          myLocation.lat,
+          myLocation.lng,
+          h.lat,
+          h.lng
+        );
+        return { ...h, distance: Math.round(d) };
+      }
+      return h;
+    });
+
+    return [...withDistance].sort((a, b) => a.distance - b.distance);
+  }, [activeCategory, searchQuery, myLocation]);
 
   useEffect(() => {
     async function initMap() {
@@ -143,6 +301,9 @@ export default function MapPage() {
           centerLat = position.coords.latitude;
           centerLng = position.coords.longitude;
           usedMyLocation = true;
+
+          myPositionRef.current = { lat: centerLat, lng: centerLng };
+          setMyLocation({ lat: centerLat, lng: centerLng });
         } catch (err) {
           console.warn("위치 권한 오류, 경산시청 사용", err);
         }
@@ -155,6 +316,10 @@ export default function MapPage() {
         level: 3,
       });
       mapInstanceRef.current = map;
+
+      if (usedMyLocation) {
+        createMyLocationOverlay(centerLat, centerLng);
+      }
 
       try {
         const res = await fetch("/gyeongsan_city.geojson");
@@ -273,8 +438,16 @@ export default function MapPage() {
 
     const { kakao } = window;
     const pos = new kakao.maps.LatLng(item.host.lat, item.host.lng);
+
+    if (initialSelectRef.current) {
+      initialSelectRef.current = false;
+      if (myLocation) {
+        return;
+      }
+    }
+
     map.panTo(pos);
-  }, [selectedHostId]);
+  }, [selectedHostId, myLocation]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -385,16 +558,27 @@ export default function MapPage() {
               {sheetExpanded ? <IoIosArrowDown /> : <IoIosArrowUp />}
             </button>
 
-            <button
-              type="button"
-              className="w-[150px] mx-auto rounded-full bg-[#e64a45] text-white py-2.5 text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
-              onClick={() => {
-                const q = activeCategory ? `?category=${activeCategory}` : "";
-                navigate(`/nearby${q}`);
-              }}
-            >
-              목록 보기
-            </button>
+            <div className="relative w-full flex justify-center items-center">
+              <button
+                type="button"
+                className="w-[150px] rounded-full bg-[#e64a45] text-white py-2.5 text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
+                onClick={() => {
+                  const q = activeCategory ? `?category=${activeCategory}` : "";
+                  navigate(`/nearby${q}`);
+                }}
+              >
+                목록 보기
+              </button>
+
+              <button
+                type="button"
+                className="absolute right-1 w-11 h-11 rounded-full bg-white shadow-[0_4px_10px_rgba(0,0,0,0.18)] border border-neutral-200 flex items-center justify-center"
+                aria-label="내 위치로 이동"
+                onClick={handleMoveToMyLocation}
+              >
+                <LuCrosshair className="text-neutral-700 text-xl" />
+              </button>
+            </div>
           </div>
 
           {sheetExpanded && (
@@ -424,32 +608,33 @@ export default function MapPage() {
                         : "border-neutral-200",
                     ].join(" ")}
                   >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-[17px] font-bold">{host.name}</div>
-                        <div className="mt-0.5 text-[13px] text-neutral-500">
-                          {host.title}
-                        </div>
-                        <div className="mt-0.5 text-[12px] text-neutral-400">
-                          {host.place}
-                        </div>
-                      </div>
+                    <div className="flex flex-row items-baseline gap-2">
+                      <span className="text-[17px] font-bold">{host.name}</span>
+                      <span className="text-[13px] text-neutral-500">
+                        {host.title}
+                      </span>
                     </div>
 
-                    <div className="mt-2 text-[13px] text-neutral-500">
-                      후기 {host.reviews}
+                    <div className="mt-2 flex flex-row items-center text-[13px] text-neutral-500">
+                      <BiSolidMessageDetail className="text-[15px] mr-1" />
+                      <span>후기 {host.reviews}</span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-4 text-[13px]">
-                      <span className="text-neutral-500">내 위치에서</span>
+
+                    <div className="mt-0.5 flex flex-row items-center text-[13px] text-neutral-500">
+                      <IoLocationSharp className="text-[15px] mr-1" />
+                      <span className="mr-1">내 위치에서</span>
                       <span className="text-[#e64a45] font-semibold">
                         {host.distance}m
                       </span>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[14px] font-semibold">
-                        {host.price}
-                      </span>
+                    <div className="mt-2 flex items-center justify-between text-[14px]">
+                      <div className="flex items-center">
+                        <span className="text-[#e64a45] font-semibold mr-1">
+                          1인
+                        </span>
+                        <span className="font-semibold">{host.price}</span>
+                      </div>
                       <span className="px-3 py-1.5 rounded-full border border-neutral-300 text-[12px]">
                         만나러 가기
                       </span>
