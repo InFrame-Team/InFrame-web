@@ -1,13 +1,12 @@
-// src/pages/MapPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import BottomTab from "../components/BottomTab";
+
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { TbAdjustmentsHorizontal } from "react-icons/tb";
-import { IoIosArrowUp } from "react-icons/io";
-import { IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 
-/** 상단 카테고리 4개 */
 const CATEGORY_ITEMS = [
   { key: "artisan", label: "장인" },
   { key: "youth", label: "청년사업가" },
@@ -15,7 +14,6 @@ const CATEGORY_ITEMS = [
   { key: "artist", label: "예술가" },
 ];
 
-/** 더미 호스트 데이터 5명 */
 const HOSTS = [
   {
     id: "h1",
@@ -85,9 +83,11 @@ const HOSTS = [
 ];
 
 export default function MapPage() {
-  const mapRef = useRef(null); // 지도 DOM
-  const mapInstanceRef = useRef(null); // kakao.maps.Map 인스턴스
-  const hostOverlaysRef = useRef({}); // { hostId: { overlay, el, host } }
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const hostOverlaysRef = useRef({});
+  const labelListRef = useRef(null);
+  const labelItemRefs = useRef({});
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,22 +95,15 @@ export default function MapPage() {
   const params = new URLSearchParams(location.search);
   const categoryFromQuery = params.get("category");
 
-  /** 기본은 null → 아무 카테고리도 선택 안 함 */
   const [activeCategory, setActiveCategory] = useState(() => {
     const exists = CATEGORY_ITEMS.some((c) => c.key === categoryFromQuery);
     return exists ? categoryFromQuery : null;
   });
 
-  /** 검색어 (장소/호스트 이름/직업에 필터링) */
   const [searchQuery, setSearchQuery] = useState("");
-
-  /** 어떤 호스트가 선택됐는지 (카드 + 마커 강조용) */
   const [selectedHostId, setSelectedHostId] = useState(null);
-
-  /** 바텀시트 펼침 여부 (true: 라벨 보임, false: 버튼만 보임) */
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
-  /** 카테고리 + 검색어 필터 + 거리순 정렬 된 호스트 리스트 */
   const displayedHosts = useMemo(() => {
     let filtered = activeCategory
       ? HOSTS.filter((h) => h.category === activeCategory)
@@ -130,18 +123,15 @@ export default function MapPage() {
     return [...filtered].sort((a, b) => a.distance - b.distance);
   }, [activeCategory, searchQuery]);
 
-  // ============= 1. 지도 초기화 (내 위치 기준 + 경산시 마스크 + 마커 생성) =============
   useEffect(() => {
     async function initMap() {
       const { kakao } = window;
       if (!mapRef.current || !kakao || !kakao.maps) return;
 
-      // 기본 중심: 경산시청 (위치 허용 안 할 경우)
       let centerLat = 35.825;
       let centerLng = 128.741;
       let usedMyLocation = false;
 
-      // 내 위치
       if (navigator.geolocation) {
         try {
           const position = await new Promise((resolve, reject) => {
@@ -153,24 +143,19 @@ export default function MapPage() {
           centerLat = position.coords.latitude;
           centerLng = position.coords.longitude;
           usedMyLocation = true;
-          console.log("📍 내 위치로 지도 중심 설정:", centerLat, centerLng);
         } catch (err) {
-          console.warn("⚠️ 위치 권한 거부 또는 실패, 경산시청 사용", err);
+          console.warn("위치 권한 오류, 경산시청 사용", err);
         }
-      } else {
-        console.warn("⚠️ Geolocation 미지원, 경산시청 사용");
       }
 
       const center = new kakao.maps.LatLng(centerLat, centerLng);
 
-      // 지도 생성
       const map = new kakao.maps.Map(mapRef.current, {
         center,
         level: 3,
       });
       mapInstanceRef.current = map;
 
-      // --- 경산시 외곽 어둡게 마스킹 ---
       try {
         const res = await fetch("/gyeongsan_city.geojson");
         if (res.ok) {
@@ -222,10 +207,9 @@ export default function MapPage() {
           }
         }
       } catch (e) {
-        console.warn("gyeongsan_city.geojson 로드 실패 (무시 가능)", e);
+        console.warn("gyeongsan_city.geojson 로드 실패", e);
       }
 
-      // --- 더미 호스트 마커들 생성 ---
       hostOverlaysRef.current = {};
       HOSTS.forEach((host) => {
         const pos = new kakao.maps.LatLng(host.lat, host.lng);
@@ -270,10 +254,8 @@ export default function MapPage() {
       };
       document.head.appendChild(script);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ============= 2. 선택된 호스트 -> 마커 강조 & 지도 이동 =============
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.kakao) return;
@@ -294,7 +276,6 @@ export default function MapPage() {
     map.panTo(pos);
   }, [selectedHostId]);
 
-  // ============= 3. 카테고리/검색 변경 시 마커 보이기/숨기기 =============
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -318,22 +299,29 @@ export default function MapPage() {
     }
   }, [activeCategory, searchQuery, displayedHosts, selectedHostId]);
 
-  // ================== JSX ==================
+  useEffect(() => {
+    if (!sheetExpanded || !selectedHostId) return;
+    const container = labelListRef.current;
+    const item = labelItemRefs.current[selectedHostId];
+    if (!container || !item) return;
+
+    const targetScrollLeft =
+      item.offsetLeft + item.offsetWidth / 2 - container.clientWidth / 2;
+
+    container.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
+  }, [selectedHostId, sheetExpanded]);
+
   return (
     <div className="relative min-h-[100dvh] bg-white">
-      {/* 카카오 지도 */}
       <div
         ref={mapRef}
         className="absolute inset-0"
         style={{ minHeight: "100dvh" }}
       />
 
-      {/* 지도 위 UI 오버레이 */}
       <div className="pointer-events-none relative z-10 flex flex-col min-h-[100dvh] pb-24">
-        {/* 상단 검색 + 카테고리 */}
         <header className="pt-6 px-4 pointer-events-auto">
           <div className="flex items-center gap-2">
-            {/* 검색창 */}
             <div className="flex flex-1 items-center gap-2 bg-white rounded-[10px] shadow-md px-4 py-4">
               <input
                 type="text"
@@ -351,7 +339,6 @@ export default function MapPage() {
               </button>
             </div>
 
-            {/* 필터 버튼 (검색창과 분리) */}
             <button
               type="button"
               className="flex items-center justify-center w-14 h-14 rounded-[10px] bg-[#7b7b7b] text-white shadow-md"
@@ -385,14 +372,10 @@ export default function MapPage() {
           </div>
         </header>
 
-        {/* 가운데는 지도만 터치되게 비워둠 */}
         <div className="flex-1" />
 
-        {/* 하단: 목록 보기 버튼 + 라벨 카드 (토글 방식) */}
         <div className="pointer-events-auto fixed bottom-[70px] left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 flex flex-col gap-2">
-          {/* 핸들 + 버튼 */}
           <div className="w-full flex flex-col items-center mb-1">
-            {/* ⌃ / ⌄ 텍스트로 토글 (동그라미/테두리 없음) */}
             <button
               type="button"
               onClick={() => setSheetExpanded((prev) => !prev)}
@@ -414,24 +397,30 @@ export default function MapPage() {
             </button>
           </div>
 
-          {/* 펼쳐진 상태에서만 라벨 카드 보이기 */}
           {sheetExpanded && (
-            <div className="mt-1 flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            <div
+              ref={labelListRef}
+              className="mt-1 flex gap-3 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
+              style={{ padding: "0 calc((100% - 250px) / 2)" }}
+            >
               {displayedHosts.map((host) => {
                 const selected = host.id === selectedHostId;
                 return (
                   <button
                     key={host.id}
                     type="button"
+                    ref={(el) => {
+                      if (el) labelItemRefs.current[host.id] = el;
+                    }}
                     onClick={() =>
                       setSelectedHostId((prev) =>
                         prev === host.id ? null : host.id
                       )
                     }
                     className={[
-                      "min-w-[250px] max-w-[250px] rounded-2xl bg-white border text-left px-4 py-2 shadow-sm transition-all duration-150",
+                      "min-w-[250px] max-w-[250px] rounded-2xl bg-white border text-left px-4 py-2 shadow-sm transition-all duration-150 snap-center",
                       selected
-                        ? "border-[#e64a45] shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
+                        ? "border-[#000000] shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
                         : "border-neutral-200",
                     ].join(" ")}
                   >
@@ -473,120 +462,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* 하단 탭 바 */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-20 pointer-events-auto">
-        <div className="grid grid-cols-5 text-[11px]">
-          {[
-            { label: "홈", icon: HomeIcon, onClick: () => navigate("/app") },
-            {
-              label: "즐겨찾기",
-              icon: HeartIcon,
-              onClick: () => navigate("/favorites"),
-            },
-            {
-              label: "인물지도",
-              icon: MapPinIcon,
-              onClick: () => navigate("/map"),
-            },
-            {
-              label: "예약하기",
-              icon: CalendarIcon,
-              onClick: () => navigate("/booking"),
-            },
-            {
-              label: "마이페이지",
-              icon: UserIcon,
-              onClick: () => navigate("/me"),
-            },
-          ].map((t, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={t.onClick}
-              className="py-2 flex flex-col items-center gap-1 text-neutral-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            >
-              <t.icon />
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <BottomTab />
     </div>
-  );
-}
-
-/* ===== 탭바 아이콘들 ===== */
-function UserIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <circle cx="12" cy="7" r="4" />
-      <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
-    </svg>
-  );
-}
-function HomeIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 10v10h14V10" />
-    </svg>
-  );
-}
-function HeartIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M20.8 11c1.5-3.8-2.8-7.6-6.5-4.7L12 8l-2.3-1.7C6 3.4 1.7 7.2 3.2 11c1.1 2.8 4.4 5.4 8.8 9 4.4-3.6 7.7-6.2 8.8-9z" />
-    </svg>
-  );
-}
-function MapPinIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z" />
-      <circle cx="12" cy="10" r="2.5" />
-    </svg>
-  );
-}
-function CalendarIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M16 3v4M8 3v4M3 10h18" />
-    </svg>
   );
 }
