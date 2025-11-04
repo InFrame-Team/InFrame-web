@@ -277,7 +277,6 @@ export default function MapPage() {
       }
       return h;
     });
-
     return [...withDistance].sort((a, b) => a.distance - b.distance);
   }, [activeCategory, searchQuery, myLocation]);
 
