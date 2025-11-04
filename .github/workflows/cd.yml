@@ -7,19 +7,26 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 코드 체크아웃
       - uses: actions/checkout@v4
 
+      # Node.js 설정
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
+      # 의존성 설치 및 빌드 (환경변수 포함)
       - name: Install & Build
         run: |
           npm ci || npm i
           npm run build
+        env:
+          VITE_KAKAO_JS_KEY: ${{ secrets.VITE_KAKAO_JS_KEY }}
 
+      # 서버에 dist 폴더 생성
       - name: Ensure target dir
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -29,6 +36,7 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           script: mkdir -p /home/ubuntu/InFrame-web/dist
 
+      # dist 파일 서버로 업로드
       - name: Upload dist files (no dist/dist)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -39,6 +47,7 @@ jobs:
           source: "dist/*"
           target: "/home/ubuntu/InFrame-web/dist/"
 
+      # Nginx 재로드
       - name: Reload Nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
