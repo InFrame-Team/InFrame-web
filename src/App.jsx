@@ -32,7 +32,8 @@ export default function App() {
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
-          <Route path="/signup" element={<SignupLayout />} />
+
+          <Route path="/signup" element={<SignupLayout />}>
             <Route path="name" element={<Name />} />
             <Route path="nickname" element={<Nickname />} />
             <Route path="account" element={<Account />} />
