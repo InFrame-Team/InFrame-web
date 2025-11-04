@@ -14,15 +14,15 @@ export default function MainPage() {
   const goMessages = () => navigate("/messages");
   const goNotifications = () => navigate("/notifications");
 
-  const goCategory = (key) => navigate(`/category/${key}`);
+  const goCategory = (key) => navigate(`/map?category=${key}`);
+
   const goHostMore = () => navigate("/host/ezisub");
 
-  const [likedMap, setLikedMap] = useState({}); // (기존 유지)
+  const [likedMap, setLikedMap] = useState({});
   const toggleLike = (id) =>
     setLikedMap((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // ▼ 추가: '나의 저장' 섹션용 탭/좋아요 상태
-  const [tab, setTab] = useState("host"); // "host" | "product"
+  const [tab, setTab] = useState("host");
   const [savedLike, setSavedLike] = useState({ a: false, b: false });
   const toggleSavedLike = (key) =>
     setSavedLike((p) => ({ ...p, [key]: !p[key] }));
@@ -51,7 +51,6 @@ export default function MainPage() {
   return (
     <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
       <div className="w-full max-w-[480px] relative pb-24">
-        {/* 헤더 */}
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-neutral-200">
           <div className="px-5 py-3 flex items-center justify-between">
             <img
@@ -82,9 +81,7 @@ export default function MainPage() {
           </div>
         </header>
 
-        {/* 컨텐츠 */}
         <main className="px-5 pt-4 pb-6 space-y-8">
-          {/* 2×2 카테고리 */}
           <section>
             <div className="grid grid-cols-2 gap-3">
               {categories.map((c) => (
@@ -113,7 +110,6 @@ export default function MainPage() {
             </div>
 
             <div className="flex justify-between items-center rounded-2xl bg-[#e64a45] text-white p-6 mt-3 shadow-[0_8px_24px_rgba(230,74,69,0.25)]">
-              {/* 왼쪽 텍스트 영역 */}
               <div>
                 <div className="text-[18px] font-bold leading-snug">
                   내 주변
@@ -126,7 +122,6 @@ export default function MainPage() {
                 </div>
               </div>
 
-              {/* 오른쪽 이미지 */}
               <img
                 src="/hand.png"
                 alt="악수 아이콘"
@@ -135,7 +130,6 @@ export default function MainPage() {
             </div>
           </section>
 
-          {/* 나의 저장으로 만나보세요! */}
           <section className="space-y-5">
             <div className="flex flex-col">
               <div className="flex items-center justify-between">
@@ -156,7 +150,6 @@ export default function MainPage() {
               </p>
             </div>
 
-            {/* 탭 */}
             <div className="flex gap-3">
               <button
                 onClick={() => setTab("host")}
@@ -180,10 +173,8 @@ export default function MainPage() {
               </button>
             </div>
 
-            {/* 호스트 카드 리스트 */}
             {tab === "host" && (
               <div className="space-y-6">
-                {/* 카드 A */}
                 <article className="rounded-2xl bg-white border border-neutral-200 shadow-sm p-3">
                   <div className="flex items-center gap-3">
                     <img
@@ -240,7 +231,6 @@ export default function MainPage() {
                   </div>
                 </article>
 
-                {/* 카드 B */}
                 <article className="rounded-2xl bg-white border border-neutral-200 shadow-sm p-3">
                   <div className="flex items-center gap-3">
                     <img
@@ -299,7 +289,6 @@ export default function MainPage() {
               </div>
             )}
 
-            {/* 상품 탭은 자리만 */}
             {tab === "product" && (
               <div className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-neutral-500">
                 곧 추가될 예정입니다.
