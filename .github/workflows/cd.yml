@@ -45,7 +45,7 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_KEY }}
           source: "dist/*"
-          target: "/home/ubuntu/InFrame-web/dist/"
+          target: "/home/ubuntu/InFrame-web/"
 
       # Nginx 재로드
       - name: Reload Nginx
