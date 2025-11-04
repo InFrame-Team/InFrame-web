@@ -23,6 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 빌드
+      # 빌드 (환경 변수 포함)
       - name: Build Vite app
         run: npm run build
+        env:
+          VITE_KAKAO_JS_KEY: ${{ secrets.VITE_KAKAO_JS_KEY }}
