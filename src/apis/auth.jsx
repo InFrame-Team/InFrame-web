@@ -56,3 +56,9 @@ export async function signin({ email, password }) {
     return { success: false, status, message };
   }
 }
+
+// 소셜 로그인
+export function socialLogin(provider) {
+  const base = "http://13.125.136.155:8080/api/v1";
+  window.location.href = `${base}/auth/oauth2/${provider}`;
+}

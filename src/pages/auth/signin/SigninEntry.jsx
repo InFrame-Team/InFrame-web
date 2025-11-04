@@ -7,6 +7,7 @@ import naverIcon from "../../../assets/naverIcon.png";
 import vector1 from "../../../assets/vector1.png";
 import vector2 from "../../../assets/vector2.png";
 import { useNavigate } from "react-router-dom";
+import { socialLogin } from "../../../apis/auth";
 
 export default function SigninEntry() {
   const navigate = useNavigate();
@@ -73,6 +74,7 @@ export default function SigninEntry() {
             {/* 카카오 로그인 */}
             <button
               type="button"
+              onClick={() => socialLogin("kakao")}
               className="w-full h-[48px] rounded-[10px] bg-white border border-[#E5E5E5] text-[15px] text-[#3A3A3A] font-medium flex items-center justify-center gap-2"
             >
               <img src={kakaoIcon} alt="카카오 아이콘" className="w-4 h-4" />
@@ -82,6 +84,7 @@ export default function SigninEntry() {
             {/* 네이버 로그인 */}
             <button
               type="button"
+              onClick={() => socialLogin("naver")}
               className="w-full h-[48px] rounded-[10px] bg-white border border-[#E5E5E5] text-[15px] text-[#3A3A3A] font-medium flex items-center justify-center gap-2"
             >
               <img src={naverIcon} alt="네이버 아이콘" className="w-4 h-4" />

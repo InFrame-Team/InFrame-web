@@ -9,6 +9,7 @@ import Onboarding from "./pages/auth/signup/Onboarding";
 import SigninEntry from "./pages/auth/signin/SigninEntry";
 import SigninEmail from "./pages/auth/signin/SigninEmail";
 import AuthProvider from "./contexts/AuthProvider";
+import OAuthRedirect from "./pages/auth/OAuthRedirect";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/app" element={<MobileApp />} />
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
+          <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           <Route path="/signup" element={<SignupLayout />}>
             <Route path="name" element={<Name />} />
             <Route path="nickname" element={<Nickname />} />
