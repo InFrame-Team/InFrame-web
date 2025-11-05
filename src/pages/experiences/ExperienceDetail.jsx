@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   IoChevronBack,
   IoChevronForward,
-  IoHeartOutline,
   IoShareOutline,
   IoMapOutline,
 } from "react-icons/io5";
@@ -15,9 +14,10 @@ import { FaUser } from "react-icons/fa6";
 import { CiStar } from "react-icons/ci";
 import { RiHome5Line } from "react-icons/ri";
 import fakeImg from "../../assets/fakeImg.svg";
+import { LuCalendarDays } from "react-icons/lu";
 import fakeProfile from "../../assets/fakeProfile.svg";
 
-// 목업 데이터
+/*  목업 데이터 */
 const fakeExperience = {
   id: 1,
   tags: ["초콜릿", "일일클래스"],
@@ -36,33 +36,9 @@ const fakeExperience = {
   heroImage: fakeImg,
 };
 
-// 더미 예약 데이터
-const fakeSchedule = {
-  currency: "KRW",
-  pricePerPerson: 50000,
-  dates: [
-    {
-      key: "2025-11-09",
-      label: "11.9 일",
-      price: 50000,
-      slots: ["09:00", "10:00", "11:00", "13:00", "14:00"],
-    },
-    {
-      key: "2025-11-10",
-      label: "11.10 월",
-      price: 50000,
-      slots: ["09:00", "10:00", "11:00", "13:00", "14:00"],
-    },
-    {
-      key: "2025-11-11",
-      label: "11.11 화",
-      price: 50000,
-      slots: ["09:00", "10:00", "11:00", "13:00", "14:00"],
-    },
-  ],
-};
+const PRICE_PER_PERSON = 50000;
 
-// 평점
+/* 별점 */
 function Stars({ value = 0 }) {
   const full = Math.floor(value);
   const hasHalf = value - full >= 0.5;
@@ -80,16 +56,13 @@ function Stars({ value = 0 }) {
   );
 }
 
-// 저장하기, 지도보기, 리뷰쓰기, 공유하기
+/* 액션 아이템 */
 function ActionItem({ icon, label, toggleable = false }) {
   const [active, setActive] = useState(false);
-  const handleClick = () => {
-    if (toggleable) setActive((prev) => !prev);
-  };
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={() => toggleable && setActive((p) => !p)}
       className="flex flex-col items-center py-3 rounded-xl"
     >
       <div className="w-10 h-10 rounded-full flex items-center justify-center">
@@ -108,47 +81,81 @@ function ActionItem({ icon, label, toggleable = false }) {
   );
 }
 
-export default function ExperienceDetailPage({
-  data = fakeExperience,
-  schedule = fakeSchedule,
-}) {
+export default function ExperienceDetailPage({ data = fakeExperience }) {
   const navigate = useNavigate();
 
-  // 예약 하단 표기용 — 임시값
-  const [selectedDateKey] = useState(schedule.dates[1].key); // 11.10 기본
-  const [selectedSlot] = useState("13:00");
-  const [adult] = useState(2);
-  const [child] = useState(0);
-
-  const selectedDate = useMemo(
-    () => schedule.dates.find((d) => d.key === selectedDateKey),
-    [selectedDateKey, schedule.dates]
-  );
-  const total = useMemo(
-    () => (adult + child) * selectedDate.price,
-    [adult, child, selectedDate.price]
-  );
-  const canReserve = adult + child > 0 && !!selectedSlot;
-
-  // 상단 헤더 노출 제어
+  // 헤더 페이드
   const heroRef = useRef(null);
   const topSentinelRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
-
   useEffect(() => {
     const el = topSentinelRef.current;
     if (!el) return;
-
     const io = new IntersectionObserver(
-      ([entry]) => {
-        setShowTopBar(!entry.isIntersecting);
-      },
-      { root: null, threshold: 0, rootMargin: "0px" }
+      ([entry]) => setShowTopBar(!entry.isIntersecting),
+      { root: null, threshold: 0 }
     );
-
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  // 탭 상태
+  const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
+
+  // 날짜 스트립 (오늘 ~ +10일)
+  const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
+  const dateStrip = useMemo(() => {
+    const today = new Date();
+    const arr = [];
+    for (let i = 0; i <= 10; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const mm = d.getMonth() + 1;
+      const dd = d.getDate();
+      const yo = dayLabels[d.getDay()];
+      arr.push({
+        key: d.toISOString().slice(0, 10),
+        label: `${mm}.${dd} ${yo}`,
+        price: PRICE_PER_PERSON,
+        dateObj: d,
+      });
+    }
+    return arr;
+  }, []);
+
+  const [selectedDateIdx, setSelectedDateIdx] = useState(1);
+  const selectedDate = dateStrip[selectedDateIdx];
+
+  // 회차 (추후 API 연동)
+  const slots = [
+    "오전 9:00",
+    "오전 10:00",
+    "오전 11:00",
+    "오후 12:00",
+    "오후 1:00",
+    "오후 2:00",
+    "오후 12:00",
+    "오후 1:00",
+    "오후 2:00",
+  ];
+  const [selectedSlot, setSelectedSlot] = useState(null);
+
+  // 인원수
+  const [adult, setAdult] = useState(0);
+  const [child, setChild] = useState(0);
+
+  // 합계/예약 가능
+  const total = useMemo(
+    () => (adult + child) * PRICE_PER_PERSON,
+    [adult, child]
+  );
+  const canReserve = adult + child > 0 && !!selectedSlot;
+
+  // 상단 월 표시
+  const monthLabel = useMemo(() => {
+    const d = selectedDate?.dateObj ?? new Date();
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, [selectedDate]);
 
   return (
     <div className="min-h-[100dvh] bg-white flex flex-col items-center">
@@ -189,8 +196,9 @@ export default function ExperienceDetailPage({
         </div>
       </div>
 
-      {/* 본문 */}
+      {/* 본문 컨테이너 */}
       <div className="w-full max-w-[480px] pb-[160px]">
+        {/* 히어로 */}
         <div ref={heroRef} className="relative">
           <img
             src={data.heroImage}
@@ -200,15 +208,13 @@ export default function ExperienceDetailPage({
           <div
             ref={topSentinelRef}
             className="absolute top-[80px] left-0 right-0 h-px"
-          ></div>
-
-          {/* 이미지 위 투명 헤더 (스크롤 전 상태) */}
+          />
+          {/* 투명 헤더 (스크롤 전) */}
           <div
             className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] h-14 z-40 flex items-center justify-between px-3 transition-opacity duration-150 ${
               showTopBar ? "opacity-0 pointer-events-none" : "opacity-100"
             }`}
           >
-            {/* 좌측: 뒤로가기 + 홈 */}
             <div className="flex items-center">
               <button
                 aria-label="뒤로가기"
@@ -217,7 +223,6 @@ export default function ExperienceDetailPage({
               >
                 <IoChevronBack size={22} />
               </button>
-
               <button
                 aria-label="홈"
                 onClick={() => navigate("/app")}
@@ -226,18 +231,17 @@ export default function ExperienceDetailPage({
                 <RiHome5Line size={22} />
               </button>
             </div>
-            <div>
-              <button
-                aria-label="저장"
-                className="w-9 h-9 rounded-full backdrop-blur flex items-center justify-center text-white/70"
-              >
-                <FaRegHeart size={20} />
-              </button>
-            </div>
+            <button
+              aria-label="저장"
+              className="w-9 h-9 rounded-full backdrop-blur flex items-center justify-center text-white/70"
+            >
+              <FaRegHeart size={20} />
+            </button>
           </div>
         </div>
+
+        {/* 소개 섹션 */}
         <div className="px-5 py-5">
-          {/* 태그 */}
           <div className="flex gap-2 mb-2">
             {data.tags.map((t) => (
               <span
@@ -249,13 +253,11 @@ export default function ExperienceDetailPage({
             ))}
           </div>
 
-          {/* 제목 */}
           <h1 className="text-[24px] font-bold text-[#3A3A3A]">{data.title}</h1>
           <p className="text-[15px] font-medium text-[#A0A0A0] mt-1">
             {data.subtitle}
           </p>
 
-          {/* 평점 */}
           <div className="flex items-center gap-1.5 mt-3">
             <Stars value={data.rating} />
             <span className="text-[14px] font-semibold text-[#3A3A3A]">
@@ -264,7 +266,6 @@ export default function ExperienceDetailPage({
             <IoChevronForward className="text-[#A0A0A0] cursor-pointer" />
           </div>
 
-          {/* 시간/연령 */}
           <div className="mt-2 space-y-1.5">
             <div className="flex items-center gap-2 text-[15px] font-medium text-[#555558]">
               <IoMdTime className="w-[15px] h-[15px] text-[#8E8E93]" />
@@ -276,7 +277,6 @@ export default function ExperienceDetailPage({
             </div>
           </div>
 
-          {/* 저장, 지도, 리뷰, 공유 영역 */}
           <div className="mt-6 pb-2 grid grid-cols-4 gap-2 border-t border-b text-center">
             <ActionItem toggleable label="저장하기" />
             <ActionItem icon={<IoMapOutline size={20} />} label="지도보기" />
@@ -295,7 +295,6 @@ export default function ExperienceDetailPage({
                 className="text-[#7F7F7F] cursor-pointer mt-1"
               />
             </div>
-
             <div className="flex justify-between rounded-2xl">
               <div className="flex items-center">
                 <div>
@@ -317,32 +316,219 @@ export default function ExperienceDetailPage({
             </div>
           </div>
         </div>
+
+        {/* 탭 바 */}
+        <div
+          className="px-5 border-b border-[#EDEEF0]"
+          role="tablist"
+          aria-label="상세 탭"
+        >
+          <div className="flex w-full">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "reserve"}
+              onClick={() => setTab("reserve")}
+              className={`flex-1 text-center py-3 text-[15px] font-bold ${
+                tab === "reserve"
+                  ? "text-[#3A3A3A] border-b-2 border-[#3A3A3A]"
+                  : "text-[#C5C5C7] border-b-2 border-transparent"
+              }`}
+            >
+              예약하기
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "detail"}
+              onClick={() => setTab("detail")}
+              className={`flex-1 text-center py-3 text-[15px] font-bold ${
+                tab === "detail"
+                  ? "text-[#3A3A3A] border-b-2 border-[#3A3A3A]"
+                  : "text-[#C5C5C7] border-b-2 border-transparent"
+              }`}
+            >
+              상세정보
+            </button>
+          </div>
+        </div>
+
+        {/* 탭 컨텐츠 */}
+        <div className="relative w-full">
+          {/* === 예약하기 === */}
+          <div
+            className={`px-5 pt-2 pb-8 border-t border-[#F0F0F0] ${
+              tab === "reserve" ? "block" : "hidden"
+            }`}
+          >
+            {/* 상단 타이틀 (월) */}
+            <div className="flex items-center justify-between mt-3 mb-4">
+              <h2 className="text-[20px] font-bold text-[#3A3A3A]">
+                {monthLabel}
+              </h2>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-[16px] font-semibold text-[#3A3A3A]"
+              >
+                <LuCalendarDays className="w-4 h-4 text-[#C9C9C9]" />
+                달력보기
+              </button>
+            </div>
+
+            {/* 날짜 스트립 */}
+            <div className="-mx-5 px-5 border-b pb-2">
+              <div className="flex gap-2 overflow-x-auto snap-x pb-2">
+                {dateStrip.map((d, idx) => {
+                  const active = idx === selectedDateIdx;
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() => setSelectedDateIdx(idx)}
+                      className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
+                        active
+                          ? "bg-[#F13030] text-white"
+                          : "bg-white border-[#C5C5C7] text-[#3A3A3A]"
+                      }`}
+                    >
+                      <div className="text-[16px] font-bold">{d.label}</div>
+                      <div
+                        className={`text-[11px] ${
+                          active ? "text-[#ECFFE7]" : "text-[#3A3A3A]"
+                        }`}
+                      >
+                        {d.price.toLocaleString()}원
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 인원 선택 */}
+            <div className="mt-5 border-b pb-7">
+              <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
+                인원선택
+              </h3>
+              <div className="space-y-1.5 pl-1">
+                {/* 성인 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[16px] font-semibold text-[#555558]">
+                    성인
+                  </span>
+                  <div className="flex items-center gap-5">
+                    <button
+                      type="button"
+                      onClick={() => setAdult((n) => Math.max(0, n - 1))}
+                      className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                    >
+                      −
+                    </button>
+                    <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
+                      {adult}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAdult((n) => n + 1)}
+                      className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                    >
+                      ＋
+                    </button>
+                  </div>
+                </div>
+                {/* 아동 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[16px] font-semibold text-[#555558]">
+                    아동
+                  </span>
+                  <div className="flex items-center gap-5">
+                    <button
+                      type="button"
+                      onClick={() => setChild((n) => Math.max(0, n - 1))}
+                      className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                    >
+                      −
+                    </button>
+                    <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
+                      {child}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setChild((n) => n + 1)}
+                      className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                    >
+                      ＋
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 회차선택 */}
+            <div className="mt-6">
+              <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-2">
+                회차선택
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {slots.map((t) => {
+                  const active = selectedSlot === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSlot((prev) => (prev === t ? null : t))
+                      }
+                      className={`py-3 rounded-xl border text-[14px] font-medium ${
+                        active
+                          ? "border-2 border-[#3A3A3A] text-[#3A3A3A] font-semibold"
+                          : "border-[#E9E9EC] text-[#555558]"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 상세정보 (디자인 안 나옴 나중에 채울 것) */}
+          <div
+            className={`px-5 pt-4 pb-12 ${
+              tab === "detail" ? "block" : "hidden"
+            }`}
+          >
+            {/* 상세 정보 콘텐츠는 추후 작성 */}
+          </div>
+        </div>
       </div>
 
       {/* 고정 하단 영역 */}
-      <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-40">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="leading-tight">
-            <p className="text-[18px] font-bold text-[#1D1D1F]">
-              {total.toLocaleString()}원
-            </p>
-            <p className="text-[12px] text-[#8E8E93]">
-              {selectedDate.label} · {adult + child}명
-            </p>
-          </div>
-          <button
-            disabled={!canReserve}
-            className={`px-6 py-3 rounded-full text-white text-[14px] font-semibold shadow-sm
-              ${
+      {tab === "reserve" && (
+        <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-40">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="leading-tight">
+              <p className="text-[18px] font-bold text-[#1D1D1F]">
+                {total.toLocaleString()}원
+              </p>
+              <p className="text-[12px] text-[#8E8E93]">
+                {selectedDate?.label} · {adult + child}명
+              </p>
+            </div>
+            <button
+              disabled={!canReserve}
+              className={`px-6 py-3 rounded-full text-white text-[14px] font-semibold shadow-sm ${
                 canReserve
                   ? "bg-[#F13030]"
                   : "bg-[#E9E9EC] text-[#99A0B0] cursor-not-allowed"
               }`}
-          >
-            예약 진행하기
-          </button>
+            >
+              예약 진행하기
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* BottomTab */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-30">
