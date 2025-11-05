@@ -16,6 +16,7 @@ import { RiHome5Line } from "react-icons/ri";
 import fakeImg from "../../assets/fakeImg.svg";
 import { LuCalendarDays } from "react-icons/lu";
 import fakeProfile from "../../assets/fakeProfile.svg";
+import Calendar from "../../components/Calendar";
 
 /*  목업 데이터 */
 const fakeExperience = {
@@ -81,6 +82,12 @@ function ActionItem({ icon, label, toggleable = false }) {
   );
 }
 
+/* 로컬 키(UTC 오프셋 문제 방지) */
+const localKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+
 export default function ExperienceDetailPage({ data = fakeExperience }) {
   const navigate = useNavigate();
 
@@ -102,7 +109,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
   // 탭 상태
   const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
 
-  // 날짜 스트립 (오늘 ~ +10일)
+  // 날짜 스트립 (오늘 ~ +10일) — 고정
   const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
   const dateStrip = useMemo(() => {
     const today = new Date();
@@ -114,10 +121,10 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
       const dd = d.getDate();
       const yo = dayLabels[d.getDay()];
       arr.push({
-        key: d.toISOString().slice(0, 10),
+        key: localKey(d),
         label: `${mm}.${dd} ${yo}`,
         price: PRICE_PER_PERSON,
-        dateObj: d,
+        dateObj: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
       });
     }
     return arr;
@@ -125,6 +132,16 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
   const [selectedDateIdx, setSelectedDateIdx] = useState(1);
   const selectedDate = dateStrip[selectedDateIdx];
+
+  // 달력에서 고른 실제 예약일(스트립과 독립)
+  const [pickedDate, setPickedDate] = useState(
+    selectedDate?.dateObj || new Date()
+  );
+
+  const handleStripPick = (idx) => {
+    setSelectedDateIdx(idx);
+    setPickedDate(dateStrip[idx].dateObj);
+  };
 
   // 회차 (추후 API 연동)
   const slots = [
@@ -134,9 +151,9 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
     "오후 12:00",
     "오후 1:00",
     "오후 2:00",
-    "오후 12:00",
-    "오후 1:00",
-    "오후 2:00",
+    "오후 3:00",
+    "오후 4:00",
+    "오후 5:00",
   ];
   const [selectedSlot, setSelectedSlot] = useState(null);
 
@@ -153,9 +170,39 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
   // 상단 월 표시
   const monthLabel = useMemo(() => {
-    const d = selectedDate?.dateObj ?? new Date();
+    const d = pickedDate ?? selectedDate?.dateObj ?? new Date();
     return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-  }, [selectedDate]);
+  }, [pickedDate, selectedDate]);
+
+  /* 달력 토글 */
+  const [showCalendar, setShowCalendar] = useState(false);
+  const toggleCalendar = () => setShowCalendar((p) => !p);
+
+  // 달력 범위: 오늘 ~ 오늘 기준 두 달 뒤 같은 일자
+  const minDate = useMemo(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  }, []);
+  const maxDate = useMemo(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth() + 2, t.getDate());
+  }, []);
+
+  // 달력에서 날짜 선택 → pickedDate만 변경(스트립은 그대로)
+  const handleCalendarChange = (date) => {
+    const d = date instanceof Date ? date : new Date(date);
+    const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    setPickedDate(normalized);
+    // 필요 시 자동 닫기 원하면 주석 해제
+    // setShowCalendar(false);
+  };
+
+  // 하단 요약용 포맷(달력 선택 우선)
+  const fmtPicked = useMemo(() => {
+    const d = pickedDate;
+    if (!d) return selectedDate?.label || "";
+    return `${d.getMonth() + 1}.${d.getDate()} ${dayLabels[d.getDay()]}`;
+  }, [pickedDate, selectedDate, dayLabels]);
 
   return (
     <div className="min-h-[100dvh] bg-white flex flex-col items-center">
@@ -369,40 +416,53 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
               <button
                 type="button"
                 className="flex items-center gap-1 text-[16px] font-semibold text-[#3A3A3A]"
+                onClick={toggleCalendar}
+                aria-pressed={showCalendar}
               >
                 <LuCalendarDays className="w-4 h-4 text-[#C9C9C9]" />
                 달력보기
               </button>
             </div>
 
-            {/* 날짜 스트립 */}
+            {/* 날짜/금액 영역 → 달력 토글 */}
             <div className="-mx-5 px-5 border-b pb-2">
-              <div className="flex gap-2 overflow-x-auto snap-x pb-2">
-                {dateStrip.map((d, idx) => {
-                  const active = idx === selectedDateIdx;
-                  return (
-                    <button
-                      key={d.key}
-                      type="button"
-                      onClick={() => setSelectedDateIdx(idx)}
-                      className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
-                        active
-                          ? "bg-[#F13030] text-white"
-                          : "bg-white border-[#C5C5C7] text-[#3A3A3A]"
-                      }`}
-                    >
-                      <div className="text-[16px] font-bold">{d.label}</div>
-                      <div
-                        className={`text-[11px] ${
-                          active ? "text-[#ECFFE7]" : "text-[#3A3A3A]"
+              {showCalendar ? (
+                <div className="py-1">
+                  <Calendar
+                    value={pickedDate || selectedDate?.dateObj || new Date()}
+                    onChange={handleCalendarChange}
+                    minDate={minDate}
+                    maxDate={maxDate} // 오늘 기준 두 달 뒤까지
+                  />
+                </div>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto snap-x pb-2">
+                  {dateStrip.map((d, idx) => {
+                    const active = idx === selectedDateIdx;
+                    return (
+                      <button
+                        key={d.key}
+                        type="button"
+                        onClick={() => handleStripPick(idx)}
+                        className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
+                          active
+                            ? "bg-[#F13030] text-white"
+                            : "bg-white border-[#C5C5C7] text-[#3A3A3A]"
                         }`}
                       >
-                        {d.price.toLocaleString()}원
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                        <div className="text-[16px] font-bold">{d.label}</div>
+                        <div
+                          className={`text-[11px] ${
+                            active ? "text-[#ECFFE7]" : "text-[#3A3A3A]"
+                          }`}
+                        >
+                          {d.price.toLocaleString()}원
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* 인원 선택 */}
@@ -466,7 +526,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
             {/* 회차선택 */}
             <div className="mt-6">
-              <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-2">
+              <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
                 회차선택
               </h3>
               <div className="grid grid-cols-3 gap-2">
@@ -479,10 +539,10 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                       onClick={() =>
                         setSelectedSlot((prev) => (prev === t ? null : t))
                       }
-                      className={`py-3 rounded-xl border text-[14px] font-medium ${
+                      className={`py-3 rounded-lg border border-[#E9E9EC] text-[14px] font-medium ${
                         active
-                          ? "border-2 border-[#3A3A3A] text-[#3A3A3A] font-semibold"
-                          : "border-[#E9E9EC] text-[#555558]"
+                          ? "outline outline-2 outline-[#3A3A3A] text-[#3A3A3A] font-semibold"
+                          : "text-[#555558]"
                       }`}
                     >
                       {t}
@@ -513,7 +573,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                 {total.toLocaleString()}원
               </p>
               <p className="text-[12px] text-[#8E8E93]">
-                {selectedDate?.label} · {adult + child}명
+                {fmtPicked} · {adult + child}명
               </p>
             </div>
             <button
