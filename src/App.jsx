@@ -28,7 +28,10 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
-          <Route path="/experiences/:id" element={<ExperienceDetail />} />
+          <Route
+            path="/experiences/:experienceId"
+            element={<ExperienceDetail />}
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

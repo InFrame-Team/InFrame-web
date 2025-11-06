@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   IoChevronBack,
   IoChevronForward,
@@ -17,6 +17,7 @@ import fakeImg from "../../assets/fakeImg.svg";
 import { LuCalendarDays } from "react-icons/lu";
 import fakeProfile from "../../assets/fakeProfile.svg";
 import Calendar from "../../components/Calendar";
+import { fetchAvailableSlots } from "../../apis/experiences";
 
 /*  목업 데이터 */
 const fakeExperience = {
@@ -83,13 +84,18 @@ function ActionItem({ icon, label, toggleable = false }) {
 }
 
 /* 로컬 키(UTC 오프셋 문제 방지) */
-const localKey = (d) =>
+const toYYYYMMDD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()
   ).padStart(2, "0")}`;
+const localKey = toYYYYMMDD;
+
+/* HH:MM:SS -> HH:MM */
+const toDisplayHM = (t) => (typeof t === "string" ? t.slice(0, 5) : t);
 
 export default function ExperienceDetailPage({ data = fakeExperience }) {
   const navigate = useNavigate();
+  const { experienceId } = useParams(); // URL에서 체험 ID 수신
 
   // 헤더 페이드
   const heroRef = useRef(null);
@@ -143,18 +149,41 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
     setPickedDate(dateStrip[idx].dateObj);
   };
 
-  // 회차 (추후 API 연동)
-  const slots = [
-    "오전 9:00",
-    "오전 10:00",
-    "오전 11:00",
-    "오후 12:00",
-    "오후 1:00",
-    "오후 2:00",
-    "오후 3:00",
-    "오후 4:00",
-    "오후 5:00",
-  ];
+  // 회차: API 연동
+  const [slots, setSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState("");
+
+  // 날짜 변경/초기 진입 시 호출
+  useEffect(() => {
+    if (!experienceId || !pickedDate) return;
+
+    const ac = new AbortController();
+    const dateStr = toYYYYMMDD(pickedDate);
+
+    setLoadingSlots(true);
+    setSlotsError("");
+    setSlots([]);
+
+    fetchAvailableSlots(experienceId, dateStr, ac.signal)
+      .then((list) => {
+        const available = (list || [])
+          .filter((x) => x.isAvailable)
+          .map((x) => x.startTime);
+        setSlots(available);
+      })
+      .catch((e) => {
+        if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
+        if (e.response?.status === 401) setSlotsError("로그인이 필요합니다.");
+        else if (e.response?.status === 404)
+          setSlotsError("체험 정보를 찾을 수 없습니다.");
+        else setSlotsError("예약 가능 시간을 불러오지 못했습니다.");
+      })
+      .finally(() => setLoadingSlots(false));
+
+    return () => ac.abort();
+  }, [experienceId, pickedDate]);
+
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   // 인원수
@@ -193,8 +222,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
     const d = date instanceof Date ? date : new Date(date);
     const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     setPickedDate(normalized);
-    // 필요 시 자동 닫기 원하면 주석 해제
-    // setShowCalendar(false);
+    setSelectedSlot(null);
   };
 
   // 하단 요약용 포맷(달력 선택 우선)
@@ -432,7 +460,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                     value={pickedDate || selectedDate?.dateObj || new Date()}
                     onChange={handleCalendarChange}
                     minDate={minDate}
-                    maxDate={maxDate} // 오늘 기준 두 달 뒤까지
+                    maxDate={maxDate}
                   />
                 </div>
               ) : (
@@ -443,7 +471,10 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                       <button
                         key={d.key}
                         type="button"
-                        onClick={() => handleStripPick(idx)}
+                        onClick={() => {
+                          handleStripPick(idx);
+                          setSelectedSlot(null);
+                        }}
                         className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
                           active
                             ? "bg-[#F13030] text-white"
@@ -529,15 +560,32 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
               <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
                 회차선택
               </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {slots.map((t) => {
-                  const active = selectedSlot === t;
+
+              {/* 상태 메시지 */}
+              {loadingSlots && (
+                <p className="text-sm text-[#888]">
+                  예약 가능 시간을 불러오는 중…
+                </p>
+              )}
+              {!loadingSlots && slotsError && (
+                <p className="text-sm text-red-500">{slotsError}</p>
+              )}
+              {!loadingSlots && !slotsError && slots.length === 0 && (
+                <p className="text-sm text-[#888]">
+                  해당 날짜에는 예약 가능한 시간이 없습니다.
+                </p>
+              )}
+
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {slots.map((raw) => {
+                  const display = toDisplayHM(raw);
+                  const active = selectedSlot === raw;
                   return (
                     <button
-                      key={t}
+                      key={raw}
                       type="button"
                       onClick={() =>
-                        setSelectedSlot((prev) => (prev === t ? null : t))
+                        setSelectedSlot((prev) => (prev === raw ? null : raw))
                       }
                       className={`py-3 rounded-lg border border-[#E9E9EC] text-[14px] font-medium ${
                         active
@@ -545,7 +593,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                           : "text-[#555558]"
                       }`}
                     >
-                      {t}
+                      {display}
                     </button>
                   );
                 })}
