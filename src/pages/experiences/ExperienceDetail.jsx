@@ -17,7 +17,7 @@ import fakeImg from "../../assets/fakeImg.svg";
 import { LuCalendarDays } from "react-icons/lu";
 import fakeProfile from "../../assets/fakeProfile.svg";
 import Calendar from "../../components/Calendar";
-import { fetchAvailableSlots } from "../../apis/experiences";
+import { fetchAvailableSlots, createReservation } from "../../apis/experiences";
 
 /*  목업 데이터 */
 const fakeExperience = {
@@ -83,12 +83,11 @@ function ActionItem({ icon, label, toggleable = false }) {
   );
 }
 
-/* 로컬 키(UTC 오프셋 문제 방지) */
+/* 날짜 포맷 */
 const toYYYYMMDD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()
   ).padStart(2, "0")}`;
-const localKey = toYYYYMMDD;
 
 /* HH:MM:SS -> HH:MM */
 const toDisplayHM = (t) => (typeof t === "string" ? t.slice(0, 5) : t);
@@ -127,7 +126,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
       const dd = d.getDate();
       const yo = dayLabels[d.getDay()];
       arr.push({
-        key: localKey(d),
+        key: toYYYYMMDD(d),
         label: `${mm}.${dd} ${yo}`,
         price: PRICE_PER_PERSON,
         dateObj: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
@@ -153,7 +152,6 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
   const [slots, setSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState("");
-
   // 날짜 변경/초기 진입 시 호출
   useEffect(() => {
     if (!experienceId || !pickedDate) return;
@@ -230,7 +228,37 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
     const d = pickedDate;
     if (!d) return selectedDate?.label || "";
     return `${d.getMonth() + 1}.${d.getDate()} ${dayLabels[d.getDay()]}`;
-  }, [pickedDate, selectedDate, dayLabels]);
+  }, [pickedDate, selectedDate]);
+
+  // 예약 생성
+  const [reserveLoading, setReserveLoading] = useState(false);
+
+  const handleReserve = async () => {
+    if (!canReserve) return;
+
+    const ac = new AbortController();
+    const payload = {
+      experienceId: experienceId ?? data.id,
+      reservationDate: toYYYYMMDD(pickedDate),
+      startTime: selectedSlot,
+      numAdults: adult,
+      numChildren: child,
+    };
+
+    try {
+      setReserveLoading(true);
+      await createReservation(payload, ac.signal);
+      alert("예약이 완료되었습니다.");
+    } catch (e) {
+      const status = e.response?.status;
+      const serverMsg =
+        e.response?.data?.message || e.message || "알 수 없는 오류";
+      console.error("Reservation error:", e.response || e);
+      alert(`오류(${status ?? "?"}): ${serverMsg}`);
+    } finally {
+      setReserveLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-[100dvh] bg-white flex flex-col items-center">
@@ -387,6 +415,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
               <img
                 src={data.host.avatarEmoji}
                 className="w-[80px] h-[80px] mr-2"
+                alt="host"
               />
             </div>
           </div>
@@ -625,14 +654,15 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
               </p>
             </div>
             <button
-              disabled={!canReserve}
+              onClick={handleReserve}
+              disabled={!canReserve || reserveLoading}
               className={`px-6 py-3 rounded-full text-white text-[14px] font-semibold shadow-sm ${
-                canReserve
+                canReserve && !reserveLoading
                   ? "bg-[#F13030]"
                   : "bg-[#E9E9EC] text-[#99A0B0] cursor-not-allowed"
               }`}
             >
-              예약 진행하기
+              {reserveLoading ? "처리 중…" : "예약 진행하기"}
             </button>
           </div>
         </div>
