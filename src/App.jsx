@@ -12,6 +12,7 @@ import Onboarding from "./pages/auth/signup/Onboarding";
 import SigninEntry from "./pages/auth/signin/SigninEntry";
 import SigninEmail from "./pages/auth/signin/SigninEmail";
 import OAuthRedirect from "./pages/auth/OAuthRedirect";
+import ExperienceDetail from "./pages/experiences/ExperienceDetail";
 
 import MapPage from "./pages/MapPage";
 import NearbyListPage from "./pages/NearbyListPage";
@@ -39,6 +40,10 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
+          <Route
+            path="/experiences/:experienceId"
+            element={<ExperienceDetail />}
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

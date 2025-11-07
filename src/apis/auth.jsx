@@ -1,5 +1,10 @@
 import api from "./api";
 
+const storeToken = (token) => {
+  if (!token) return;
+  localStorage.setItem("accessToken", token);
+};
+
 // 회원가입
 export async function signup({ email, password, nickname, name }) {
   const body = { email, password, nickname, name, role: "USER" };
@@ -42,7 +47,14 @@ export async function checkNickname(nickname) {
 // 이메일 로그인
 export async function signin({ email, password }) {
   try {
-    const { data } = await api.post("/auth/sign-in", { email, password });
+    const { data } = await api.post("auth/sign-in", { email, password });
+    const token =
+      data?.token ??
+      data?.accessToken ??
+      data?.data?.token ??
+      data?.data?.accessToken;
+    storeToken(token);
+
     return { success: true, data };
   } catch (error) {
     const status = error.response?.status;
@@ -56,7 +68,6 @@ export async function signin({ email, password }) {
     return { success: false, status, message };
   }
 }
-
 // 소셜 로그인
 export function socialLogin(provider) {
   const base = "http://13.125.136.155:8080/api/v1";
