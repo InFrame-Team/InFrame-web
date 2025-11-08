@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import BottomTab from "../components/BottomTab";
+import BottomTab from "../../components/BottomTab";
 
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { TbAdjustmentsHorizontal } from "react-icons/tb";

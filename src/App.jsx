@@ -14,10 +14,15 @@ import SigninEmail from "./pages/auth/signin/SigninEmail";
 import OAuthRedirect from "./pages/auth/OAuthRedirect";
 import ExperienceDetail from "./pages/experiences/ExperienceDetail";
 
-import MapPage from "./pages/MapPage";
-import NearbyListPage from "./pages/NearbyListPage";
+import MapPage from "./pages/map/MapPage";
+import NearbyListPage from "./pages/map/NearbyListPage";
+import RegisterHost from "./pages/host/RegisterHost";
+import HostBusinessNumber from "./pages/host/HostBusinessNumber";
 
 import AuthProvider from "./contexts/AuthProvider";
+import HostBasicInfo from "./pages/host/HostBasicInfo";
+import HostComplete from "./pages/host/HostComplete";
+import HostProfileSettings from "./pages/host/HostProfileSettings";
 
 export default function App() {
   return (
@@ -29,6 +34,18 @@ export default function App() {
 
           <Route path="/map" element={<MapPage />} />
           <Route path="/nearby" element={<NearbyListPage />} />
+
+          <Route path="/register-host" element={<RegisterHost />} />
+          <Route
+            path="/host/business-number"
+            element={<HostBusinessNumber />}
+          />
+          <Route path="/host/basic-info" element={<HostBasicInfo />} />
+          <Route path="/host/complete" element={<HostComplete />} />
+          <Route
+            path="/host/profile-settings"
+            element={<HostProfileSettings />}
+          />
 
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
