@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { IoChevronDown } from "react-icons/io5";
 import fakeProfile from "../../../assets/fakeProfile.svg";
-import StepHeader from "../../../components/StepHeader";
+import StepHeader from "../../../components/experience_create/StepHeader";
+import CategorySheet from "../../../components/experience_create/CategorySheet";
+import categoryIcon1 from "../../../assets/categoryIcon1.png";
+import categoryIcon2 from "../../../assets/categoryIcon2.png";
+import categoryIcon3 from "../../../assets/categoryIcon3.png";
+import categoryIcon4 from "../../../assets/categoryIcon4.png";
+import { fetchCategoryEnums } from "../../../apis/enums";
 
 function HostCard() {
   return (
@@ -20,8 +26,16 @@ function HostCard() {
   );
 }
 
-function DropdownSkeleton({ label, placeholder = "선택", disabled }) {
-  const [open, setOpen] = useState(false);
+function DropdownButton({
+  label,
+  value,
+  placeholder = "선택",
+  disabled,
+  onClick,
+}) {
+  const display = value || placeholder;
+  const isPlaceholder = !value;
+
   return (
     <div className="w-full">
       {label && (
@@ -29,35 +43,28 @@ function DropdownSkeleton({ label, placeholder = "선택", disabled }) {
           {label}
         </label>
       )}
-      <div className="relative">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => setOpen((v) => !v)}
-          className={`w-full h-[46px] px-3 rounded-[5px] border-[2px] text-left text-[14px] flex items-center justify-between ${
-            disabled
-              ? "bg-[#F7F7F9] text-[#B9B9C1] border-[#F0F0F3] cursor-not-allowed"
-              : "bg-white text-[#3A3A3A] border-[#E7E7EA]"
-          }`}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={`w-full h-[46px] px-3 rounded-[5px] border-[2px] text-left text-[14px] flex items-center justify-between ${
+          disabled
+            ? "bg-[#F7F7F9] text-[#B9B9C1] border-[#F0F0F3] cursor-not-allowed"
+            : "bg-white text-[#3A3A3A] border-[#E7E7EA]"
+        }`}
+      >
+        <span
+          className={`${
+            isPlaceholder ? "text-[#969696]" : "text-[#3A3A3A]"
+          } text-[15px] font-medium`}
         >
-          <span className="text-[#969696] text-[15px] font-medium">
-            {placeholder}
-          </span>
-          <IoChevronDown
-            size={18}
-            className={`transition-transform duration-200 ${
-              open ? "rotate-180" : "rotate-0"
-            } ${disabled ? "text-[#D1D1D6]" : "text-[#D4D4D4]"}`}
-          />
-        </button>
-
-        {/* 드롭 패널 */}
-        {open && !disabled && (
-          <div className="absolute left-0 right-0 mt-1 bg-white border border-[#E7E7EA] rounded-lg shadow-sm overflow-hidden">
-            <div className="h-28" />
-          </div>
-        )}
-      </div>
+          {display}
+        </span>
+        <IoChevronDown
+          size={18}
+          className={`${disabled ? "text-[#D1D1D6]" : "text-[#D4D4D4]"}`}
+        />
+      </button>
     </div>
   );
 }
@@ -86,32 +93,111 @@ function TagInputSkeleton() {
 }
 
 export default function Step1() {
+  const [categoryId, setCategoryId] = useState(null);
+  const [specialtyId, setSpecialtyId] = useState(null);
+  const [subId, setSubId] = useState(null);
+
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openSpecialty, setOpenSpecialty] = useState(false);
+  const [openSub, setOpenSub] = useState(false);
+
+  const [categories, setCategories] = useState([]);
+  const iconMap = {
+    MASTER_ARTISAN: categoryIcon1,
+    YOUNG_ENTREPRENEUR: categoryIcon2,
+    LOCAL_MERCHANT: categoryIcon3,
+    ARTIST: categoryIcon4,
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const data = await fetchCategoryEnums(controller.signal);
+        const mapped = (Array.isArray(data) ? data : []).map((item, idx) => ({
+          id: item.code,
+          label: item.description,
+          icon:
+            iconMap[item.code] ||
+            [categoryIcon1, categoryIcon2, categoryIcon3, categoryIcon4][
+              idx % 4
+            ],
+        }));
+        setCategories(mapped);
+      } catch (e) {
+        if (e?.name !== "CanceledError") {
+          console.error("카테고리 불러오기 실패:", e);
+          setCategories([]);
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  // ====== (2) 전문/상세 분야: 기존 디자인 유지용 임시 데이터 유지 ======
+  const specialties = [
+    { id: "craft", label: "공예·창작" },
+    { id: "food", label: "음식·디저트" },
+    { id: "garden", label: "플라워·가드닝" },
+    { id: "tradition", label: "문화·전통 체험" },
+    { id: "music", label: "음악·예술" },
+    { id: "life", label: "라이프·힐링" },
+  ];
+
+  const subSpecialties = [
+    { id: "ceramic", label: "도자기 공예" },
+    { id: "family", label: "가죽 공예" },
+    { id: "metal", label: "금속·은공예" },
+    { id: "diffuser", label: "비누·캔들·디퓨저 제작" },
+    { id: "wood", label: "목공예" },
+  ];
+
+  const categoryLabel = useMemo(
+    () => categories.find((v) => v.id === categoryId)?.label || "",
+    [categories, categoryId]
+  );
+  const specialtyLabel =
+    specialties.find((v) => v.id === specialtyId)?.label || "";
+  const subLabel = subSpecialties.find((v) => v.id === subId)?.label || "";
+  const canNext = !!(categoryId && specialtyId && subId);
+
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px]">
-        <StepHeader onBack={() => navigate(-1)} currentStep={1} />
+        <StepHeader onBack={() => history.back()} currentStep={1} />
 
         <main className="px-5 pb-28">
-          {/* 호스트 카드 */}
           <HostCard />
 
-          {/* 필드들 */}
           <section className="mt-8 space-y-7">
             <div>
               <p className="mb-4 text-[20px] font-bold text-[#3A3A3A]">
                 분야 카테고리를 선택해주세요.
               </p>
-              <DropdownSkeleton placeholder="장인/명인" />
+              <DropdownButton
+                value={categoryLabel}
+                placeholder="카테고리 선택"
+                onClick={() => setOpenCategory(true)}
+              />
             </div>
 
             <div>
               <p className="mb-4 text-[20px] font-bold text-[#3A3A3A]">
                 전문 분야 및 상세 분야를
-                <br /> 선택해주세요.
+                <br />
+                선택해주세요.
               </p>
               <div className="space-y-2">
-                <DropdownSkeleton placeholder="전문 분야" />
-                <DropdownSkeleton placeholder="상세 분야" />
+                <DropdownButton
+                  value={specialtyLabel}
+                  placeholder="전문 분야"
+                  onClick={() => setOpenSpecialty(true)}
+                />
+                <DropdownButton
+                  value={subLabel}
+                  placeholder="상세 분야"
+                  onClick={() => setOpenSub(true)}
+                />
               </div>
             </div>
 
@@ -123,12 +209,31 @@ export default function Step1() {
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-5 pb-6 pt-3 border-t border-[#EEE]">
           <button
             type="button"
-            className="w-full h-[48px] rounded-[10px] bg-[#3A3A3A] text-white text-[16px] font-bold"
+            disabled={!canNext}
+            className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold ${
+              canNext
+                ? "bg-[#3A3A3A] text-white"
+                : "bg-[#EDEDED] text-[#B1B1B1] cursor-not-allowed"
+            }`}
           >
             다음
           </button>
         </div>
       </div>
+
+      {/* 카테고리 시트 */}
+      <CategorySheet
+        open={openCategory}
+        title="카테고리를 선택해주세요."
+        options={categories}
+        selectedId={categoryId}
+        onSelect={setCategoryId}
+        onApply={(selected) => {
+          setCategoryId(selected?.id ?? null);
+          setOpenCategory(false);
+        }}
+        onClose={() => setOpenCategory(false)}
+      />
     </div>
   );
 }
