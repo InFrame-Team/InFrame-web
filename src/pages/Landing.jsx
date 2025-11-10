@@ -65,7 +65,7 @@ export default function Landing() {
             pr-[max(env(safe-area-inset-right),8px)] 
           "
         >
-          <PhonePreview src="/register-host" />
+          <PhonePreview src="/app" />
         </aside>
       </div>
     </div>

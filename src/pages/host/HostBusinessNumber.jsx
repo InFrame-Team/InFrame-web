@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import checkBusinessNumber from "../../apis/checkBusinessNumber";
+import { MdArrowBackIosNew } from "react-icons/md";
 
 export default function HostBusinessNumber() {
   const navigate = useNavigate();
@@ -48,8 +49,8 @@ export default function HostBusinessNumber() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* 상단 */}
       <header className="pt-4 px-4 flex items-center gap-4">
-        <button type="button" onClick={() => navigate(-1)} className="text-2xl">
-          ‹
+        <button type="button" onClick={() => navigate(-1)} className="text-xl">
+          <MdArrowBackIosNew />
         </button>
 
         <div className="flex justify-center flex-1">

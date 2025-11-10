@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
+import { MdArrowBackIosNew } from "react-icons/md";
 // ❌ 여기서는 이제 updateHost 안 씀
 // import { updateHost } from "../../apis/host";
 
@@ -41,8 +43,8 @@ export default function HostBasicInfo() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* 상단 */}
       <header className="pt-4 px-4 flex items-center gap-4">
-        <button type="button" onClick={() => navigate(-1)} className="text-2xl">
-          ‹
+        <button type="button" onClick={() => navigate(-1)} className="text-xl">
+          <MdArrowBackIosNew />
         </button>
 
         <div className="flex justify-center flex-1">

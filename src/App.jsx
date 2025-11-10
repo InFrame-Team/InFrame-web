@@ -23,6 +23,7 @@ import AuthProvider from "./contexts/AuthProvider";
 import HostBasicInfo from "./pages/host/HostBasicInfo";
 import HostComplete from "./pages/host/HostComplete";
 import HostProfileSettings from "./pages/host/HostProfileSettings";
+import HostLocationPicker from "./pages/host/HostLocationPicker";
 
 export default function App() {
   return (
@@ -45,6 +46,10 @@ export default function App() {
           <Route
             path="/host/profile-settings"
             element={<HostProfileSettings />}
+          />
+          <Route
+            path="/host/location-picker"
+            element={<HostLocationPicker />}
           />
 
           <Route path="/signin" element={<SigninEntry />} />
