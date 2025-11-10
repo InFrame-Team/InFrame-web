@@ -7,7 +7,11 @@ import categoryIcon1 from "../../../assets/categoryIcon1.png";
 import categoryIcon2 from "../../../assets/categoryIcon2.png";
 import categoryIcon3 from "../../../assets/categoryIcon3.png";
 import categoryIcon4 from "../../../assets/categoryIcon4.png";
-import { fetchCategoryEnums } from "../../../apis/enums";
+import {
+  fetchCategoryEnums,
+  fetchProfessionalFields,
+} from "../../../apis/enums";
+import FieldSheet from "../../../components/experience_create/FieldSheet";
 
 function HostCard() {
   return (
@@ -101,6 +105,7 @@ export default function Step1() {
   const [openSpecialty, setOpenSpecialty] = useState(false);
   const [openSub, setOpenSub] = useState(false);
 
+  // 카테고리 API
   const [categories, setCategories] = useState([]);
   const iconMap = {
     MASTER_ARTISAN: categoryIcon1,
@@ -134,15 +139,25 @@ export default function Step1() {
     return () => controller.abort();
   }, []);
 
-  // ====== (2) 전문/상세 분야: 기존 디자인 유지용 임시 데이터 유지 ======
-  const specialties = [
-    { id: "craft", label: "공예·창작" },
-    { id: "food", label: "음식·디저트" },
-    { id: "garden", label: "플라워·가드닝" },
-    { id: "tradition", label: "문화·전통 체험" },
-    { id: "music", label: "음악·예술" },
-    { id: "life", label: "라이프·힐링" },
-  ];
+  // 전문 분야 API
+  const [specialties, setSpecialties] = useState([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const data = await fetchProfessionalFields(controller.signal);
+        const mapped = (Array.isArray(data) ? data : []).map((item) => ({
+          id: item.code,
+          label: item.description,
+        }));
+        setSpecialties(mapped);
+      } catch (e) {
+        if (e?.name !== "CanceledError")
+          console.error("전문 분야 불러오기 실패:", e);
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   const subSpecialties = [
     { id: "ceramic", label: "도자기 공예" },
@@ -233,6 +248,17 @@ export default function Step1() {
           setOpenCategory(false);
         }}
         onClose={() => setOpenCategory(false)}
+      />
+
+      {/* 전문 분야 시트 */}
+      <FieldSheet
+        open={openSpecialty}
+        title="전문 분야를 선택해주세요."
+        options={specialties}
+        selectedId={specialtyId}
+        onSelect={setSpecialtyId}
+        onNext={() => setOpenSpecialty(false)}
+        onClose={() => setOpenSpecialty(false)}
       />
     </div>
   );
