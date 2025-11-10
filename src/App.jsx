@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Landing from "./pages/Landing";
@@ -25,6 +26,10 @@ import HostComplete from "./pages/host/HostComplete";
 import HostProfileSettings from "./pages/host/HostProfileSettings";
 import HostLocationPicker from "./pages/host/HostLocationPicker";
 
+// 🔽 새로 추가
+import ExplorePage from "./pages/explore/ExplorePage";
+import ExploreResultPage from "./pages/explore/ExploreResultPage";
+
 export default function App() {
   return (
     <AuthProvider>
@@ -32,6 +37,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<MobileApp />} />
+
+          {/* 탐색 탭 */}
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/explore/result" element={<ExploreResultPage />} />
 
           <Route path="/map" element={<MapPage />} />
           <Route path="/nearby" element={<NearbyListPage />} />
@@ -62,6 +71,7 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
+
           <Route
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
