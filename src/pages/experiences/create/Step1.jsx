@@ -10,6 +10,7 @@ import categoryIcon4 from "../../../assets/categoryIcon4.png";
 import {
   fetchCategoryEnums,
   fetchProfessionalFields,
+  fetchDetailFields,
 } from "../../../apis/enums";
 import FieldSheet from "../../../components/experience_create/FieldSheet";
 
@@ -159,13 +160,25 @@ export default function Step1() {
     return () => controller.abort();
   }, []);
 
-  const subSpecialties = [
-    { id: "ceramic", label: "도자기 공예" },
-    { id: "family", label: "가죽 공예" },
-    { id: "metal", label: "금속·은공예" },
-    { id: "diffuser", label: "비누·캔들·디퓨저 제작" },
-    { id: "wood", label: "목공예" },
-  ];
+  // 상세 분야 API
+  const [detailFields, setDetailFields] = useState([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const data = await fetchDetailFields(controller.signal);
+        const mapped = (Array.isArray(data) ? data : []).map((item) => ({
+          id: item.code,
+          label: item.description,
+        }));
+        setDetailFields(mapped);
+      } catch (e) {
+        if (e?.name !== "CanceledError")
+          console.error("상세 분야 불러오기 실패:", e);
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   const categoryLabel = useMemo(
     () => categories.find((v) => v.id === categoryId)?.label || "",
@@ -173,7 +186,7 @@ export default function Step1() {
   );
   const specialtyLabel =
     specialties.find((v) => v.id === specialtyId)?.label || "";
-  const subLabel = subSpecialties.find((v) => v.id === subId)?.label || "";
+  const subLabel = detailFields.find((v) => v.id === subId)?.label || "";
   const canNext = !!(categoryId && specialtyId && subId);
 
   return (
@@ -259,6 +272,17 @@ export default function Step1() {
         onSelect={setSpecialtyId}
         onNext={() => setOpenSpecialty(false)}
         onClose={() => setOpenSpecialty(false)}
+      />
+
+      {/* 상세 분야 시트 */}
+      <FieldSheet
+        open={openSub}
+        title="상세 분야를 선택해주세요."
+        options={detailFields}
+        selectedId={subId}
+        onSelect={setSubId}
+        onNext={() => setOpenSub(false)}
+        onClose={() => setOpenSub(false)}
       />
     </div>
   );

@@ -11,3 +11,9 @@ export async function fetchProfessionalFields(signal) {
   const res = await api.get("enums/professionalFields", { signal });
   return res.data;
 }
+
+// 상세 분야 목록 조회 */
+export async function fetchDetailFields(signal) {
+  const res = await api.get("enums/detailFields", { signal });
+  return res.data;
+}
