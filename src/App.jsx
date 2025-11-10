@@ -18,6 +18,7 @@ import MapPage from "./pages/MapPage";
 import NearbyListPage from "./pages/NearbyListPage";
 
 import AuthProvider from "./contexts/AuthProvider";
+import Step1 from "./pages/experiences/create/Step1";
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
           />
+          <Route path="/experience/create/step1" element={<Step1 />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
