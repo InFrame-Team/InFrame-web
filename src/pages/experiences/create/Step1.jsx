@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { IoChevronDown } from "react-icons/io5";
 import fakeProfile from "../../../assets/fakeProfile.svg";
 import StepHeader from "../../../components/experience_create/StepHeader";
@@ -74,7 +75,7 @@ function DropdownButton({
   );
 }
 
-function TagInputSkeleton() {
+function TagInputSkeleton({ onAdd }) {
   return (
     <div className="w-full">
       <label className="block mb-4 text-[20px] font-bold text-[#3A3A3A]">
@@ -88,9 +89,14 @@ function TagInputSkeleton() {
             placeholder="추가해 주세요."
             className="w-full bg-transparent outline-none text-[15px] font-medium text-[#969696] placeholder:text-[#969696]"
           />
-          <span className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[#D4D4D4] text-[20px] cursor-pointer">
+          <button
+            type="button"
+            aria-label="자격증 추가"
+            onClick={onAdd}
+            className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[#D4D4D4] text-[20px]"
+          >
             +
-          </span>
+          </button>
         </div>
       </div>
     </div>
@@ -98,6 +104,7 @@ function TagInputSkeleton() {
 }
 
 export default function Step1() {
+  const navigate = useNavigate();
   const [categoryId, setCategoryId] = useState(null);
   const [specialtyId, setSpecialtyId] = useState(null);
   const [subId, setSubId] = useState(null);
@@ -229,7 +236,9 @@ export default function Step1() {
               </div>
             </div>
 
-            <TagInputSkeleton />
+            <TagInputSkeleton
+              onAdd={() => navigate("/experience/create/certificate")}
+            />
           </section>
         </main>
 
