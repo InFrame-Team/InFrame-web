@@ -20,6 +20,7 @@ import NearbyListPage from "./pages/NearbyListPage";
 import AuthProvider from "./contexts/AuthProvider";
 import Step1 from "./pages/experiences/create/Step1";
 import CertificateForm from "./pages/experiences/create/CertificateForm";
+import Step2 from "./pages/experiences/create/Step2";
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
             element={<ExperienceDetail />}
           />
           <Route path="/experience/create/step1" element={<Step1 />} />
+          <Route path="/experience/create/step2" element={<Step2 />} />
           <Route
             path="/experience/create/certificate"
             element={<CertificateForm />}
