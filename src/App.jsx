@@ -21,6 +21,7 @@ import AuthProvider from "./contexts/AuthProvider";
 import Step1 from "./pages/experiences/create/Step1";
 import CertificateForm from "./pages/experiences/create/CertificateForm";
 import Step2 from "./pages/experiences/create/Step2";
+import IntroForm from "./pages/experiences/create/IntroForm";
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
             path="/experience/create/certificate"
             element={<CertificateForm />}
           />
+          <Route path="/experience/create/intro" element={<IntroForm />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

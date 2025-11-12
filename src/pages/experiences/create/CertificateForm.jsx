@@ -35,7 +35,7 @@ export default function CertificateForm() {
               type="button"
               aria-label="뒤로가기"
               onClick={onBack}
-              className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center"
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center"
             >
               <IoChevronBack size={22} className="text-[#3A3A3A]" />
             </button>
