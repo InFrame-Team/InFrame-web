@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 
 import BottomTab from "../components/BottomTab";
 
-import { FiMessageCircle } from "react-icons/fi";
-import { PiBellSimple } from "react-icons/pi";
+import { PiBellSimpleBold } from "react-icons/pi";
 import { CiHeart } from "react-icons/ci";
 import { FaHeart } from "react-icons/fa";
+import { MdArrowForwardIos } from "react-icons/md";
+import { IoSearch } from "react-icons/io5";
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function MainPage() {
             <img
               src="/inframe-logo.png"
               alt=""
-              className="w-30 h-10 object-contain"
+              className="w-30 h-9 object-contain"
               aria-hidden
             />
 
@@ -67,7 +68,7 @@ export default function MainPage() {
                 aria-label="메시지로 이동"
                 className="p-2 text-[22px] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
               >
-                <FiMessageCircle />
+                <IoSearch />
               </button>
               <button
                 type="button"
@@ -75,7 +76,7 @@ export default function MainPage() {
                 aria-label="알림으로 이동"
                 className="p-2 text-[22px] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
               >
-                <PiBellSimple />
+                <PiBellSimpleBold />
               </button>
             </div>
           </div>
@@ -137,15 +138,15 @@ export default function MainPage() {
                   나의 저장으로 만나보세요!
                 </h2>
                 <button
-                  className="text-[#919191] text-[40px]"
+                  className="text-[#919191] text-[20px]"
                   aria-label="더보기"
                   onClick={() => navigate("/favorites")}
                 >
-                  ›
+                  <MdArrowForwardIos />
                 </button>
               </div>
 
-              <p className="text-[14px] font-medium text-[#919191] mt-[-10px]">
+              <p className="text-[14px] font-medium text-[#919191]">
                 최근 추가한 나의 즐겨찾기예요
               </p>
             </div>

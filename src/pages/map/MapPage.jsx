@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import api from "../../apis/api";
 
-import BottomTab from "../components/BottomTab";
+import BottomTab from "../../components/BottomTab";
 
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { TbAdjustmentsHorizontal } from "react-icons/tb";
@@ -17,7 +18,7 @@ const CATEGORY_ITEMS = [
   { key: "artist", label: "예술가" },
 ];
 
-const HOSTS = [
+const DUMMY_HOSTS = [
   {
     id: "h1",
     category: "artisan",
@@ -146,6 +147,76 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [myLocation, setMyLocation] = useState(null);
 
+  const [hosts, setHosts] = useState(DUMMY_HOSTS);
+
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    async function fetchHosts() {
+      try {
+        const res = await api.get("/host/list");
+
+        const raw = res.data.hosts || res.data;
+
+        const mapped = raw.map((h) => ({
+          id: h.id,
+          category: h.category || "artisan",
+          name: h.businessName || h.name,
+          title: h.title || "",
+          place: h.addressBase || h.place || "",
+          lat: h.latitude,
+          lng: h.longitude,
+          distance: 0,
+          price: h.priceText || "가격 문의",
+          reviews: h.reviewCount ?? 0,
+          avatar: h.profileImageUrl || null,
+        }));
+
+        setHosts(mapped);
+      } catch (err) {
+        console.error(
+          "[MapPage] 호스트 목록 불러오기 실패, 더미 데이터 사용",
+          err
+        );
+        // 실패하면 DUMMY_HOSTS 그대로 사용
+      }
+    }
+
+    fetchHosts();
+  }, []);
+
+  const displayedHosts = useMemo(() => {
+    let filtered = activeCategory
+      ? hosts.filter((h) => h.category === activeCategory)
+      : hosts;
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter((h) => {
+        const target = [h.name, h.title, h.place]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return target.includes(q);
+      });
+    }
+
+    const withDistance = filtered.map((h) => {
+      if (myLocation && h.lat && h.lng) {
+        const d = haversineDistance(
+          myLocation.lat,
+          myLocation.lng,
+          h.lat,
+          h.lng
+        );
+        return { ...h, distance: Math.round(d) };
+      }
+      return h;
+    });
+
+    return [...withDistance].sort((a, b) => a.distance - b.distance);
+  }, [hosts, activeCategory, searchQuery, myLocation]);
+
   const createMyLocationOverlay = (lat, lng) => {
     const { kakao } = window;
     const map = mapInstanceRef.current;
@@ -249,37 +320,7 @@ export default function MapPage() {
     );
   };
 
-  const displayedHosts = useMemo(() => {
-    let filtered = activeCategory
-      ? HOSTS.filter((h) => h.category === activeCategory)
-      : HOSTS;
-
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      filtered = filtered.filter((h) => {
-        const target = [h.name, h.title, h.place]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return target.includes(q);
-      });
-    }
-
-    const withDistance = filtered.map((h) => {
-      if (myLocation) {
-        const d = haversineDistance(
-          myLocation.lat,
-          myLocation.lng,
-          h.lat,
-          h.lng
-        );
-        return { ...h, distance: Math.round(d) };
-      }
-      return h;
-    });
-    return [...withDistance].sort((a, b) => a.distance - b.distance);
-  }, [activeCategory, searchQuery, myLocation]);
-
+  // ---------- 지도 초기화 (1번만) ----------
   useEffect(() => {
     async function initMap() {
       const { kakao } = window;
@@ -315,6 +356,7 @@ export default function MapPage() {
         level: 3,
       });
       mapInstanceRef.current = map;
+      setMapReady(true);
 
       if (usedMyLocation) {
         createMyLocationOverlay(centerLat, centerLng);
@@ -375,34 +417,6 @@ export default function MapPage() {
       }
 
       hostOverlaysRef.current = {};
-      HOSTS.forEach((host) => {
-        const pos = new kakao.maps.LatLng(host.lat, host.lng);
-
-        const el = document.createElement("div");
-        el.className = "host-marker";
-        el.innerHTML = host.avatar
-          ? `<img src="${host.avatar}" alt="${host.name}" />`
-          : `<span style="font-size:26px;">😊</span>`;
-
-        el.addEventListener("click", () => {
-          setSelectedHostId((prev) => (prev === host.id ? null : host.id));
-          setSheetExpanded(true);
-        });
-
-        const overlay = new kakao.maps.CustomOverlay({
-          position: pos,
-          content: el,
-          yAnchor: 1,
-        });
-        overlay.setMap(map);
-
-        hostOverlaysRef.current[host.id] = { overlay, el, host };
-      });
-
-      const firstHost = displayedHosts[0] || HOSTS[0];
-      if (firstHost) {
-        setSelectedHostId(firstHost.id);
-      }
     }
 
     if (window.kakao && window.kakao.maps) {
@@ -420,6 +434,52 @@ export default function MapPage() {
     }
   }, []);
 
+  // ---------- hosts가 바뀔 때마다 마커 생성/갱신 ----------
+  useEffect(() => {
+    if (!mapReady || !window.kakao || !window.kakao.maps) return;
+    const { kakao } = window;
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // 기존 마커 제거
+    Object.values(hostOverlaysRef.current).forEach(({ overlay }) =>
+      overlay.setMap(null)
+    );
+    hostOverlaysRef.current = {};
+
+    hosts.forEach((host) => {
+      if (!host.lat || !host.lng) return;
+
+      const pos = new kakao.maps.LatLng(host.lat, host.lng);
+
+      const el = document.createElement("div");
+      el.className = "host-marker";
+      el.innerHTML = host.avatar
+        ? `<img src="${host.avatar}" alt="${host.name}" />`
+        : `<span style="font-size:26px;">😊</span>`;
+
+      el.addEventListener("click", () => {
+        setSelectedHostId((prev) => (prev === host.id ? null : host.id));
+        setSheetExpanded(true);
+      });
+
+      const overlay = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: el,
+        yAnchor: 1,
+      });
+      overlay.setMap(map);
+
+      hostOverlaysRef.current[host.id] = { overlay, el, host };
+    });
+
+    // 초기 선택 호스트
+    if (!selectedHostId && hosts.length > 0) {
+      setSelectedHostId(hosts[0].id);
+    }
+  }, [hosts, mapReady]); // ← 지도 준비 + 호스트 로딩 이후
+
+  // ---------- 선택된 호스트에 맞춰 지도 패닝 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.kakao) return;
@@ -469,7 +529,7 @@ export default function MapPage() {
       const first = displayedHosts[0];
       setSelectedHostId(first ? first.id : null);
     }
-  }, [activeCategory, searchQuery, displayedHosts, selectedHostId]);
+  }, [activeCategory, searchQuery, displayedHosts, selectedHostId, mapReady]);
 
   useEffect(() => {
     if (!sheetExpanded || !selectedHostId) return;
@@ -492,6 +552,7 @@ export default function MapPage() {
       />
 
       <div className="pointer-events-none relative z-10 flex flex-col min-h-[100dvh] pb-24">
+        {/* 상단 검색창 */}
         <header className="pt-6 px-4 pointer-events-auto">
           <div className="flex items-center gap-2">
             <div className="flex flex-1 items-center gap-2 bg-white rounded-[10px] shadow-md px-4 py-4">
@@ -546,6 +607,7 @@ export default function MapPage() {
 
         <div className="flex-1" />
 
+        {/* 하단 카드 + 내 위치 버튼 */}
         <div className="pointer-events-auto fixed bottom-[70px] left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 flex flex-col gap-2">
           <div className="w-full flex flex-col items-center mb-1">
             <button
@@ -609,9 +671,11 @@ export default function MapPage() {
                   >
                     <div className="flex flex-row items-baseline gap-2">
                       <span className="text-[17px] font-bold">{host.name}</span>
-                      <span className="text-[13px] text-neutral-500">
-                        {host.title}
-                      </span>
+                      {host.title && (
+                        <span className="text-[13px] text-neutral-500">
+                          {host.title}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-2 flex flex-row items-center text-[13px] text-neutral-500">

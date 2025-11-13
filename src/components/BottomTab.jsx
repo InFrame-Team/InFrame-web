@@ -13,7 +13,7 @@ export default function BottomTab() {
     { label: "탐색", icon: MdStars, path: "/explore" },
     { label: "인물지도", icon: IoLocationSharp, path: "/map" },
     { label: "예약하기", icon: FaSquareCheck, path: "/booking" },
-    { label: "마이페이지", icon: FaUser, path: "/me" },
+    { label: "마이페이지", icon: FaUser, path: "/register-host" },
   ];
 
   return (
