@@ -186,6 +186,7 @@ function HostRegisterView() {
 
   return (
     <main className="flex-1 px-6 mt-14 relative pb-28">
+      {/* 상단 문구 */}
       <p className="text-[15px] text-[#7C7C7F] mb-2">
         당신의 이야기를 나눌 준비가 되셨나요?
       </p>
@@ -195,16 +196,16 @@ function HostRegisterView() {
         함께하세요.
       </h1>
 
-      <img
-        src={doorImg}
-        alt="호스트 가입 이미지"
-        className="absolute right-6 bottom-[120px] w-[200px] select-none pointer-events-none"
-      />
-
-      <div className="mt-auto flex justify-end pt-10">
+      {/* 이미지 + 버튼 (오른쪽 하단 고정) */}
+      <div className="absolute bottom-40 right-6 flex flex-col items-end">
+        <img
+          src={doorImg}
+          alt="호스트 가입 이미지"
+          className="w-[220px] mb-4 select-none pointer-events-none"
+        />
         <button
           onClick={() => navigate("/host/business-number")}
-          className="bg-[#F13030] text-white py-3 px-6 rounded-full shadow-md text-[15px] font-semibold"
+          className="bg-[#F13030] text-white py-2.5 px-6 rounded-full shadow-md text-[15px] font-semibold"
         >
           호스트 가입
         </button>
@@ -393,6 +394,10 @@ export default function RegisterHost() {
   const upperRole = (roleStr ?? "").toString().toUpperCase();
   const isHost = upperRole.includes("BUSINESS") || upperRole.includes("HOST");
 
+  // 🧠 설정 버튼 노출 여부
+  const showSettings =
+    !loadingMe && tab !== null && !(tab === "host" && !isHost);
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       {/* 상단 탭 & 설정 아이콘 */}
@@ -421,13 +426,15 @@ export default function RegisterHost() {
           </button>
         </div>
 
-        {/* 오른쪽 설정 아이콘 */}
-        <button
-          type="button"
-          className="absolute right-4 w-9 h-9 rounded-full flex items-center justify-center bg-neutral-100"
-        >
-          <FiSettings className="text-[18px] text-neutral-700" />
-        </button>
+        {/* 오른쪽 설정 아이콘 (조건부 렌더링) */}
+        {showSettings && (
+          <button
+            type="button"
+            className="absolute right-4 w-9 h-9 rounded-full flex items-center justify-center bg-neutral-100"
+          >
+            <FiSettings className="text-[18px] text-neutral-700" />
+          </button>
+        )}
       </header>
 
       {/* 탭 내용 */}

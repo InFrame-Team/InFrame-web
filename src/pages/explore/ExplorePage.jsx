@@ -1,17 +1,20 @@
 // src/pages/explore/ExplorePage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { FaSearch } from "react-icons/fa";
 import BottomTab from "../../components/BottomTab";
+import { IoSearch } from "react-icons/io5";
 
 export default function ExplorePage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   const scenarioButtons = [
-    "오늘 하고 싶은 체험이나 기분을 적어보세요",
-    "친구랑 시험 끝나고 감성 있게 즐기고 싶은 체험",
-    "친구랑 도자기 관련해서 만나러 즐길 체험 추천해줘",
+    "친구랑 시험 끝나고 반나절 즐길 체험 추천해줘",
+    "오늘은 혼자 조용히 힐링하고 싶어",
+    "비 오는 날 어울리는 실내 체험 알려줘",
+    "데이트에 감성 있는 클래스 찾아줘",
   ];
 
   const handleSubmit = (e) => {
@@ -29,22 +32,23 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="px-4 pt-4 pb-3 border-b border-neutral-100">
-        <div className="flex items-center mb-4">
+      <header className="px-3 pt-2 pb-3 border-b border-neutral-100">
+        <div className="px-2 py-1 flex items-center justify-start">
           <img
             src="/inframe-logo.png"
-            alt="in경산 로고"
-            className="h-6 object-contain"
+            alt=""
+            className="w-30 h-9 object-contain"
+            aria-hidden
           />
         </div>
 
-        <h1 className="text-[18px] font-semibold text-[#1D1D1D] mb-3 leading-snug">
-          상황에 딱 맞는 로컬 체험을 찾아드릴게요.
+        <h1 className="text-[18px] font-bold text-[#1D1D1D] mt-8 mb-3 leading-snug">
+          상황에 딱 맞는 로컬 체험을 찾아드립니다.
         </h1>
 
         <form
           onSubmit={handleSubmit}
-          className="flex items-center bg-[#f4f4f4] rounded-full px-4 py-2.5 mb-2"
+          className="flex items-center bg-[#f4f4f4] rounded-xl px-4 py-2.5 mb-2"
         >
           <input
             type="text"
@@ -53,11 +57,8 @@ export default function ExplorePage() {
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent text-[14px] focus:outline-none placeholder:text-neutral-400"
           />
-          <button
-            type="submit"
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1D1D1D]"
-          >
-            <FaSearch className="text-white text-[13px]" />
+          <button type="submit">
+            <IoSearch className="text-[20px]" />
           </button>
         </form>
 
@@ -66,25 +67,28 @@ export default function ExplorePage() {
             <button
               key={text}
               onClick={() => handleScenarioClick(text)}
-              className="shrink-0 px-3 py-1.5 rounded-full bg-[#f4f4f4] text-[11px] text-neutral-700 text-left"
+              className="shrink-0 px-3 py-1.5 border border-[#F1F1F1] rounded-full bg-[#FFFFFF] text-[11px] text-[#9D9D9D] text-left"
             >
               {text}
             </button>
           ))}
         </div>
-      </header>
 
-      <main className="flex-1 overflow-y-auto pb-28">
-        <section className="px-4 pt-4">
-          <div className="rounded-2xl bg-[#fff5f4] px-4 py-3">
-            <p className="text-[11px] font-semibold text-[#e64a45] mb-1">TIP</p>
-            <p className="text-[12px] text-[#3A3A3A] leading-relaxed">
-              &quot;누구랑&quot; &quot;무엇을&quot; &quot;어떻게&quot;를
-              조합하면 <br />더 취향에 맞는 체험을 쉽게 만날 수 있어요.
-            </p>
+        <div className="flex-1 overflow-y-auto pb-5">
+          <div className="px-4 pt-4">
+            <div className="rounded-xl bg-[#F8F8F8] border border-[#F0F0F0] px-4 py-3 flex items-start justify-between">
+              <p className="text-[13px] font-bold text-[#F13030] mr-3 whitespace-nowrap">
+                TIP
+              </p>
+              <p className="flex-1 text-[13px] text-[#3A3A3A] leading-relaxed">
+                &quot;누구랑&quot; &quot;무엇을&quot; &quot;어떻게&quot; 등의
+                키워드를 정확하게 입력하면 <br />
+                원하는 체험을 쉽게 만나볼 수 있어요!
+              </p>
+            </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </header>
 
       <div className="fixed bottom-0 left-0 right-0">
         <BottomTab active="explore" />

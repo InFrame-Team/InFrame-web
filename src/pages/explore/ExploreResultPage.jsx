@@ -1,7 +1,10 @@
 // src/pages/explore/ExploreResultPage.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
 import { FaStar, FaRegHeart } from "react-icons/fa";
+import { IoIosArrowBack } from "react-icons/io";
+
 import { getExploreRecommendations } from "../../apis/explore";
 
 export default function ExploreResultPage() {
@@ -38,17 +41,17 @@ export default function ExploreResultPage() {
       <header className="sticky top-0 bg-white px-4 pt-5 pb-3 border-b border-neutral-200 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="text-[14px] text-neutral-600"
+          className="text-[16px] text-neutral-600"
         >
-          ←
+          <IoIosArrowBack />
         </button>
         <h1 className="text-[15px] font-semibold">AI 추천</h1>
         <div className="w-6" />
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 pb-10">
-        <h2 className="text-[15px] font-semibold mt-4 mb-2">
-          상황에 딱 맞는 로컬 체험을 찾아드릴게요.
+        <h2 className="text-[18px] font-bold mt-8 mb-2">
+          상황에 딱 맞는 로컬 체험을 찾아드립니다.
         </h2>
 
         <div className="text-[13px] text-neutral-500 mb-3">
