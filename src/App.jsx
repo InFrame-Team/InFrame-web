@@ -22,6 +22,7 @@ import Step1 from "./pages/experiences/create/Step1";
 import CertificateForm from "./pages/experiences/create/CertificateForm";
 import Step2 from "./pages/experiences/create/Step2";
 import IntroForm from "./pages/experiences/create/IntroForm";
+import Step3 from "./pages/experiences/create/Step3";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           />
           <Route path="/experience/create/step1" element={<Step1 />} />
           <Route path="/experience/create/step2" element={<Step2 />} />
+          <Route path="/experience/create/step3" element={<Step3 />} />
           <Route
             path="/experience/create/certificate"
             element={<CertificateForm />}
