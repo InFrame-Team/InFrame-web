@@ -2,13 +2,11 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { MdArrowBackIosNew } from "react-icons/md";
-// ❌ 여기서는 이제 updateHost 안 씀
-// import { updateHost } from "../../apis/host";
 
 export default function HostBasicInfo() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const businessNumber = state?.businessNumber; // 이전 페이지에서 받은 번호
+  const businessNumber = state?.businessNumber;
 
   const [businessName, setBusinessName] = useState("");
   const [businessPhoneNumber, setBusinessPhoneNumber] = useState("");
@@ -27,7 +25,6 @@ export default function HostBasicInfo() {
       return;
     }
 
-    // ✅ 여기서는 API 호출 안 하고, 다음 페이지로 값들 넘기기만 함
     navigate("/host/profile-settings", {
       state: {
         businessNumber,

@@ -37,12 +37,11 @@ export default function HostBusinessNumber() {
     setChecking(false);
   };
 
-  // ✅ 여기서는 단순히 businessNumber를 다음 페이지로 넘기기만 함
   const handleNext = () => {
     if (!isNextEnabled) return;
 
     navigate("/host/basic-info", {
-      state: { businessNumber: onlyNumber }, // 다음 페이지로 전달
+      state: { businessNumber: onlyNumber },
     });
   };
   return (

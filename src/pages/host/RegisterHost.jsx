@@ -1,4 +1,3 @@
-// src/pages/host/RegisterHost.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,13 +7,9 @@ import { getMyInfo } from "../../apis/user";
 import { logout, deleteAccount } from "../../apis/auth";
 import { FiSettings } from "react-icons/fi";
 
-// ===============================
-// 공통 메뉴 (로그아웃 / 회원탈퇴 포함)
-// ===============================
 function CommonMenu() {
   const navigate = useNavigate();
 
-  // 🔹 로그아웃
   const handleLogout = async () => {
     const ok = window.confirm("정말 로그아웃 하시겠어요?");
     if (!ok) return;
@@ -26,18 +21,15 @@ function CommonMenu() {
       return;
     }
 
-    // 토큰/유저 정보 제거
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
 
     alert("로그아웃 되었습니다.");
 
-    // ✅ 로그인 화면으로 이동 (이메일 로그인 페이지로)
     navigate("/signin/email", { replace: true });
   };
 
-  // 🔹 회원 탈퇴
   const handleDeleteAccount = async () => {
     const ok = window.confirm(
       "정말 회원 탈퇴하시겠어요?\n이 작업은 되돌릴 수 없습니다."
@@ -53,10 +45,8 @@ function CommonMenu() {
 
     alert("회원 탈퇴가 완료되었습니다.");
 
-    // 모든 로컬 데이터 제거
     localStorage.clear();
 
-    // ✅ 로그인 화면으로 이동
     navigate("/signin/email", { replace: true });
   };
 
@@ -81,9 +71,6 @@ function CommonMenu() {
   );
 }
 
-// ===============================
-// 참여자 탭 화면
-// ===============================
 function ParticipantView({ me }) {
   const name = me?.name || "닉네임";
   const nickname = me?.nickname || "바람감자512";
@@ -178,9 +165,6 @@ function ParticipantView({ me }) {
   );
 }
 
-// ===============================
-// 호스트 탭 – 아직 호스트 아님 (가입 유도 화면)
-// ===============================
 function HostRegisterView() {
   const navigate = useNavigate();
 
@@ -196,7 +180,7 @@ function HostRegisterView() {
         함께하세요.
       </h1>
 
-      {/* 이미지 + 버튼 (오른쪽 하단 고정) */}
+      {/* 이미지 + 버튼  */}
       <div className="absolute bottom-40 right-6 flex flex-col items-end">
         <img
           src={doorImg}
@@ -214,9 +198,6 @@ function HostRegisterView() {
   );
 }
 
-// ===============================
-// 호스트 탭 – 이미 호스트 (대시보드)
-// ===============================
 function HostDashboardView({ me }) {
   const name = me?.name || "호스트 이름";
   const intro = me?.hostIntro || "흙을 담아 삶의 이야기를 빚어냅니다.";
@@ -311,11 +292,8 @@ function HostDashboardView({ me }) {
   );
 }
 
-// ===============================
-// 메인 컴포넌트
-// ===============================
 export default function RegisterHost() {
-  const [tab, setTab] = useState(null); // 처음에는 null → 내 정보 받아온 뒤 결정
+  const [tab, setTab] = useState(null);
   const [me, setMe] = useState(null);
   const [loadingMe, setLoadingMe] = useState(true);
 
@@ -327,7 +305,6 @@ export default function RegisterHost() {
         const res = await getMyInfo();
         console.log("[RegisterHost] /user/me raw res:", res);
 
-        // { success, data } 형태 / 아니면 바로 user 객체 등 여러 케이스 대응
         const outerData = res?.data ?? res?.data?.data ?? res;
         const userFromWrapper = res?.success && res.data ? res.data : outerData;
 
@@ -348,7 +325,6 @@ export default function RegisterHost() {
 
         setMe(user);
 
-        // role 여러 형태 대응
         let rawRole =
           user.role ??
           user.roles ??
@@ -359,11 +335,9 @@ export default function RegisterHost() {
 
         rawRole = (rawRole ?? "").toString().toUpperCase();
 
-        // "BUSINESS" 또는 "HOST" 포함하면 호스트로 간주
         const hostFlag =
           rawRole.includes("BUSINESS") || rawRole.includes("HOST");
 
-        // 호스트면 host 탭, 아니면 participant 탭
         setTab(hostFlag ? "host" : "participant");
         setLoadingMe(false);
       } catch (e) {
@@ -380,7 +354,6 @@ export default function RegisterHost() {
     };
   }, []);
 
-  // isHost 계산도 동일 로직
   let roleStr = "";
   if (me) {
     roleStr =
@@ -394,13 +367,12 @@ export default function RegisterHost() {
   const upperRole = (roleStr ?? "").toString().toUpperCase();
   const isHost = upperRole.includes("BUSINESS") || upperRole.includes("HOST");
 
-  // 🧠 설정 버튼 노출 여부
   const showSettings =
     !loadingMe && tab !== null && !(tab === "host" && !isHost);
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
-      {/* 상단 탭 & 설정 아이콘 */}
+      {/* 상단 탭  */}
       <header className="relative pt-5 px-4 flex items-center justify-center">
         {/* 중앙 탭 */}
         <div className="flex items-center bg-neutral-100 rounded-full p-1">
@@ -426,7 +398,7 @@ export default function RegisterHost() {
           </button>
         </div>
 
-        {/* 오른쪽 설정 아이콘 (조건부 렌더링) */}
+        {/* 오른쪽 설정 아이콘 */}
         {showSettings && (
           <button
             type="button"
@@ -445,10 +417,8 @@ export default function RegisterHost() {
       ) : tab === "participant" ? (
         <ParticipantView me={me} />
       ) : isHost ? (
-        // ✅ 호스트 등록 완료 → 첫 번째(대시보드) 화면
         <HostDashboardView me={me} />
       ) : (
-        // ✅ 호스트 아님 → 두 번째(호스트 가입) 화면
         <HostRegisterView />
       )}
 

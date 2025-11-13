@@ -18,7 +18,6 @@ const CATEGORY_ITEMS = [
   { key: "artist", label: "예술가" },
 ];
 
-// 더미 데이터 (백엔드 호출 실패 시 fallback 용)
 const DUMMY_HOSTS = [
   {
     id: "h1",
@@ -148,25 +147,20 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [myLocation, setMyLocation] = useState(null);
 
-  // 🔹 실제 지도에 찍을 호스트들 (백엔드 + fallback)
   const [hosts, setHosts] = useState(DUMMY_HOSTS);
 
-  // 지도 로딩 완료 여부
   const [mapReady, setMapReady] = useState(false);
 
-  // ---------- 백엔드에서 호스트 목록 불러오기 ----------
   useEffect(() => {
     async function fetchHosts() {
       try {
-        // 👉 엔드포인트는 백엔드에 맞게 수정
         const res = await api.get("/host/list");
 
-        // 백엔드 응답 구조에 맞게 파싱 (예시)
         const raw = res.data.hosts || res.data;
 
         const mapped = raw.map((h) => ({
           id: h.id,
-          category: h.category || "artisan", // 서버에 카테고리 있으면 그대로
+          category: h.category || "artisan",
           name: h.businessName || h.name,
           title: h.title || "",
           place: h.addressBase || h.place || "",
@@ -191,7 +185,6 @@ export default function MapPage() {
     fetchHosts();
   }, []);
 
-  // ---------- “목록에 보이는” 호스트 계산 ----------
   const displayedHosts = useMemo(() => {
     let filtered = activeCategory
       ? hosts.filter((h) => h.category === activeCategory)
@@ -224,7 +217,6 @@ export default function MapPage() {
     return [...withDistance].sort((a, b) => a.distance - b.distance);
   }, [hosts, activeCategory, searchQuery, myLocation]);
 
-  // ---------- 내 위치 커스텀 오버레이 ----------
   const createMyLocationOverlay = (lat, lng) => {
     const { kakao } = window;
     const map = mapInstanceRef.current;
@@ -370,7 +362,6 @@ export default function MapPage() {
         createMyLocationOverlay(centerLat, centerLng);
       }
 
-      // 경산 시 경계 마스크
       try {
         const res = await fetch("/gyeongsan_city.geojson");
         if (res.ok) {
@@ -425,7 +416,6 @@ export default function MapPage() {
         console.warn("gyeongsan_city.geojson 로드 실패", e);
       }
 
-      // 마커 ref 초기화
       hostOverlaysRef.current = {};
     }
 
@@ -518,7 +508,6 @@ export default function MapPage() {
     map.panTo(pos);
   }, [selectedHostId, myLocation]);
 
-  // ---------- 필터/검색에 따라 마커 숨기기/보이기 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -542,7 +531,6 @@ export default function MapPage() {
     }
   }, [activeCategory, searchQuery, displayedHosts, selectedHostId, mapReady]);
 
-  // ---------- 하단 카드 스크롤 중앙 정렬 ----------
   useEffect(() => {
     if (!sheetExpanded || !selectedHostId) return;
     const container = labelListRef.current;

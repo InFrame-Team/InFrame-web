@@ -1,11 +1,5 @@
-// src/apis/image.jsx
 import api from "./api";
 
-/**
- * 내 프로필 이미지 업로드
- * POST /api/v1/user/me/profile-image
- * form-data key: file
- */
 export async function uploadProfileImage(file) {
   try {
     const formData = new FormData();
@@ -32,11 +26,6 @@ export async function uploadProfileImage(file) {
   }
 }
 
-/**
- * 업체 로고 이미지 업로드
- * POST /api/v1/host/companyLogo
- * form-data key: file
- */
 export async function uploadCompanyLogo(file) {
   try {
     const formData = new FormData();

@@ -1,4 +1,3 @@
-// src/pages/host/HostLocationPicker.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -17,9 +16,8 @@ export default function HostLocationPicker() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
-  const [selected, setSelected] = useState(null); // { address, detail, lat, lng }
+  const [selected, setSelected] = useState(null);
 
-  // ---------------- kakao 장소 검색 ----------------
   const runSearch = () => {
     const q = keyword.trim();
     if (!q) return;
@@ -40,7 +38,6 @@ export default function HostLocationPicker() {
         return;
       }
 
-      // 🔥 slice(0, 5) 제거해서 전체 결과 사용
       const list = data.map((item) => ({
         id: item.id,
         name: item.place_name,
@@ -54,7 +51,6 @@ export default function HostLocationPicker() {
     });
   };
 
-  // ---------------- 현재 위치 ----------------
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("현재 위치를 사용할 수 없습니다.");
@@ -97,7 +93,6 @@ export default function HostLocationPicker() {
     );
   };
 
-  // ---------------- 검색 결과 선택 → 지도 ----------------
   const handleSelectResult = (item) => {
     const addr = item.roadAddress || item.jibunAddress || item.name;
     setSelected({
@@ -109,7 +104,6 @@ export default function HostLocationPicker() {
     setStep("map");
   };
 
-  // ---------------- 지도 렌더링 ----------------
   useEffect(() => {
     if (step !== "map" || !selected) return;
     if (!window.kakao || !window.kakao.maps) return;
@@ -127,7 +121,6 @@ export default function HostLocationPicker() {
     marker.setMap(map);
   }, [step, selected]);
 
-  // ---------------- 이 위치로 등록 ----------------
   const handleConfirm = () => {
     if (!selected) return;
 
@@ -142,9 +135,6 @@ export default function HostLocationPicker() {
     });
   };
 
-  // ===================================================================
-  // 1. 위치 검색 리스트 화면
-  // ===================================================================
   if (step === "search") {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -186,7 +176,6 @@ export default function HostLocationPicker() {
                 placeholder="지번, 도로명, 건물명으로 검색"
                 className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#D4D4D4]"
               />
-              {/* ⬇⬇⬇ 요 버튼이 아이콘 클릭 시 검색 실행 ⬇⬇⬇ */}
               <button
                 type="button"
                 onClick={runSearch}
@@ -209,7 +198,6 @@ export default function HostLocationPicker() {
             <span>현재 위치로 설정</span>
           </button>
 
-          {/* 회색 구분 바 */}
           <div className="h-[9px] w-full bg-[#EFEFEF] my-2" />
 
           {/* 검색 결과 리스트 */}

@@ -1,8 +1,6 @@
-// src/pages/explore/ExplorePage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { FaSearch } from "react-icons/fa";
 import BottomTab from "../../components/BottomTab";
 import { IoSearch } from "react-icons/io5";
 

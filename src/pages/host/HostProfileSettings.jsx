@@ -1,4 +1,3 @@
-// src/pages/host/HostProfileSettings.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { updateHost } from "../../apis/host";
@@ -9,7 +8,6 @@ import { FaUser } from "react-icons/fa6";
 import { IoMdCamera } from "react-icons/io";
 import { MdArrowForwardIos } from "react-icons/md";
 
-// 0~23시 1시간 단위
 const TIMES = Array.from(
   { length: 24 },
   (_, i) => `${String(i).padStart(2, "0")}:00`
@@ -59,25 +57,20 @@ export default function HostProfileSettings() {
   const { state } = useLocation();
   const baseInfo = state || {};
 
-  // 위치 / 소개
   const [address, setAddress] = useState(baseInfo.addressBase || "");
   const [detail, setDetail] = useState(baseInfo.addressDetail || "");
   const [intro, setIntro] = useState("");
   const [description, setDescription] = useState("");
   const [cancelPolicy, setCancelPolicy] = useState("");
 
-  // 연락 가능 시간
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("18:00");
 
-  // 위도/경도 (위치 선택 화면에서 넣음)
   const [latitude] = useState(baseInfo.latitude ?? null);
   const [longitude] = useState(baseInfo.longitude ?? null);
 
-  // 로그인한 사용자 이름
   const [userName, setUserName] = useState("");
 
-  // 이미지 업로드 관련
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState(null);
   const [uploadingProfile, setUploadingProfile] = useState(false);
@@ -88,7 +81,6 @@ export default function HostProfileSettings() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // ❗ 필수 필드 에러 상태
   const [errors, setErrors] = useState({
     intro: false,
     address: false,
@@ -96,13 +88,10 @@ export default function HostProfileSettings() {
     cancelPolicy: false,
     description: false,
   });
-
-  // 모든 필수 값이 채워졌는지
   const isFormValid = [intro, address, detail, cancelPolicy, description].every(
     (v) => v.trim() !== ""
   );
 
-  // ---------- 처음 진입 시 내 정보 가져오기 ----------
   useEffect(() => {
     (async () => {
       const { success, data, message } = await getMyInfo();
@@ -120,7 +109,6 @@ export default function HostProfileSettings() {
     })();
   }, []);
 
-  // 위치 선택 화면으로 이동
   const goLocationPicker = () => {
     navigate("/host/location-picker", {
       state: {
@@ -133,7 +121,6 @@ export default function HostProfileSettings() {
     });
   };
 
-  // ------------ 프로필 이미지 업로드 ------------
   const handleSelectProfileImage = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -153,7 +140,6 @@ export default function HostProfileSettings() {
     if (url) setProfileImageUrl(url);
   };
 
-  // ------------ 업체 로고 이미지 업로드 ------------
   const handleSelectCompanyLogo = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -176,7 +162,6 @@ export default function HostProfileSettings() {
   const handleComplete = async () => {
     if (submitting) return;
 
-    // ✅ 먼저 필수 필드 체크
     const newErrors = {
       intro: intro.trim() === "",
       address: address.trim() === "",
@@ -187,7 +172,6 @@ export default function HostProfileSettings() {
     setErrors(newErrors);
 
     if (Object.values(newErrors).some(Boolean)) {
-      // 알림은 취향대로, 필요 없으면 제거해도 됨
       alert("필수 항목을 모두 입력해주세요.");
       return;
     }
@@ -209,7 +193,6 @@ export default function HostProfileSettings() {
       addressDetail: detail,
       latitude,
       longitude,
-      // cancelPolicy 도 백엔드에서 받게 되면 여기에 추가
     };
 
     console.log("▶︎ /host/update payload:", payload);
@@ -255,7 +238,6 @@ export default function HostProfileSettings() {
           프로필 설정
         </h1>
 
-        {/* 프로필 + 이름 + 25자 소개 */}
         <section className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <button

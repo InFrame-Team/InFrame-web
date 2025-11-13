@@ -1,18 +1,16 @@
-// src/pages/host/HostComplete.jsx
 import { useNavigate, useLocation } from "react-router-dom";
-import completeImg from "../../assets/host-complete.png"; // 이미지 경로에 맞게 수정
+import completeImg from "../../assets/host-complete.png";
 
 export default function HostComplete() {
   const navigate = useNavigate();
 
   const handleGoToProfile = () => {
-    // 👉 프로필 설정 페이지로, 기존 state 그대로 전달
     navigate("/host/map");
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단: 뒤로가기 + 진행바 (오른쪽에 빨간 바) */}
+      {/* 상단 */}
       <header className="pt-4 px-4 flex items-center gap-4">
         <button type="button" onClick={() => navigate(-1)} className="text-2xl">
           ‹
@@ -20,7 +18,6 @@ export default function HostComplete() {
 
         <div className="flex justify-center flex-1">
           <div className="relative w-32 h-2 bg-neutral-200 rounded-full overflow-hidden">
-            {/* 오른쪽 단계 활성화 */}
             <div className="absolute right-0 top-0 w-1/3 h-full bg-[#e64a45] rounded-full" />
           </div>
         </div>
