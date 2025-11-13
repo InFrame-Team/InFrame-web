@@ -2,10 +2,12 @@ import React, { useMemo, useState } from "react";
 import StepHeader from "../../../components/experience_create/StepHeader.jsx";
 import { IoChevronDown } from "react-icons/io5";
 import TimeSheet from "../../../components/experience_create/TimeSheet.jsx";
+import { useNavigate } from "react-router-dom";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function Step3() {
+  const navigate = useNavigate();
   // 요일 선택
   const [days, setDays] = useState(() => new Set());
 
@@ -149,18 +151,19 @@ export default function Step3() {
         />
 
         {/* 하단 버튼 */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur px-5 pb-6 pt-3">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-5 pb-6 pt-3">
           <button
             type="button"
             disabled={!isNextEnabled}
             onClick={() => {
               if (!isNextEnabled) return;
+              navigate("/experience/create/step4");
             }}
-            className={`w-full h-11 rounded-[10px] text-[14px] font-semibold
+            className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold
               ${
                 isNextEnabled
                   ? "bg-[#3A3A3A] text-white"
-                  : "bg-[#E6E6EB] text-[#B7B7C2]"
+                  : "bg-[#EDEDED] text-[#B1B1B1] cursor-not-allowed"
               }`}
           >
             다음

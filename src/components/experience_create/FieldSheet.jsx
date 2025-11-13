@@ -32,14 +32,9 @@ export default function FieldSheet({
           <button
             type="button"
             onClick={onNext}
-            disabled={!selectedId}
-            className={`flex-1 h-[48px] rounded-[10px] text-[15px] font-semibold ${
-              selectedId
-                ? "bg-[#3A3A3A] text-white"
-                : "bg-[#EDEDED] text-[#B1B1B1]"
-            }`}
+            className="flex-1 h-[48px] rounded-[10px] text-[15px] font-semibold bg-[#3A3A3A] text-white"
           >
-            {showPrev ? "적용" : "다음"}
+            적용
           </button>
         </div>
       }

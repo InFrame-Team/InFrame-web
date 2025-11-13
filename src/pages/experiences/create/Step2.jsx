@@ -29,7 +29,11 @@ export default function Step2() {
   const navigate = useNavigate();
 
   const countText = useMemo(() => `${images.length}/1`, [images.length]);
-
+  const canNext = useMemo(() => {
+    return (
+      title.trim() && price.trim() && duration && capacity && images.length > 0
+    );
+  }, [title, price, duration, capacity, images.length]);
   const openFileDialog = () => {
     if (images.length >= 1) return;
     fileInputRef.current?.click();
@@ -232,11 +236,19 @@ export default function Step2() {
         </main>
 
         {/* 하단 버튼 */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-5 pb-6 pt-3 border-t border-[#EEE]">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-5 pb-6 pt-3">
           <button
             type="button"
-            className="w-full h-11 rounded-[10px] bg-[#3A3A3A] text-white text-[14px] font-semibold"
-            onClick={() => {}}
+            disabled={!canNext}
+            onClick={() => {
+              if (!canNext) return;
+              navigate("/experience/create/step3");
+            }}
+            className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold ${
+              canNext
+                ? "bg-[#3A3A3A] text-white"
+                : "bg-[#EDEDED] text-[#B1B1B1] cursor-not-allowed"
+            }`}
           >
             다음
           </button>
