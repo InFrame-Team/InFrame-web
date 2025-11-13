@@ -64,7 +64,7 @@ export default function BaseAppSheet({
 
         <div className="flex-1 overflow-y-auto">{children}</div>
 
-        <div className="px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))] border-t border-[#EEE] bg-white">
+        <div className="px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))] bg-white">
           {footer}
         </div>
       </div>

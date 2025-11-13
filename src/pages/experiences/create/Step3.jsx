@@ -27,6 +27,9 @@ export default function Step3() {
     });
   };
 
+  // 다음 버튼 활성화 조건: 요일 1개 이상 + 오픈/마감 둘 다 선택
+  const isNextEnabled = days.size > 0 && !!timeStart && !!timeEnd;
+
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] relative">
@@ -149,8 +152,16 @@ export default function Step3() {
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur px-5 pb-6 pt-3">
           <button
             type="button"
-            className="w-full h-11 rounded-[10px] bg-[#3A3A3A] text-white text-[14px] font-semibold"
-            onClick={() => {}}
+            disabled={!isNextEnabled}
+            onClick={() => {
+              if (!isNextEnabled) return;
+            }}
+            className={`w-full h-11 rounded-[10px] text-[14px] font-semibold
+              ${
+                isNextEnabled
+                  ? "bg-[#3A3A3A] text-white"
+                  : "bg-[#E6E6EB] text-[#B7B7C2]"
+              }`}
           >
             다음
           </button>
