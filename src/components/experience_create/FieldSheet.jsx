@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { IoCheckmarkSharp } from "react-icons/io5";
 import BaseAppSheet from "./BaseAppSheet";
 
@@ -12,6 +13,12 @@ export default function FieldSheet({
   onPrev,
   onClose,
 }) {
+  const [tempId, setTempId] = useState(selectedId);
+
+  useEffect(() => {
+    if (open) setTempId(selectedId);
+  }, [open, selectedId]);
+
   return (
     <BaseAppSheet
       open={open}
@@ -29,9 +36,10 @@ export default function FieldSheet({
               이전
             </button>
           )}
+
           <button
             type="button"
-            onClick={onNext}
+            onClick={() => onNext(tempId)}
             className="w-full h-[48px] rounded-[10px] text-[16px] font-bold bg-[#3A3A3A] text-white"
           >
             적용
@@ -39,21 +47,17 @@ export default function FieldSheet({
         </div>
       }
     >
-      <ul
-        className="px-5 py-2 divide-y-2 divide-[#F5F5F5]"
-        role="radiogroup"
-        aria-label={title}
-      >
+      <ul className="px-5 py-2 divide-y-2 divide-[#F5F5F5]" role="radiogroup">
         {options.map((opt) => {
-          const active = selectedId === opt.id;
+          const active = tempId === opt.id;
           return (
             <li key={opt.id}>
               <button
                 type="button"
-                onClick={() => onSelect(opt.id)}
+                onClick={() => setTempId(opt.id)}
                 role="radio"
                 aria-checked={active}
-                className="w-full flex items-center justify-between py-3.5 focus:outline-none"
+                className="w-full flex items-center justify-between py-3.5"
               >
                 <span
                   className={`text-[16px] ${

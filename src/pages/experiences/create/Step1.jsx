@@ -265,7 +265,10 @@ export default function Step1() {
         options={specialties}
         selectedId={specialtyId}
         onSelect={setSpecialtyId}
-        onNext={() => setOpenSpecialty(false)}
+        onNext={(newId) => {
+          setSpecialtyId(newId);
+          setOpenSpecialty(false);
+        }}
         onClose={() => setOpenSpecialty(false)}
       />
 
@@ -276,7 +279,10 @@ export default function Step1() {
         options={detailFields}
         selectedId={subId}
         onSelect={setSubId}
-        onNext={() => setOpenSub(false)}
+        onNext={(newId) => {
+          setSubId(newId);
+          setOpenSub(false);
+        }}
         onClose={() => setOpenSub(false)}
       />
     </div>
