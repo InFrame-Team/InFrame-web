@@ -14,19 +14,34 @@ import {
   fetchDetailFields,
 } from "../../../apis/enums";
 import FieldSheet from "../../../components/experience_create/FieldSheet";
+import { fetchMyHostProfile } from "../../../apis/host";
 
-function HostCard() {
+function HostCard({ host, loading }) {
+  const { hostName, profileImageUrl, description } = host || {};
+
+  const nameText =
+    hostName || (loading ? "호스트 정보를 불러오는 중..." : "호스트 이름");
+  const descText =
+    description || (loading ? "" : "호스트 소개가 아직 등록되지 않았습니다.");
+  const imgSrc = profileImageUrl || fakeProfile;
+
   return (
     <div className="flex items-center h-[102px] gap-3 p-4 border-[2px] border-[#E6E6E6] rounded-[10px]">
       <div className="w-[72px] h-[72px] rounded-full bg-[#FFEFEF] flex items-center justify-center text-xl">
-        <img src={fakeProfile} />
+        <img
+          src={imgSrc}
+          alt="host profile"
+          className="w-full h-full rounded-full object-cover"
+        />
       </div>
 
       <div className="flex-1 ml-2">
-        <p className="text-[18px] font-bold text-[#3A3A3A]">이지섭 호스트</p>
-        <p className="text-[13px] font-medium text-[#A0A0A0] mt-1">
-          흙을 담아 삶의 이야기를 빚어냅니다.
-        </p>
+        <p className="text-[18px] font-bold text-[#3A3A3A]">{nameText}</p>
+        {descText && (
+          <p className="text-[13px] font-medium text-[#A0A0A0] mt-1">
+            {descText}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -112,6 +127,28 @@ export default function Step1() {
   const [openCategory, setOpenCategory] = useState(false);
   const [openSpecialty, setOpenSpecialty] = useState(false);
   const [openSub, setOpenSub] = useState(false);
+
+  const [host, setHost] = useState(null);
+  const [hostLoading, setHostLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const data = await fetchMyHostProfile(controller.signal);
+        setHost(data);
+      } catch (e) {
+        if (e?.name !== "CanceledError") {
+          console.error("호스트 정보 불러오기 실패:", e);
+        }
+      } finally {
+        setHostLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, []);
 
   // 카테고리 API
   const [categories, setCategories] = useState([]);
@@ -202,7 +239,7 @@ export default function Step1() {
         <StepHeader onBack={() => history.back()} currentStep={1} />
 
         <main className="px-5 pb-28">
-          <HostCard />
+          <HostCard host={host} loading={hostLoading} />
 
           <section className="mt-8 space-y-7">
             <div>
