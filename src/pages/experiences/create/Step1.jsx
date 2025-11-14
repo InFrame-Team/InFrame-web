@@ -244,17 +244,6 @@ export default function Step1() {
           <section className="mt-8 space-y-7">
             <div>
               <p className="mb-4 text-[20px] font-bold text-[#3A3A3A]">
-                분야 카테고리를 선택해주세요.
-              </p>
-              <DropdownButton
-                value={categoryLabel}
-                placeholder="카테고리 선택"
-                onClick={() => setOpenCategory(true)}
-              />
-            </div>
-
-            <div>
-              <p className="mb-4 text-[20px] font-bold text-[#3A3A3A]">
                 전문 분야 및 상세 분야를
                 <br />
                 선택해주세요.
