@@ -32,7 +32,7 @@ export default function FieldSheet({
           <button
             type="button"
             onClick={onNext}
-            className="flex-1 h-[48px] rounded-[10px] text-[15px] font-semibold bg-[#3A3A3A] text-white"
+            className="w-full h-[48px] rounded-[10px] text-[16px] font-bold bg-[#3A3A3A] text-white"
           >
             적용
           </button>

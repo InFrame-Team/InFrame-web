@@ -223,7 +223,7 @@ export default function Step2() {
                   "어떤 체험인지, 진행 방식과 특징을 간단히 설명해 주세요."
                 }
                 rows={4}
-                className="w-full h-[70px] rounded-[5px] border-[2px] border-[#E6E6E6] px-4 py-3 text-[13px] text-[#3A3A3A] placeholder:text-[#B6B6B6] outline-none resize-none"
+                className="w-full h-[90px] rounded-[5px] border-[2px] border-[#E6E6E6] px-4 py-3 text-[13px] text-[#3A3A3A] placeholder:text-[#B6B6B6] outline-none resize-none"
               />
               <div className="text-[12px] mt-1 text-right">
                 <span className="text-[#3A3A3A] font-medium">{descCount}</span>
