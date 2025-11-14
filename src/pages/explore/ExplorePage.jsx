@@ -30,42 +30,88 @@ export default function ExplorePage() {
     navigate(`/explore/result?query=${encodeURIComponent(text)}`);
   };
 
-  // ⭐ 샘플 데이터 (나중에 API 연동 예정)
   const recommendedHost = {
     name: "이지섭 호스트",
-    title: "흙을 담아 삶에 여유를 더해보세요",
+    subtitle: "흙을 담아 삶의 이야기를 빚어냅니다.",
     avatar: "/host-pottery.png",
+    reviews: 129,
     distance: "210m",
-    images: [
-      "/sample-p1.jpg",
-      "/sample-p2.jpg",
-      "/sample-p3.jpg",
-      "/sample-p4.jpg",
-    ],
+    images: ["/potter-1.jpg", "/potter-2.jpg", "/potter-3.jpg"],
   };
 
   const hotList = [
     {
+      id: 1,
       host: "박서현님",
       rating: "4.50",
       reviews: 210,
       avatar: "/host-choco.png",
-      cover: "/cover-choco.jpg",
+      cover: "/choco-main.jpg",
       classes: [
         {
           title: "나만의 초콜릿 만들기",
-          desc: "프리미엄 원두와 견과류...",
+          desc: "프리미엄 원두와 견과류…",
           img: "/choco1.jpg",
         },
         {
           title: "디핑 데코 체험",
-          desc: "녹인 초콜릿에 과일이나...",
+          desc: "녹인 초콜릿에 과일이나…",
           img: "/choco2.jpg",
         },
         {
           title: "초콜릿 시식 타임",
-          desc: "다양한 원두 초콜릿을 비...",
+          desc: "다양한 원두 초콜릿을 비…",
           img: "/choco3.jpg",
+        },
+      ],
+    },
+    {
+      id: 2,
+      host: "이지섭 호스트",
+      rating: "4.80",
+      reviews: 129,
+      avatar: "/host-potter.png",
+      cover: "/pottery-main.jpg",
+      classes: [
+        {
+          title: "물레 도자기 만들기",
+          desc: "기초 물레 성형부터 완성까지…",
+          img: "/potter-1.jpg",
+        },
+        {
+          title: "백자 컵 핸드메이드",
+          desc: "일상에서 쓰는 나만의 컵…",
+          img: "/potter-2.jpg",
+        },
+        {
+          title: "도예 원데이 클래스",
+          desc: "처음 와도 따라올 수 있어요",
+          img: "/potter-3.jpg",
+        },
+      ],
+    },
+    {
+      id: 3,
+      host: "최하늘 조향사",
+      rating: "4.70",
+      reviews: 82,
+      avatar: "/host-perfume.png",
+      cover: "/perfume-main.jpg",
+      classes: [
+        {
+          title: "나만의 향수 만들기",
+          desc: "원하는 분위기를 향으로 표현해요",
+          img: "/perfume1.jpg",
+        },
+        {
+          title: "디퓨저 만들기",
+          desc: "집 안을 채우는 나만의 향기",
+          img: "/perfume2.jpg",
+        },
+        {
+          title: "향 블렌딩 클래스",
+          desc: "기본 향부터 직접 배합까지…",
+          img: "/perfume3.jpg",
         },
       ],
     },
@@ -73,6 +119,7 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* 상단 헤더 */}
       <header className="px-3 pt-2 pb-3 border-b border-neutral-100">
         <div className="px-2 py-1 flex items-center justify-start">
           <img
@@ -129,180 +176,154 @@ export default function ExplorePage() {
         </div>
       </header>
 
+      {/* ===== 메인 컨텐츠 ===== */}
       <main className="flex-1 overflow-y-auto pb-32 px-4 pt-5">
-        {/* ── 이지혜님이 관심있어할 호스트 섹션 ─────────────────────── */}
-        <section className="mb-8">
-          <h2 className="text-[18px] font-extrabold text-[#1D1D1D]">
+        <section className="mb-6">
+          <h2 className="text-[20px] font-bold text-[#3A3A3A]">
             이지혜님이 관심있어할 호스트
           </h2>
-          <p className="mt-1 text-[13px] text-[#777777]">
+          <p className="mt-1 text-[15px] text-[#919191]">
             이전에 전통 공예 장인을 만나셨군요!
           </p>
 
-          <div className="mt-4 rounded-2xl bg-white border border-[#F0F0F0] shadow-[0_4px_12px_rgba(0,0,0,0.04)] px-4 pt-4 pb-4">
-            {/* 프로필 영역 */}
-            <div className="flex items-center">
-              <img
-                src="/host-potter.png" // 아바타 이미지 경로
-                alt="이지섭 호스트"
-                className="w-16 h-16 rounded-full mr-3"
-              />
+          <div className="mt-4 px-1">
+            <div className="rounded-[22px] bg-white px-3 pt-4 pb-5">
+              {/* 프로필 + 텍스트 그룹 */}
+              <div className="flex justify-between items-start">
+                {/* 왼쪽: 프로필 + 텍스트 */}
+                <div className="flex">
+                  {/* 프로필 이미지 (완전한 원형) */}
+                  <img
+                    src="/host-pottery.png"
+                    alt="이지섭 호스트"
+                    className="w-[72px] h-[72px] rounded-full object-cover mr-4 shrink-0"
+                  />
 
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-[17px] font-extrabold text-[#1D1D1D]">
-                    이지섭 호스트
-                  </p>
-                  <button
-                    type="button"
-                    className="ml-2 text-[#D3D3D3]"
-                    aria-label="관심 호스트"
-                  >
-                    <AiOutlineHeart className="text-[22px]" />
-                  </button>
+                  {/* 오른쪽 텍스트 — 프로필의 높이를 기준으로 세로 배치 */}
+                  <div className="flex flex-col justify-between py-1">
+                    <div>
+                      <p className="text-[18px] font-bold text-[#3A3A3A] leading-tight">
+                        이지섭 호스트
+                      </p>
+                      <p className="mt-0.5 text-[13px] text-[#A0A0A0] leading-snug">
+                        흙을 담아 삶의 이야기를 빚어냅니다.
+                      </p>
+                    </div>
+
+                    {/* 후기 & 거리 — 프로필 하단 정렬 */}
+                    <div className="mt-2 flex items-center text-[13px] text-[#919191]">
+                      <div className="flex items-center mr-4">
+                        <BiSolidMessageDetail className="text-[13px] mr-1" />
+                        후기 129
+                      </div>
+
+                      <div className="flex items-center">
+                        <IoLocationSharp className="text-[13px] mr-1" />
+                        <span className="mr-1">내 위치에서</span>
+                        <span className="text-[#F13030] font-medium">210m</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-0.5 text-[13px] text-[#9B9B9B]">
-                  흙을 담아 삶의 이야기를 빚어냅니다.
-                </p>
-              </div>
-            </div>
 
-            {/* 후기 / 거리 */}
-            <div className="mt-3 flex items-center text-[13px] text-[#9B9B9B]">
-              <div className="flex items-center mr-4">
-                <BiSolidMessageDetail className="text-[15px] mr-1" />
-                <span>후기 129</span>
+                {/* 좋아요 버튼 */}
+                <button className="text-[#D3D3D3] mt-1">
+                  <AiOutlineHeart className="text-[24px]" />
+                </button>
               </div>
 
-              <div className="flex items-center">
-                <IoLocationSharp className="text-[15px] mr-1" />
-                <span className="mr-1">내 위치에서</span>
-                <span className="text-[#F13030] font-semibold">210m</span>
+              {/* 아래 이미지 3장 */}
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <img
+                  src="/potter-1.jpg"
+                  className="w-full h-[95px] rounded-xl object-cover"
+                />
+                <img
+                  src="/potter-2.jpg"
+                  className="w-full h-[95px] rounded-xl object-cover"
+                />
+                <img
+                  src="/potter-3.jpg"
+                  className="w-full h-[95px] rounded-xl object-cover"
+                />
               </div>
-            </div>
-
-            {/* 썸네일 이미지들 */}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <img
-                src="/potter-1.jpg"
-                alt="도자기 작업"
-                className="w-full h-24 rounded-xl object-cover"
-              />
-              <img
-                src="/potter-2.jpg"
-                alt="도자기 작업"
-                className="w-full h-24 rounded-xl object-cover"
-              />
-              <img
-                src="/potter-3.jpg"
-                alt="도자기 작품"
-                className="w-full h-24 rounded-xl object-cover"
-              />
             </div>
           </div>
         </section>
 
-        {/* 아래에는 HOT 섹션이나 다른 콘텐츠 이어서 넣으면 됨 */}
-      </main>
-      {/* 🔥 HOT 지금 주목할만한 */}
-      <section className="mt-6 mb-10 px-1">
-        <h2 className="text-[16px] font-extrabold text-[#1D1D1D] px-3">
-          <span className="text-[#F13030]">HOT</span> 지금 주목할만한
-        </h2>
+        {/* ── HOT 지금 주목할만한 ─────────────────────────── */}
+        <section className="mt-1 mb-6 px-0">
+          <h2 className="text-[18px] font-bold text-[#3A3A3A] px-1">
+            <span className="text-[#F13030]">HOT</span> 지금 주목할만한
+          </h2>
 
-        {/* 가로 스크롤 리스트 */}
-        <div className="mt-3 flex gap-4 overflow-x-auto no-scrollbar px-3 pb-2">
-          {/* 카드 1 */}
-          <div className="shrink-0 w-[240px] rounded-2xl bg-white border border-[#EDEDED] shadow-[0_4px_10px_rgba(0,0,0,0.06)] overflow-hidden">
-            {/* 상단 이미지 */}
-            <div className="w-full h-[110px]">
-              <img
-                src="/choco-main.jpg"
-                alt="초콜릿 배경"
-                className="w-full h-full object-cover"
-              />
-            </div>
+          <div className="mt-3 flex gap-4 overflow-x-auto no-scrollbar px-1 pb-2">
+            {hotList.map((item) => (
+              <div
+                key={item.id}
+                className="shrink-0 w-[280px] rounded-2xl bg-white border border-[#EDEDED] shadow-[0_4px_10px_rgba(0,0,0,0.06)] overflow-hidden"
+              >
+                <div className="w-full h-[110px]">
+                  <img
+                    src={item.cover}
+                    alt={`${item.host} 배경`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
-            {/* 프로필 + 이름 + 리뷰 */}
-            <div className="relative px-4">
-              <div className="flex items-center -mt-7">
-                <img
-                  src="/host-choco.png"
-                  alt="박서현님"
-                  className="w-14 h-14 rounded-full border-4 border-white"
-                />
-                <div className="ml-2 flex-1">
-                  <p className="text-[15px] font-extrabold">박서현님</p>
-                  <div className="flex items-center text-[12px] text-[#777] gap-1">
-                    <span className="text-[#F13030]">★ 4.50</span>
-                    <span>·</span>
-                    <span>후기 210개</span>
+                <div className="relative px-4">
+                  <div className="flex items-center -mt-7">
+                    <img
+                      src={item.avatar}
+                      alt={item.host}
+                      className="w-14 h-14 rounded-full border-4 border-white"
+                    />
+                    <div className="ml-2 flex-1">
+                      <p className="text-[15px] text-[#FFFFFF] font-extrabold">
+                        {item.host}
+                      </p>
+                      <div className="flex items-center text-[12px] text-[#3A3A3A] gap-1">
+                        <span className="text-[#F13030]">★ </span> {item.rating}
+                        <span>·</span>
+                        <span>후기 {item.reviews}개</span>
+                      </div>
+                    </div>
                   </div>
+
+                  <button className="mt-3 w-full bg-[#3A3A3A] text-white rounded-lg py-2 text-[13px] font-medium">
+                    예약 바로가기
+                  </button>
+                </div>
+
+                <div className="mt-3 px-4 pb-4">
+                  {item.classes.map((cls, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex gap-3 ${
+                        idx !== item.classes.length - 1 ? "mb-3" : ""
+                      }`}
+                    >
+                      <img
+                        src={cls.img}
+                        alt={cls.title}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                      <div>
+                        <p className="text-[16px] text-[#1D1D1D] font-semibold">
+                          {cls.title}
+                        </p>
+                        <p className="text-[15px] text-[#6D6D6D]">{cls.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* 예약 버튼 */}
-              <button className="mt-3 w-full bg-[#3B3B3B] text-white rounded-lg py-2 text-[13px] font-medium">
-                예약 바로가기
-              </button>
-            </div>
-
-            {/* 클래스 리스트 */}
-            <div className="mt-3 px-4 pb-4">
-              {/* 클래스 1 */}
-              <div className="flex gap-3 mb-3">
-                <img
-                  src="/choco1.jpg"
-                  alt=""
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-                <div>
-                  <p className="text-[14px] font-semibold">
-                    나만의 초콜릿 만들기
-                  </p>
-                  <p className="text-[12px] text-[#8b8b8b]">
-                    프리미엄 원두와 견과류…
-                  </p>
-                </div>
-              </div>
-
-              {/* 클래스 2 */}
-              <div className="flex gap-3 mb-3">
-                <img
-                  src="/choco2.jpg"
-                  alt=""
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-                <div>
-                  <p className="text-[14px] font-semibold">디핑 데코 체험</p>
-                  <p className="text-[12px] text-[#8b8b8b]">
-                    녹인 초콜릿에 과일이나…
-                  </p>
-                </div>
-              </div>
-
-              {/* 클래스 3 */}
-              <div className="flex gap-3">
-                <img
-                  src="/choco3.jpg"
-                  alt=""
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-                <div>
-                  <p className="text-[14px] font-semibold">초콜릿 시식 타임</p>
-                  <p className="text-[12px] text-[#8b8b8b]">
-                    다양한 원두 초콜릿을 비…
-                  </p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
+        </section>
+      </main>
 
-          {/* 카드 2 — 필요하면 복사해서 추가 */}
-        </div>
-      </section>
-      {/* ===== 추천 섹션 끝 ===== */}
-
+      {/* 하단 탭바 */}
       <div className="fixed bottom-0 left-0 right-0">
         <BottomTab active="explore" />
       </div>
