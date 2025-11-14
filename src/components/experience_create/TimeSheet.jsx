@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import BaseAppSheet from "./BaseAppSheet";
 
 // 오픈: 06~11
@@ -26,16 +26,27 @@ function toKoreanTime(h) {
 export default function TimeSheet({
   open,
   onClose,
-  start,
+  start, // 부모가 들고 있는 기존 값
   end,
   onChangeStart,
   onChangeEnd,
   onApply,
 }) {
+  const [tempStart, setTempStart] = useState(start || "");
+  const [tempEnd, setTempEnd] = useState(end || "");
+
+  // 시트 열릴 때, 부모 값 기준으로 초기화
+  useEffect(() => {
+    if (open) {
+      setTempStart(start || "");
+      setTempEnd(end || "");
+    }
+  }, [open, start, end]);
+
   const openTimes = useMemo(() => OPEN_HOURS.map((h) => toKoreanTime(h)), []);
   const closeTimes = useMemo(() => CLOSE_HOURS.map((h) => toKoreanTime(h)), []);
 
-  const canApply = Boolean(start && end);
+  const canApply = Boolean(tempStart && tempEnd);
 
   return (
     <BaseAppSheet
@@ -49,7 +60,12 @@ export default function TimeSheet({
           disabled={!canApply}
           onClick={() => {
             if (!canApply) return;
-            onApply();
+
+            // 적용 누를 때만 부모 state 업데이트
+            onChangeStart?.(tempStart);
+            onChangeEnd?.(tempEnd);
+
+            onApply?.();
           }}
           className={`w-full h-11 rounded-[10px] text-[14px] font-semibold
             ${
@@ -70,13 +86,13 @@ export default function TimeSheet({
           </div>
           <div className="grid grid-cols-3 gap-2">
             {openTimes.map((t) => {
-              const selected = start === t;
+              const selected = tempStart === t;
 
               return (
                 <button
                   key={`open-${t}`}
                   type="button"
-                  onClick={() => onChangeStart(selected ? "" : t)}
+                  onClick={() => setTempStart(selected ? "" : t)}
                   className={`h-[55px] rounded-[10px] border-[2px] text-[14px] text-[#3A3A3A]
                     ${
                       selected
@@ -96,13 +112,13 @@ export default function TimeSheet({
           <div className="text-[16px] font-bold text-[#3A3A3A] mb-5">마감</div>
           <div className="grid grid-cols-3 gap-2">
             {closeTimes.map((t) => {
-              const selected = end === t;
+              const selected = tempEnd === t;
 
               return (
                 <button
                   key={`close-${t}`}
                   type="button"
-                  onClick={() => onChangeEnd(selected ? "" : t)}
+                  onClick={() => setTempEnd(selected ? "" : t)}
                   className={`h-[55px] rounded-[10px] border-[2px] text-[14px] text-[#3A3A3A]
                     ${
                       selected
