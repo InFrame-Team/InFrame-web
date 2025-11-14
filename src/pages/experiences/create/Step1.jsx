@@ -3,18 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { IoChevronDown } from "react-icons/io5";
 import fakeProfile from "../../../assets/fakeProfile.svg";
 import StepHeader from "../../../components/experience_create/StepHeader";
-import CategorySheet from "../../../components/experience_create/CategorySheet";
-import categoryIcon1 from "../../../assets/categoryIcon1.png";
-import categoryIcon2 from "../../../assets/categoryIcon2.png";
-import categoryIcon3 from "../../../assets/categoryIcon3.png";
-import categoryIcon4 from "../../../assets/categoryIcon4.png";
 import {
-  fetchCategoryEnums,
   fetchProfessionalFields,
   fetchDetailFields,
 } from "../../../apis/enums";
 import FieldSheet from "../../../components/experience_create/FieldSheet";
 import { fetchMyHostProfile } from "../../../apis/host";
+import { useExperienceCreate } from "../../../contexts/ExperienceCreateContext";
 
 function HostCard({ host, loading }) {
   const { hostName, profileImageUrl, description } = host || {};
@@ -120,11 +115,13 @@ function TagInputSkeleton({ onAdd }) {
 
 export default function Step1() {
   const navigate = useNavigate();
-  const [categoryId, setCategoryId] = useState(null);
-  const [specialtyId, setSpecialtyId] = useState(null);
-  const [subId, setSubId] = useState(null);
+  const { update, data } = useExperienceCreate();
 
-  const [openCategory, setOpenCategory] = useState(false);
+  const [specialtyId, setSpecialtyId] = useState(
+    data.professionalField ?? null
+  );
+  const [subId, setSubId] = useState(data.detailField ?? null);
+
   const [openSpecialty, setOpenSpecialty] = useState(false);
   const [openSub, setOpenSub] = useState(false);
 
@@ -147,40 +144,6 @@ export default function Step1() {
       }
     })();
 
-    return () => controller.abort();
-  }, []);
-
-  // 카테고리 API
-  const [categories, setCategories] = useState([]);
-  const iconMap = {
-    MASTER_ARTISAN: categoryIcon1,
-    YOUNG_ENTREPRENEUR: categoryIcon2,
-    LOCAL_MERCHANT: categoryIcon3,
-    ARTIST: categoryIcon4,
-  };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
-      try {
-        const data = await fetchCategoryEnums(controller.signal);
-        const mapped = (Array.isArray(data) ? data : []).map((item, idx) => ({
-          id: item.code,
-          label: item.description,
-          icon:
-            iconMap[item.code] ||
-            [categoryIcon1, categoryIcon2, categoryIcon3, categoryIcon4][
-              idx % 4
-            ],
-        }));
-        setCategories(mapped);
-      } catch (e) {
-        if (e?.name !== "CanceledError") {
-          console.error("카테고리 불러오기 실패:", e);
-          setCategories([]);
-        }
-      }
-    })();
     return () => controller.abort();
   }, []);
 
@@ -224,14 +187,10 @@ export default function Step1() {
     return () => controller.abort();
   }, []);
 
-  const categoryLabel = useMemo(
-    () => categories.find((v) => v.id === categoryId)?.label || "",
-    [categories, categoryId]
-  );
   const specialtyLabel =
     specialties.find((v) => v.id === specialtyId)?.label || "";
   const subLabel = detailFields.find((v) => v.id === subId)?.label || "";
-  const canNext = !!(categoryId && specialtyId && subId);
+  const canNext = !!(specialtyId && subId);
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
@@ -263,7 +222,14 @@ export default function Step1() {
             </div>
 
             <TagInputSkeleton
-              onAdd={() => navigate("/experience/create/certificate")}
+              onAdd={() => {
+                // 현재 선택된 전문/상세 분야를 Context에 저장
+                update({
+                  professionalField: specialtyId,
+                  detailField: subId,
+                });
+                navigate("/experience/create/certificate");
+              }}
             />
           </section>
         </main>
@@ -275,6 +241,10 @@ export default function Step1() {
             disabled={!canNext}
             onClick={() => {
               if (!canNext) return;
+              update({
+                professionalField: specialtyId,
+                detailField: subId,
+              });
               navigate("/experience/create/step2");
             }}
             className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold ${
@@ -287,20 +257,6 @@ export default function Step1() {
           </button>
         </div>
       </div>
-
-      {/* 카테고리 시트 */}
-      <CategorySheet
-        open={openCategory}
-        title="카테고리를 선택해주세요."
-        options={categories}
-        selectedId={categoryId}
-        onSelect={setCategoryId}
-        onApply={(selected) => {
-          setCategoryId(selected?.id ?? null);
-          setOpenCategory(false);
-        }}
-        onClose={() => setOpenCategory(false)}
-      />
 
       {/* 전문 분야 시트 */}
       <FieldSheet

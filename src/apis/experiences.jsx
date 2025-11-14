@@ -33,3 +33,27 @@ export async function createReservation(
   const res = await api.post("reservation", body, { signal });
   return res.data;
 }
+
+// 체험 텍스트 정보 생성 (이미지 제외)
+export async function createExperience(payload, signal) {
+  const res = await api.post("host/experiences", payload, { signal });
+  return res.data; // 서버에서 생성된 experience 정보( id 포함 ) 리턴된다고 가정
+}
+
+// 생성된 체험에 이미지 업로드
+export async function uploadExperienceImages(experienceId, files, signal) {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("images", file);
+  });
+
+  const res = await api.post(
+    `host/experiences/${experienceId}/images`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      signal,
+    }
+  );
+  return res.data;
+}

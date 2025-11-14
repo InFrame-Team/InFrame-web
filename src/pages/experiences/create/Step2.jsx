@@ -2,8 +2,8 @@ import React, { useMemo, useRef, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { BiSolidCamera } from "react-icons/bi";
 import StepHeader from "../../../components/experience_create/StepHeader";
-import { IoArrowForward } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useExperienceCreate } from "../../../contexts/ExperienceCreateContext";
 
 const DURATION_OPTIONS = [
   "30분 내외",
@@ -17,23 +17,98 @@ const DURATION_OPTIONS = [
 
 const CAPACITY_OPTIONS = ["1명", "2명", "3명", "4명", "5명 이상"];
 
+// UI 라벨 -> API 에 들어가는 시간(시간 단위 숫자)
+const DURATION_TO_HOURS = {
+  "30분 내외": 1,
+  "1시간": 1,
+  "2시간": 2,
+  "3시간": 3,
+  "4시간": 4,
+  "5시간": 5,
+  "5시간 이상": 5,
+};
+
+// UI 라벨 -> 최대 인원 숫자
+const CAPACITY_TO_INT = {
+  "1명": 1,
+  "2명": 2,
+  "3명": 3,
+  "4명": 4,
+  "5명 이상": 5, // 최소 기준
+};
+
+// 저장된 숫자값을 다시 라벨로
+const hoursToDurationLabel = (h) => {
+  const entry = Object.entries(DURATION_TO_HOURS).find(([, val]) => val === h);
+  return entry ? entry[0] : "";
+};
+
+const capacityToLabel = (n) => {
+  const entry = Object.entries(CAPACITY_TO_INT).find(([, val]) => val === n);
+  return entry ? entry[0] : "";
+};
+
 export default function Step2() {
-  const [isFocused, setIsFocused] = useState(false);
-  const [title, setTitle] = useState("");
-  const [intro, setIntro] = useState("");
-  const [price, setPrice] = useState("");
-  const [duration, setDuration] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [images, setImages] = useState([]);
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { data, update } = useExperienceCreate();
+
+  const [isFocused, setIsFocused] = useState(false);
+
+  const [title, setTitle] = useState(data.title || "");
+  const [description, setDescription] = useState(data.description || "");
+  const [price, setPrice] = useState(
+    data.price !== undefined && data.price !== null ? String(data.price) : ""
+  );
+  const [duration, setDuration] = useState(
+    data.durationInHours ? hoursToDurationLabel(data.durationInHours) : ""
+  );
+  const [capacity, setCapacity] = useState(
+    data.maxCapacityPerSlot ? capacityToLabel(data.maxCapacityPerSlot) : ""
+  );
+
+  const [images, setImages] = useState(() => {
+    if (data.mainImageFile) {
+      return [
+        {
+          id: "saved",
+          url: URL.createObjectURL(data.mainImageFile),
+          file: data.mainImageFile,
+        },
+      ];
+    }
+    return [];
+  });
+
+  const fileInputRef = useRef(null);
 
   const countText = useMemo(() => `${images.length}/1`, [images.length]);
+  const descCount = useMemo(() => description.length, [description]);
+
+  const saveStep2ToContext = () => {
+    const durationInHours = DURATION_TO_HOURS[duration] ?? 1;
+    const maxCapacityPerSlot = CAPACITY_TO_INT[capacity] ?? 1;
+
+    update({
+      title,
+      description,
+      price,
+      durationInHours,
+      maxCapacityPerSlot,
+      mainImageFile: images[0]?.file || null,
+    });
+  };
+
   const canNext = useMemo(() => {
     return (
-      title.trim() && price.trim() && duration && capacity && images.length > 0
+      title.trim() &&
+      description.trim() &&
+      price.trim() &&
+      duration &&
+      capacity &&
+      images.length > 0
     );
-  }, [title, price, duration, capacity, images.length]);
+  }, [title, description, price, duration, capacity, images.length]);
+
   const openFileDialog = () => {
     if (images.length >= 1) return;
     fileInputRef.current?.click();
@@ -42,18 +117,25 @@ export default function Step2() {
   const onFilesChange = (e) => {
     const file = (e.target.files || [])[0];
     if (!file) return;
+
     const item = { id: `${Date.now()}`, url: URL.createObjectURL(file), file };
     setImages([item]);
     e.target.value = "";
   };
 
-  const removeImage = (id) => {
-    setImages((prev) => prev.filter((it) => it.id !== id));
+  const removeImage = () => {
+    setImages([]);
   };
 
   const toggleSingle = (current, value, setter) => {
     if (current === value) setter("");
     else setter(value);
+  };
+
+  const handleNext = () => {
+    if (!canNext) return;
+    saveStep2ToContext();
+    navigate("/experience/create/step3");
   };
 
   return (
@@ -109,7 +191,7 @@ export default function Step2() {
                   <button
                     type="button"
                     aria-label="이미지 삭제"
-                    onClick={() => setImages([])}
+                    onClick={removeImage}
                     className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
                   >
                     <RxCross2 size={14} />
@@ -127,21 +209,27 @@ export default function Step2() {
             />
           </section>
 
-          {/* 소개 */}
-          <section className="mb-6">
+          {/* 프로그램 소개 */}
+          <section className="mb-8">
             <h2 className="text-[20px] text-[#3A3A3A] font-bold mb-3">
               프로그램 소개를 작성해주세요.
             </h2>
-            <button
-              type="button"
-              onClick={() => navigate("/experience/create/intro")}
-              className="w-full h-11 rounded-[5px] border-[2px] border-[#E6E6E6] px-4 flex items-center justify-between"
-            >
-              <span className="text-[15px] font-medium text-[#969696]">
-                프로그램을 추가해 주세요.
-              </span>
-              <IoArrowForward size={20} className="text-[#D4D4D4]" />
-            </button>
+            <div className="relative">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 50))}
+                placeholder={
+                  "예) 프리미엄 원두와 견과류, 제철 과일을 활용해 직접 초콜릿을 만들어 보세요.\n" +
+                  "어떤 체험인지, 진행 방식과 특징을 간단히 설명해 주세요."
+                }
+                rows={4}
+                className="w-full h-[70px] rounded-[5px] border-[2px] border-[#E6E6E6] px-4 py-3 text-[13px] text-[#3A3A3A] placeholder:text-[#B6B6B6] outline-none resize-none"
+              />
+              <div className="text-[12px] mt-1 text-right">
+                <span className="text-[#3A3A3A] font-medium">{descCount}</span>
+                <span className="text-[#8E8E93]"> / 50</span>
+              </div>
+            </div>
           </section>
 
           {/* 가격 */}
@@ -167,15 +255,17 @@ export default function Step2() {
                 }
                 onChange={(e) => {
                   const raw = e.target.value.replaceAll(",", "");
-                  if (!/^\d*$/.test(raw)) return; // 숫자만 입력
+                  if (!/^\d*$/.test(raw)) return; // 숫자만
                   setPrice(raw);
                 }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="가격을 입력해주세요."
                 className={`w-full h-11 rounded-[5px] border-[2px] pl-8 pr-4 text-[14px] placeholder:text-[#969696] outline-none transition-colors
-        ${isFocused || price ? "border-[#3A3A3A]" : "border-[#E6E6E6]"}
-        text-[#3A3A3A]`}
+                  ${
+                    isFocused || price ? "border-[#3A3A3A]" : "border-[#E6E6E6]"
+                  }
+                  text-[#3A3A3A]`}
               />
             </div>
           </section>
@@ -240,10 +330,7 @@ export default function Step2() {
           <button
             type="button"
             disabled={!canNext}
-            onClick={() => {
-              if (!canNext) return;
-              navigate("/experience/create/step3");
-            }}
+            onClick={handleNext}
             className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold ${
               canNext
                 ? "bg-[#3A3A3A] text-white"

@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { IoChevronBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useExperienceCreate } from "../../../contexts/ExperienceCreateContext";
 
 export default function CertificateForm() {
   const navigate = useNavigate();
-
-  const [name, setName] = useState(""); // 자격증명
-  const [issuer, setIssuer] = useState(""); // 발행처,발행기관
-  const [year, setYear] = useState(""); // 취득년도(YYYY)
+  const { data, update } = useExperienceCreate();
+  const [name, setName] = useState(data.certificateName || "");
+  const [issuer, setIssuer] = useState(data.certificateIssuer || "");
+  const [year, setYear] = useState(data.certificateYear || "");
 
   const onBack = () => navigate(-1);
 
@@ -17,11 +18,23 @@ export default function CertificateForm() {
     setYear(onlyDigits);
   };
 
-  const canSave = name.trim().length > 0;
+  const canSave =
+    name.trim().length > 0 && // 자격증명 입력
+    issuer.trim().length > 0 && // 발행처/기관 입력
+    year.trim().length === 4; // 취득년도 4자리
 
   const onSave = () => {
     if (!canSave) return;
-    console.log("certificate:", { name, issuer, year });
+
+    const certString = [name, issuer, year].filter(Boolean).join(" / ");
+
+    update({
+      certificateName: name,
+      certificateIssuer: issuer,
+      certificateYear: year,
+      certifications: certString,
+    });
+
     navigate(-1);
   };
 
