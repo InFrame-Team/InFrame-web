@@ -1,5 +1,4 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import Landing from "./pages/Landing";
 import MobileApp from "./pages/MobileApp";
@@ -25,10 +24,23 @@ import HostBasicInfo from "./pages/host/HostBasicInfo";
 import HostComplete from "./pages/host/HostComplete";
 import HostProfileSettings from "./pages/host/HostProfileSettings";
 import HostLocationPicker from "./pages/host/HostLocationPicker";
-
-// 🔽 새로 추가
 import ExplorePage from "./pages/explore/ExplorePage";
 import ExploreResultPage from "./pages/explore/ExploreResultPage";
+
+import Step1 from "./pages/experiences/create/Step1";
+import CertificateForm from "./pages/experiences/create/CertificateForm";
+import Step2 from "./pages/experiences/create/Step2";
+import Step3 from "./pages/experiences/create/Step3";
+import Step4 from "./pages/experiences/create/Step4";
+import { ExperienceCreateProvider } from "./contexts/ExperienceCreateContext";
+
+function ExperienceCreateLayout() {
+  return (
+    <ExperienceCreateProvider>
+      <Outlet />
+    </ExperienceCreateProvider>
+  );
+}
 
 export default function App() {
   return (
@@ -76,6 +88,14 @@ export default function App() {
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
           />
+
+          <Route path="/experience/create" element={<ExperienceCreateLayout />}>
+            <Route path="step1" element={<Step1 />} />
+            <Route path="step2" element={<Step2 />} />
+            <Route path="step3" element={<Step3 />} />
+            <Route path="step4" element={<Step4 />} />
+            <Route path="certificate" element={<CertificateForm />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

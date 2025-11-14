@@ -28,3 +28,9 @@ export async function updateHost(payload) {
     };
   }
 }
+
+// 내 호스트 정보 조회
+export async function fetchMyHostProfile(signal) {
+  const res = await api.get("host/me", { signal });
+  return res.data;
+}
