@@ -1,3 +1,4 @@
+// src/pages/map/MapPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../apis/api";
@@ -18,73 +19,18 @@ const CATEGORY_ITEMS = [
   { key: "artist", label: "예술가" },
 ];
 
-const DUMMY_HOSTS = [
-  {
-    id: "h1",
-    category: "artisan",
-    name: "이지섭",
-    title: "도자기 장인",
-    place: "경산시청 근처",
-    lat: 35.82075,
-    lng: 128.7415,
-    distance: 114,
-    price: "50,000원 ~",
-    reviews: 129,
-    avatar: "/host-potter.png",
-  },
-  {
-    id: "h2",
-    category: "youth",
-    name: "서지유",
-    title: "전시 기획자",
-    place: "중방동 전시공간",
-    lat: 35.8223,
-    lng: 128.7432,
-    distance: 420,
-    price: "40,000원 ~",
-    reviews: 28,
-    avatar: "/host-planner.png",
-  },
-  {
-    id: "h3",
-    category: "alley",
-    name: "최하늘",
-    title: "조향사",
-    place: "남매공원 인근 공방",
-    lat: 35.8218,
-    lng: 128.7385,
-    distance: 650,
-    price: "35,000원 ~",
-    reviews: 82,
-    avatar: "/host-perfumer.png",
-  },
-  {
-    id: "h4",
-    category: "artist",
-    name: "소성민",
-    title: "브랜드 컨설턴트",
-    place: "사동 카페거리",
-    lat: 35.8234,
-    lng: 128.7398,
-    distance: 900,
-    price: "30,000원 ~",
-    reviews: 52,
-    avatar: "/host-consultant.png",
-  },
-  {
-    id: "h5",
-    category: "artisan",
-    name: "강도윤",
-    title: "목공예 장인",
-    place: "정평동 목공방",
-    lat: 35.8188,
-    lng: 128.7423,
-    distance: 1200,
-    price: "45,000원 ~",
-    reviews: 63,
-    avatar: "/host-wood.png",
-  },
-];
+// 백엔드 category 값을 프론트에서 쓰는 key 로 매핑
+function mapBackendCategory(code) {
+  if (!code) return "artisan";
+  const upper = code.toString().toUpperCase();
+
+  if (upper === "MASTER_ARTISAN") return "artisan";
+  if (upper === "YOUTH_ENTREPRENEUR") return "youth";
+  if (upper === "ALLEY_MERCHANT") return "alley";
+  if (upper === "ARTIST") return "artist";
+
+  return "artisan";
+}
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -147,38 +93,49 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [myLocation, setMyLocation] = useState(null);
 
-  const [hosts, setHosts] = useState(DUMMY_HOSTS);
+  // ✅ 실제 API 데이터로 채우고, 실패 시 DUMMY_HOSTS 사용
+  const [hosts, setHosts] = useState([]);
 
   const [mapReady, setMapReady] = useState(false);
 
+  // ---------- /api/v1/host/map 호출 ----------
   useEffect(() => {
     async function fetchHosts() {
       try {
-        const res = await api.get("/host/list");
+        // api 의 baseURL 이 `/api/v1/` 라고 가정 → "host/map"
+        const res = await api.get("host/map");
 
-        const raw = res.data.hosts || res.data;
+        // swagger 예시가 배열이므로 기본은 배열로 처리
+        const raw = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.hosts)
+          ? res.data.hosts
+          : [];
 
-        const mapped = raw.map((h) => ({
-          id: h.id,
-          category: h.category || "artisan",
-          name: h.businessName || h.name,
-          title: h.title || "",
+        if (!raw.length) {
+          console.warn("[MapPage] host/map 결과가 비어있어 더미 데이터 사용");
+          setHosts(DUMMY_HOSTS);
+          return;
+        }
+
+        const mapped = raw.map((h, idx) => ({
+          id: h.hostId ?? h.id ?? `host-${idx}`,
+          category: mapBackendCategory(h.category),
+          name: h.businessName || h.hostName || h.name || "이름 없는 호스트",
+          title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
           lat: h.latitude,
           lng: h.longitude,
           distance: 0,
           price: h.priceText || "가격 문의",
           reviews: h.reviewCount ?? 0,
-          avatar: h.profileImageUrl || null,
+          avatar: h.profileImageUrl || h.companyLogoUrl || null,
         }));
 
         setHosts(mapped);
       } catch (err) {
-        console.error(
-          "[MapPage] 호스트 목록 불러오기 실패, 더미 데이터 사용",
-          err
-        );
-        // 실패하면 DUMMY_HOSTS 그대로 사용
+        console.error("[MapPage] host/map 호출 실패, 더미 데이터 사용", err);
+        setHosts(DUMMY_HOSTS);
       }
     }
 
@@ -508,6 +465,7 @@ export default function MapPage() {
     map.panTo(pos);
   }, [selectedHostId, myLocation]);
 
+  // ---------- 카테고리/검색에 따라 마커 숨기기/보이기 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -531,6 +489,7 @@ export default function MapPage() {
     }
   }, [activeCategory, searchQuery, displayedHosts, selectedHostId, mapReady]);
 
+  // ---------- 하단 카드 열려 있을 때 선택된 카드로 스크롤 ----------
   useEffect(() => {
     if (!sheetExpanded || !selectedHostId) return;
     const container = labelListRef.current;
