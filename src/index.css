@@ -32,9 +32,10 @@ body {
 }
 
 .host-marker img {
-  width: 70%;
-  height: 70%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .host-marker.active {

@@ -1,7 +1,7 @@
 // src/pages/map/MapPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import api from "../../apis/api";
+import { getHostMap } from "../../apis/map";
 
 import BottomTab from "../../components/BottomTab";
 
@@ -70,7 +70,10 @@ function ensureMyLocationStyles() {
 export default function MapPage() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+
+  // ✅ { [hostId]: { overlay, el, host } }
   const hostOverlaysRef = useRef({});
+
   const labelListRef = useRef(null);
   const labelItemRefs = useRef({});
   const myLocationOverlayRef = useRef(null);
@@ -93,50 +96,56 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [myLocation, setMyLocation] = useState(null);
 
-  // ✅ 실제 API 데이터로 채우고, 실패 시 DUMMY_HOSTS 사용
+  // ✅ 실제 API 데이터
   const [hosts, setHosts] = useState([]);
 
   const [mapReady, setMapReady] = useState(false);
 
-  // ---------- /api/v1/host/map 호출 ----------
+  // ---------- 호스트 데이터 가져오기 ----------
   useEffect(() => {
     async function fetchHosts() {
-      try {
-        // api 의 baseURL 이 `/api/v1/` 라고 가정 → "host/map"
-        const res = await api.get("host/map");
+      const result = await getHostMap();
 
-        // swagger 예시가 배열이므로 기본은 배열로 처리
-        const raw = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data.hosts)
-          ? res.data.hosts
-          : [];
+      if (!result.success) {
+        console.error(
+          "[MapPage] host/map 실패:",
+          result.status,
+          result.message
+        );
+        setHosts([]);
+        return;
+      }
 
-        if (!raw.length) {
-          console.warn("[MapPage] host/map 결과가 비어있어 더미 데이터 사용");
-          setHosts(DUMMY_HOSTS);
-          return;
-        }
+      const raw = result.data;
+      console.log("[MapPage] host/map raw:", raw);
 
-        const mapped = raw.map((h, idx) => ({
-          id: h.hostId ?? h.id ?? `host-${idx}`,
+      const mapped = raw.map((h, idx) => {
+        const latRaw = h.latitude ?? h.lat;
+        const lngRaw = h.longitude ?? h.lng;
+
+        const lat =
+          latRaw !== null && latRaw !== undefined ? Number(latRaw) : null;
+        const lng =
+          lngRaw !== null && lngRaw !== undefined ? Number(lngRaw) : null;
+
+        return {
+          id: String(h.hostId ?? h.id ?? `host-${idx}`),
           category: mapBackendCategory(h.category),
-          name: h.businessName || h.hostName || h.name || "이름 없는 호스트",
+          name: h.hostName || h.name || "이름 없는 호스트",
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
-          lat: h.latitude,
-          lng: h.longitude,
+          lat,
+          lng,
           distance: 0,
           price: h.priceText || "가격 문의",
           reviews: h.reviewCount ?? 0,
-          avatar: h.profileImageUrl || h.companyLogoUrl || null,
-        }));
+          // ✅ 로고 우선순위
+          logoUrl: h.companyLogoUrl || h.profileImageUrl || null,
+        };
+      });
 
-        setHosts(mapped);
-      } catch (err) {
-        console.error("[MapPage] host/map 호출 실패, 더미 데이터 사용", err);
-        setHosts(DUMMY_HOSTS);
-      }
+      console.log("[MapPage] mapped hosts:", mapped);
+      setHosts(mapped);
     }
 
     fetchHosts();
@@ -347,6 +356,7 @@ export default function MapPage() {
             strokeColor: "none",
             fillColor: "#000000",
             fillOpacity: 0.45,
+            zIndex: 1,
           });
           maskPolygon.setMap(map);
 
@@ -357,6 +367,7 @@ export default function MapPage() {
             strokeOpacity: 0.9,
             fillColor: "transparent",
             fillOpacity: 0,
+            zIndex: 2,
           });
           borderPolygon.setMap(map);
 
@@ -391,30 +402,51 @@ export default function MapPage() {
     }
   }, []);
 
-  // ---------- hosts가 바뀔 때마다 마커 생성/갱신 ----------
+  // ---------- 호스트 마커 생성 ----------
   useEffect(() => {
     if (!mapReady || !window.kakao || !window.kakao.maps) return;
     const { kakao } = window;
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // 기존 마커 제거
-    Object.values(hostOverlaysRef.current).forEach(({ overlay }) =>
-      overlay.setMap(null)
-    );
+    // 기존 오버레이 제거
+    Object.values(hostOverlaysRef.current).forEach(({ overlay }) => {
+      if (overlay) overlay.setMap(null);
+    });
     hostOverlaysRef.current = {};
 
+    console.log("[MapPage] 마커 생성, hosts length:", hosts.length);
+
     hosts.forEach((host) => {
-      if (!host.lat || !host.lng) return;
+      if (host.lat == null || host.lng == null) {
+        console.warn("[MapPage] lat/lng 없음, 마커 스킵:", host);
+        return;
+      }
 
-      const pos = new kakao.maps.LatLng(host.lat, host.lng);
+      const lat = Number(host.lat);
+      const lng = Number(host.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        console.warn("[MapPage] lat/lng NaN, 마커 스킵:", host);
+        return;
+      }
 
+      console.log("[MapPage] marker position:", lat, lng, host.name);
+
+      const pos = new kakao.maps.LatLng(lat, lng);
+
+      // ✅ host 마커 DOM
       const el = document.createElement("div");
       el.className = "host-marker";
-      el.innerHTML = host.avatar
-        ? `<img src="${host.avatar}" alt="${host.name}" />`
+
+      const logoSrc =
+        host.logoUrl ||
+        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+
+      el.innerHTML = host.logoUrl
+        ? `<img src="${logoSrc}" alt="${host.name}" />`
         : `<span style="font-size:26px;">😊</span>`;
 
+      // 클릭 이벤트 (카드 선택)
       el.addEventListener("click", () => {
         setSelectedHostId((prev) => (prev === host.id ? null : host.id));
         setSheetExpanded(true);
@@ -424,25 +456,29 @@ export default function MapPage() {
         position: pos,
         content: el,
         yAnchor: 1,
+        zIndex: 1000,
+        clickable: true,
       });
+
       overlay.setMap(map);
 
       hostOverlaysRef.current[host.id] = { overlay, el, host };
     });
 
-    // 초기 선택 호스트
     if (!selectedHostId && hosts.length > 0) {
       setSelectedHostId(hosts[0].id);
     }
-  }, [hosts, mapReady]); // ← 지도 준비 + 호스트 로딩 이후
+  }, [hosts, mapReady]);
 
-  // ---------- 선택된 호스트에 맞춰 지도 패닝 ----------
+  // ---------- 선택된 호스트에 맞춰 지도 패닝 & 마커 강조 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.kakao) return;
 
-    Object.values(hostOverlaysRef.current).forEach(({ el }) => {
-      el.classList.remove("active");
+    // 모든 마커 active 제거
+    Object.values(hostOverlaysRef.current).forEach(({ el, overlay }) => {
+      if (el) el.classList.remove("active");
+      if (overlay) overlay.setZIndex(1000);
     });
 
     if (!selectedHostId) return;
@@ -450,7 +486,8 @@ export default function MapPage() {
     const item = hostOverlaysRef.current[selectedHostId];
     if (!item) return;
 
-    item.el.classList.add("active");
+    if (item.el) item.el.classList.add("active");
+    if (item.overlay) item.overlay.setZIndex(2000);
 
     const { kakao } = window;
     const pos = new kakao.maps.LatLng(item.host.lat, item.host.lng);
@@ -470,9 +507,18 @@ export default function MapPage() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
+    // 필터 결과가 0이면, 모든 마커 보여주기
+    if (!displayedHosts.length) {
+      Object.values(hostOverlaysRef.current).forEach(({ overlay }) => {
+        if (overlay) overlay.setMap(map);
+      });
+      return;
+    }
+
     const visibleIds = new Set(displayedHosts.map((h) => h.id));
 
     Object.entries(hostOverlaysRef.current).forEach(([id, { overlay }]) => {
+      if (!overlay) return;
       if (visibleIds.has(id)) {
         overlay.setMap(map);
       } else {
@@ -504,12 +550,14 @@ export default function MapPage() {
 
   return (
     <div className="relative min-h-[100dvh] bg-white">
+      {/* 지도 */}
       <div
         ref={mapRef}
         className="absolute inset-0"
         style={{ minHeight: "100dvh" }}
       />
 
+      {/* 지도 위 UI */}
       <div className="pointer-events-none relative z-10 flex flex-col min-h-[100dvh] pb-24">
         {/* 상단 검색창 */}
         <header className="pt-6 px-4 pointer-events-auto">
@@ -581,7 +629,7 @@ export default function MapPage() {
             <div className="relative w-full flex justify-center items-center">
               <button
                 type="button"
-                className="w-[150px] rounded-full bg-[#e64a45] text-white py-2.5 text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
+                className="mx-auto w-[150px] rounded-full bg-[#e64a45] text-white py-2.5 text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
                 onClick={() => {
                   const q = activeCategory ? `?category=${activeCategory}` : "";
                   navigate(`/nearby${q}`);
@@ -592,7 +640,7 @@ export default function MapPage() {
 
               <button
                 type="button"
-                className="absolute right-1 w-11 h-11 rounded-full bg-white shadow-[0_4px_10px_rgba(0,0,0,0.18)] border border-neutral-200 flex items-center justify-center"
+                className="absolute right-11 w-11 h-11 rounded-full bg-white shadow-[0_4px_10px_rgba(0,0,0,0.18)] border border-neutral-200 flex items-center justify-center"
                 aria-label="내 위치로 이동"
                 onClick={handleMoveToMyLocation}
               >
@@ -604,7 +652,7 @@ export default function MapPage() {
           {sheetExpanded && (
             <div
               ref={labelListRef}
-              className="mt-1 flex gap-3 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
+              className="mt-2 flex gap-4 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
               style={{ padding: "0 calc((100% - 250px) / 2)" }}
             >
               {displayedHosts.map((host) => {
@@ -622,42 +670,44 @@ export default function MapPage() {
                       )
                     }
                     className={[
-                      "min-w-[250px] max-w-[250px] rounded-2xl bg-white border text-left px-4 py-2 shadow-sm transition-all duration-150 snap-center",
+                      "min-w-[300px] max-w-[300px] rounded-2xl bg-white border text-left px-6 py-4 shadow-sm transition-all duration-150 snap-center",
                       selected
                         ? "border-[#000000] shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
                         : "border-neutral-200",
                     ].join(" ")}
                   >
                     <div className="flex flex-row items-baseline gap-2">
-                      <span className="text-[17px] font-bold">{host.name}</span>
+                      <span className="text-[22px] font-bold">{host.name}</span>
                       {host.title && (
-                        <span className="text-[13px] text-neutral-500">
+                        <span className="text-[15px] text-[#919191]">
                           {host.title}
                         </span>
                       )}
                     </div>
 
                     <div className="mt-2 flex flex-row items-center text-[13px] text-neutral-500">
-                      <BiSolidMessageDetail className="text-[15px] mr-1" />
-                      <span>후기 {host.reviews}</span>
+                      <BiSolidMessageDetail className="text-[14px] text-[#919191] mr-1" />
+                      <span className="text-[#919191]">
+                        후기 {host.reviews}
+                      </span>
                     </div>
 
                     <div className="mt-0.5 flex flex-row items-center text-[13px] text-neutral-500">
-                      <IoLocationSharp className="text-[15px] mr-1" />
-                      <span className="mr-1">내 위치에서</span>
-                      <span className="text-[#e64a45] font-semibold">
-                        {host.distance}m
-                      </span>
+                      <IoLocationSharp className="text-[14px] text-[#919191] mr-1" />
+                      <span className="text-[#919191] mr-1">내 위치에서</span>
+                      <span className="text-[#F13030]">{host.distance}m</span>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[14px]">
                       <div className="flex items-center">
-                        <span className="text-[#e64a45] font-semibold mr-1">
+                        <span className="text-[#CD2F2F] font-semibold mr-1">
                           1인
                         </span>
-                        <span className="font-semibold">{host.price}</span>
+                        <span className="text-[#3A3A3A] font-bold">
+                          {host.price}
+                        </span>
                       </div>
-                      <span className="px-3 py-1.5 rounded-full border border-neutral-300 text-[12px]">
+                      <span className="px-3 py-1.5 rounded-full border border-[#E9E9EC] text-[15px] text-[#3A3A3A]">
                         만나러 가기
                       </span>
                     </div>

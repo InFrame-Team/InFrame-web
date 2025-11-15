@@ -1,5 +1,7 @@
+// src/pages/NearbyListPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import api from "../../apis/api";
 
 import { BiSolidMessageDetail } from "react-icons/bi";
 import { IoLocationSharp } from "react-icons/io5";
@@ -18,6 +20,19 @@ const TIME_SLOTS = [
   { key: "15-17", label: "오후 3시 ~ 5시", start: 15, end: 17 },
   { key: "17-19", label: "오후 5시 ~ 7시", start: 17, end: 19 },
 ];
+
+// 백엔드 category → 프론트 key 매핑 (MapPage랑 동일하게)
+function mapBackendCategory(code) {
+  if (!code) return "artisan";
+  const upper = code.toString().toUpperCase();
+
+  if (upper === "MASTER_ARTISAN") return "artisan";
+  if (upper === "YOUTH_ENTREPRENEUR") return "youth";
+  if (upper === "ALLEY_MERCHANT") return "alley";
+  if (upper === "ARTIST") return "artist";
+
+  return "artisan";
+}
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -54,7 +69,6 @@ export default function NearbyListPage() {
 
   const [activeFilterTab, setActiveFilterTab] = useState("price");
   const [showFilterSheet, setShowFilterSheet] = useState(false);
-
   const [showSortSheet, setShowSortSheet] = useState(false);
 
   const [priceRange, setPriceRange] = useState([MIN_PRICE, MAX_PRICE]);
@@ -65,6 +79,10 @@ export default function NearbyListPage() {
   const trackRef = useRef(null);
   const [draggingHandle, setDraggingHandle] = useState(null);
 
+  // 🔹 백엔드에서 불러온 호스트 데이터
+  const [hosts, setHosts] = useState([]);
+
+  // 현재 위치 가져오기
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -78,6 +96,58 @@ export default function NearbyListPage() {
     }
   }, []);
 
+  // 🔹 /api/v1/host/map 호출 (MapPage와 동일한 엔드포인트 사용)
+  useEffect(() => {
+    async function fetchHosts() {
+      try {
+        const res = await api.get("host/map");
+
+        const raw = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.hosts)
+          ? res.data.hosts
+          : [];
+
+        const mapped = raw.map((h, idx) => {
+          const categoryKey = mapBackendCategory(h.category);
+
+          const priceText =
+            h.priceText || h.minPriceText || h.lowestPriceText || "가격 문의";
+
+          // "50,000원 ~" 같은 텍스트에서 숫자만 추출 → 슬라이더용
+          const numericMatch = String(priceText).replace(/[^\d]/g, "");
+          const priceNumber =
+            numericMatch && !Number.isNaN(Number(numericMatch))
+              ? Number(numericMatch)
+              : null;
+
+          return {
+            id: h.hostId ?? h.id ?? `host-${idx}`,
+            name: h.businessName || h.hostName || h.name || "이름 없는 호스트",
+            role: h.detailField || h.title || "",
+            category: categoryKey,
+            field: h.detailField || null,
+            lat: h.latitude,
+            lng: h.longitude,
+            reviews: h.reviewCount ?? 0,
+            priceText,
+            priceNumber,
+            // 혹시 백엔드에 availableTimeSlots 같은게 생기면 여기서 넣으면 됨
+            available: h.availableTimeSlots || [],
+          };
+        });
+
+        setHosts(mapped);
+      } catch (err) {
+        console.error("[NearbyListPage] host/map 호출 실패", err);
+        setHosts([]); // 실패시 일단 빈 배열
+      }
+    }
+
+    fetchHosts();
+  }, []);
+
+  // 필터 탭 바뀔 때 기본값 리셋
   useEffect(() => {
     setPriceRange([MIN_PRICE, MAX_PRICE]);
     setSelectedTimeSlot(null);
@@ -133,11 +203,16 @@ export default function NearbyListPage() {
     };
   }, [draggingHandle]);
 
+  // 🔹 필터 + 정렬 적용된 호스트 리스트
   const filteredHosts = useMemo(() => {
-    let base = MOCK_HOSTS.map((h) => ({
-      ...h,
-      distance: haversineDistance(myPos.lat, myPos.lng, h.lat, h.lng),
-    }));
+    if (!hosts.length) return [];
+
+    let base = hosts
+      .filter((h) => h.lat && h.lng)
+      .map((h) => ({
+        ...h,
+        distance: haversineDistance(myPos.lat, myPos.lng, h.lat, h.lng),
+      }));
 
     if (selectedCategory) {
       base = base.filter((h) => h.category === selectedCategory);
@@ -147,7 +222,7 @@ export default function NearbyListPage() {
       const slot = TIME_SLOTS.find((s) => s.key === selectedTimeSlot);
       if (slot) {
         base = base.filter((h) =>
-          h.available.some((t) => t >= slot.start && t < slot.end)
+          h.available?.some((t) => t >= slot.start && t < slot.end)
         );
       }
     }
@@ -156,16 +231,21 @@ export default function NearbyListPage() {
       base = base.filter((h) => h.field === selectedField);
     }
 
-    base = base.filter(
-      (h) => h.price >= priceRange[0] && h.price <= priceRange[1]
-    );
+    // 가격 필터: priceNumber 없으면 필터에서 제외(통과)
+    base = base.filter((h) => {
+      if (h.priceNumber == null) return true;
+      return h.priceNumber >= priceRange[0] && h.priceNumber <= priceRange[1];
+    });
 
     if (sortKey === "distance") base.sort((a, b) => a.distance - b.distance);
-    if (sortKey === "priceLow") base.sort((a, b) => a.price - b.price);
-    if (sortKey === "priceHigh") base.sort((a, b) => b.price - a.price);
+    if (sortKey === "priceLow")
+      base.sort((a, b) => (a.priceNumber || 0) - (b.priceNumber || 0));
+    if (sortKey === "priceHigh")
+      base.sort((a, b) => (b.priceNumber || 0) - (a.priceNumber || 0));
 
     return base;
   }, [
+    hosts,
     myPos,
     sortKey,
     selectedCategory,
@@ -208,6 +288,7 @@ export default function NearbyListPage() {
           <h1 className="text-[17px] font-semibold">근처 소상공인 보기</h1>
         </header>
 
+        {/* 필터 버튼들 */}
         <section className="px-4 pt-3 pb-1">
           <div className="flex gap-2 overflow-x-auto pb-1 items-center">
             <button className="flex items-center justify-center min-w-8 min-h-8 w-6 h-6 rounded-full bg-white border border-neutral-300 text-[#7b7b7b] shadow-sm shrink-0">
@@ -236,6 +317,7 @@ export default function NearbyListPage() {
           </div>
         </section>
 
+        {/* 총 개수 + 정렬 */}
         <section className="relative flex items-center justify-between px-4 pt-1 pb-3 text-[14px]">
           <span className="text-[17px] font-bold">총 {totalCount}건</span>
 
@@ -295,6 +377,7 @@ export default function NearbyListPage() {
           </div>
         </section>
 
+        {/* 리스트 */}
         <main className="flex-1 px-4 space-y-3 pb-4 overflow-y-auto">
           {filteredHosts.map((host) => (
             <article
@@ -305,12 +388,18 @@ export default function NearbyListPage() {
                 <div>
                   <div className="flex flex-row items-baseline gap-2">
                     <span className="text-[18px] font-bold">{host.name}</span>
-                    <span className="text-[13px] text-neutral-500">
-                      {host.role}
-                    </span>
+                    {host.role && (
+                      <span className="text-[13px] text-neutral-500">
+                        {host.role}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <button type="button" className="text-[22px] text-[#D8D8D8]">
+                <button
+                  type="button"
+                  className="text-[22px] text-[#D8D8D8]"
+                  aria-label="관심 호스트"
+                >
                   ♡
                 </button>
               </div>
@@ -333,7 +422,10 @@ export default function NearbyListPage() {
                 <div className="text-[14px] flex items-center">
                   <span className="text-[#e64a45] mr-1">1인</span>
                   <span className="font-semibold">
-                    {host.price.toLocaleString()}원 ~
+                    {host.priceText ||
+                      (host.priceNumber
+                        ? `${host.priceNumber.toLocaleString()}원 ~`
+                        : "가격 문의")}
                   </span>
                 </div>
                 <button className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-[13px]">
@@ -342,8 +434,17 @@ export default function NearbyListPage() {
               </div>
             </article>
           ))}
+
+          {!hosts.length && (
+            <div className="py-8 text-center text-[14px] text-neutral-500">
+              주변 소상공인 정보를 불러오는 중이거나,
+              <br />
+              아직 등록된 체험이 없어요.
+            </div>
+          )}
         </main>
 
+        {/* 아래 고정 버튼 */}
         {!showFilterSheet && (
           <button
             type="button"
@@ -354,6 +455,7 @@ export default function NearbyListPage() {
           </button>
         )}
 
+        {/* 필터 시트 */}
         {showFilterSheet && (
           <>
             <div
@@ -406,6 +508,7 @@ export default function NearbyListPage() {
                   </div>
 
                   <div className="px-6 pb-6">
+                    {/* 가격 필터 */}
                     {activeFilterTab === "price" && (
                       <>
                         <div className="flex justify-between text-[13px] mb-4">
@@ -473,6 +576,7 @@ export default function NearbyListPage() {
                       </>
                     )}
 
+                    {/* 시간대 필터 */}
                     {activeFilterTab === "time" && (
                       <div className="flex flex-wrap gap-2 text-[13px]">
                         {TIME_SLOTS.map((slot) => (
@@ -495,6 +599,7 @@ export default function NearbyListPage() {
                       </div>
                     )}
 
+                    {/* 카테고리 필터 */}
                     {activeFilterTab === "category" && (
                       <div className="flex flex-wrap gap-2 text-[13px]">
                         {[
@@ -522,15 +627,16 @@ export default function NearbyListPage() {
                       </div>
                     )}
 
+                    {/* 전문분야 필터 (임시: detailField 기준) */}
                     {activeFilterTab === "field" && (
                       <div className="flex flex-wrap gap-2 text-[13px]">
-                        {[
-                          "도자기",
-                          "전시 기획",
-                          "조향",
-                          "브랜드 컨설팅",
-                          "목공예",
-                        ].map((f) => (
+                        {Array.from(
+                          new Set(
+                            hosts
+                              .map((h) => h.field)
+                              .filter((f) => f && f.length > 0)
+                          )
+                        ).map((f) => (
                           <button
                             key={f}
                             className={`px-3 py-1.5 rounded-full border ${
@@ -547,6 +653,12 @@ export default function NearbyListPage() {
                             {f}
                           </button>
                         ))}
+
+                        {!hosts.some((h) => h.field) && (
+                          <p className="text-[13px] text-neutral-400">
+                            아직 등록된 전문분야 정보가 없어요.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
