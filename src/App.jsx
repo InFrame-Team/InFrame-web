@@ -33,6 +33,7 @@ import Step2 from "./pages/experiences/create/Step2";
 import Step3 from "./pages/experiences/create/Step3";
 import Step4 from "./pages/experiences/create/Step4";
 import { ExperienceCreateProvider } from "./contexts/ExperienceCreateContext";
+import ReservationHistoryPage from "./pages/reservation/ReservationHistoryPage";
 
 function ExperienceCreateLayout() {
   return (
@@ -88,7 +89,7 @@ export default function App() {
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
           />
-
+          {/* 체험 생성 */}
           <Route path="/experience/create" element={<ExperienceCreateLayout />}>
             <Route path="step1" element={<Step1 />} />
             <Route path="step2" element={<Step2 />} />
@@ -96,6 +97,9 @@ export default function App() {
             <Route path="step4" element={<Step4 />} />
             <Route path="certificate" element={<CertificateForm />} />
           </Route>
+
+          {/* 예약 내역 */}
+          <Route path="/my/reservations" element={<ReservationHistoryPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
