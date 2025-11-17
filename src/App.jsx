@@ -34,6 +34,7 @@ import Step3 from "./pages/experiences/create/Step3";
 import Step4 from "./pages/experiences/create/Step4";
 import { ExperienceCreateProvider } from "./contexts/ExperienceCreateContext";
 import ReservationHistoryPage from "./pages/reservation/ReservationHistoryPage";
+import ReviewCreatePage from "./components/reservation/ReviewCreatePage";
 
 function ExperienceCreateLayout() {
   return (
@@ -100,6 +101,10 @@ export default function App() {
 
           {/* 예약 내역 */}
           <Route path="/my/reservations" element={<ReservationHistoryPage />} />
+          <Route
+            path="/my/reservations/:reservationId/review"
+            element={<ReviewCreatePage />}
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

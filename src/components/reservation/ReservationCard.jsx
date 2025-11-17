@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 
-/** 예약 날짜와 오늘 날짜의 일수 차이 계산 */
 function getDateDiffInDays(reservationDate) {
   if (!reservationDate) return null;
-
   const today = new Date();
   const target = new Date(reservationDate);
 
@@ -18,15 +16,15 @@ function getDateDiffInDays(reservationDate) {
 
 function getMeetSubtitleFromDiff(diffDays) {
   if (diffDays === null) return "";
-
   if (diffDays > 0) return `${diffDays}일 후에 만나요`;
   if (diffDays === 0) return "오늘 만나요";
   return `${Math.abs(diffDays)}일 전에 만났어요`;
 }
 
-export default function ReservationCard({ reservation }) {
+export default function ReservationCard({ reservation, onClickReview }) {
   const [liked, setLiked] = useState(false);
   const {
+    id, // 예약 id (reservationId)
     dateLabel,
     status,
     hostName,
@@ -104,6 +102,7 @@ export default function ReservationCard({ reservation }) {
         <button
           type="button"
           className="h-[45px] rounded-[10px] border border-[#B6B6B6] text-[16px] font-semibold text-[#3A3A3A] bg-white flex-[2]"
+          onClick={!isUpcoming ? onClickReview : undefined}
         >
           {primaryLabel}
         </button>

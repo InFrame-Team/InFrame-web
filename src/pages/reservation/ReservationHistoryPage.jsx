@@ -12,7 +12,6 @@ const MOCK_RESERVATIONS = [
     hostName: "이서윤 호스트",
     title: "감성 도자기 원데이 클래스",
     amount: 50000,
-    avatarBg: "#FFEFEF",
   },
   {
     id: 2,
@@ -22,7 +21,6 @@ const MOCK_RESERVATIONS = [
     hostName: "최하늘 호스트",
     title: "힐링 캔들 클래스",
     amount: 40000,
-    avatarBg: "#FFF5E5",
   },
   {
     id: 3,
@@ -32,7 +30,6 @@ const MOCK_RESERVATIONS = [
     hostName: "차혜윤 호스트",
     title: "마카롱과 쿠키를 직접 구워보는 시간",
     amount: 40000,
-    avatarBg: "#E9F5FF",
   },
 ];
 
@@ -42,9 +39,8 @@ export default function ReservationHistoryPage() {
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] bg-white relative overflow-hidden flex flex-col">
-        {/* 상단 헤더 + 검색 */}
+        {/* 헤더 + 검색 */}
         <header className="sticky top-0 z-10 bg-white">
-          {/* 타이틀 */}
           <div className="h-12 flex items-center px-3 border-b border-[#F1F1F1]">
             <button
               type="button"
@@ -57,11 +53,9 @@ export default function ReservationHistoryPage() {
             <h1 className="flex-1 text-center text-[16px] font-semibold text-[#222]">
               예약내역
             </h1>
-            {/* 우측 공간 맞추기 */}
             <div className="w-9 h-9" />
           </div>
 
-          {/* 검색창 */}
           <div className="px-5 py-3">
             <div className="relative h-[40px] rounded-full bg-[#EFEFEF]">
               <input
@@ -77,11 +71,22 @@ export default function ReservationHistoryPage() {
           </div>
         </header>
 
-        {/* 하단 내역 영역 */}
+        {/* 목록 */}
         <main className="flex-1 bg-[#F5F5F5]">
           <div className="px-5 pt-3 pb-6 space-y-3">
             {MOCK_RESERVATIONS.map((item) => (
-              <ReservationCard key={item.id} reservation={item} />
+              <ReservationCard
+                key={item.id}
+                reservation={item}
+                onClickReview={() =>
+                  navigate(`/my/reservations/${item.id}/review`, {
+                    state: {
+                      title: item.title,
+                      hostName: item.hostName,
+                    },
+                  })
+                }
+              />
             ))}
           </div>
         </main>
