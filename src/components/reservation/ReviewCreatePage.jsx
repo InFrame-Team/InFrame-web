@@ -75,7 +75,7 @@ export default function ReviewCreatePage() {
 
       const reviewData = {
         rating,
-        content: trimmedContent,
+        comment: trimmedContent,
       };
 
       await createReview(
@@ -85,7 +85,10 @@ export default function ReviewCreatePage() {
       );
 
       alert("리뷰가 등록되었습니다.");
-      navigate(-1);
+      navigate("/my/reservations", {
+        replace: true,
+        state: { reviewedReservationId: Number(reservationId) },
+      });
     } catch (err) {
       console.error(err);
       alert("리뷰 등록 중 오류가 발생했습니다.");
