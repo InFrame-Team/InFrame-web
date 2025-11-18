@@ -56,6 +56,7 @@ export default function ReservationHistoryPage() {
 
             reviewWritten: item.reviewWritten,
             isUpcoming,
+            experienceThumbnailUrl: item.experienceThumbnailUrl,
           };
         });
 
@@ -163,6 +164,8 @@ export default function ReservationHistoryPage() {
                       state: {
                         title: item.title,
                         hostName: item.hostName,
+                        thumbnailUrl: item.experienceThumbnailUrl,
+                        reservation: item,
                       },
                     })
                   }

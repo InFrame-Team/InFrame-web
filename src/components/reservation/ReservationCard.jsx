@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 
 export default function ReservationCard({ reservation, onClickReview }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
 
   const {
@@ -32,13 +34,16 @@ export default function ReservationCard({ reservation, onClickReview }) {
 
   // 지난 예약 + 리뷰 작성한 경우에만 비활성
   const primaryDisabled = !isUpcoming && reviewWritten;
-
-  //  "후기 작성"일 때만 리뷰 페이지로 이동
   const handlePrimaryClick = () => {
     if (!isUpcoming && !reviewWritten && onClickReview) {
-      onClickReview();
+      onClickReview(reservation);
     }
-    // isUpcoming === true 인 경우(길찾기) / reviewWritten === true 인 경우는 아무 동작 없음(추후 추가)
+  };
+
+  const handleClickDetail = () => {
+    navigate(`/my/reservations/${id}`, {
+      state: { reservation },
+    });
   };
 
   return (
@@ -46,9 +51,13 @@ export default function ReservationCard({ reservation, onClickReview }) {
       {/* 상단 날짜 + 상태 */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-[14px] font-medium text-[#A0A0A0]">{dateLabel}</p>
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#F6F6F6] text-[12px] text-[#7E8082] font-medium">
+        <button
+          type="button"
+          onClick={handleClickDetail}
+          className="inline-flex items-center px-3 py-1 rounded-full bg-[#F6F6F6] text-[12px] text-[#7E8082] font-medium"
+        >
           예약상세
-        </span>
+        </button>
       </div>
 
       {/* 호스트 정보 + 하트 */}
