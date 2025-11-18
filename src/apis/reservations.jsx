@@ -7,3 +7,9 @@ export async function fetchMyReservations(signal) {
   });
   return res.data;
 }
+
+// 로그인한 사용자의 예약 취소
+export async function cancelReservation(reservationId) {
+  const res = await api.patch(`reservation/${reservationId}/cancel`);
+  return res.data;
+}
