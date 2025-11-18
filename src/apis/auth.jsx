@@ -81,7 +81,7 @@ export function socialLogin(provider) {
 export async function logout() {
   try {
     // api 인스턴스 사용 (위 signup / signin 과 동일한 방식)
-    const { data } = await api.post("auth/logout");
+    const { data } = await api.post("auth/sign-out");
     return {
       success: true,
       data,
@@ -99,7 +99,7 @@ export async function logout() {
 // 회원 탈퇴 API
 export async function deleteAccount() {
   try {
-    const { data } = await api.delete("user/delete"); // 필요하면 경로 수정
+    const { data } = await api.delete("user/me"); // 필요하면 경로 수정
     return {
       success: true,
       data,

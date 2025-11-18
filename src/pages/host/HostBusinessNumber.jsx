@@ -45,83 +45,89 @@ export default function HostBusinessNumber() {
     });
   };
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단 */}
-      <header className="pt-4 px-4 flex items-center gap-4">
-        <button type="button" onClick={() => navigate(-1)} className="text-xl">
-          <MdArrowBackIosNew />
-        </button>
-
-        <div className="flex justify-center flex-1">
-          <div className="relative w-32 h-2 bg-neutral-200 rounded-full overflow-hidden">
-            <div className="absolute left-0 top-0 w-1/3 h-full bg-[#e64a45] rounded-full" />
-          </div>
-        </div>
-      </header>
-
-      {/* 메인 */}
-      <main className="px-6 flex-1">
-        <h1 className="text-[22px] font-bold mb-8 mt-20 leading-snug">
-          사업자 번호를 입력하세요
-        </h1>
-
-        <div className="mb-2">
-          <span className="text-[14px] text-neutral-800">
-            사업자 번호 <span className="text-[#e64a45]">*</span>
-          </span>
-        </div>
-
-        <div className="relative mb-6">
-          <input
-            type="tel"
-            inputMode="numeric"
-            value={bizNo}
-            onChange={handleChange}
-            placeholder="숫자만 입력"
-            className="w-full outline-none text-[16px] pb-2 pr-[80px]"
-          />
-
+    <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
+      <div className="w-full max-w-[480px] relative pb-24">
+        {/* 상단 */}
+        <header className="pt-4 px-4 flex items-center gap-4">
           <button
             type="button"
-            onClick={handleCheck}
-            disabled={checking}
-            className={`absolute right-0 top-0 px-4 py-1.5 rounded-full text-[13px] border transition-all ${
-              checking
-                ? "bg-neutral-100 text-neutral-400 cursor-wait"
-                : "bg-[#f3f3f3] text-[#9a9a9a] border-transparent hover:bg-white hover:text-[#e64a45] hover:border-[#e64a45]"
-            }`}
+            onClick={() => navigate(-1)}
+            className="text-xl"
           >
-            {checking ? "조회 중..." : "조회"}
+            <MdArrowBackIosNew />
           </button>
 
-          <div className="h-[1px] w-full bg-neutral-200 mt-1" />
-        </div>
+          <div className="flex justify-center flex-1">
+            <div className="relative w-32 h-2 bg-neutral-200 rounded-full overflow-hidden">
+              <div className="absolute left-0 top-0 w-1/3 h-full bg-[#e64a45] rounded-full" />
+            </div>
+          </div>
+        </header>
 
-        {message && (
-          <p
-            className={`mt-2 text-[13px] ${
-              isValid ? "text-[#1a7f37]" : "text-[#e64a45]"
+        {/* 메인 */}
+        <main className="px-6 flex-1">
+          <h1 className="text-[22px] font-bold mb-8 mt-20 leading-snug">
+            사업자 번호를 입력하세요
+          </h1>
+
+          <div className="mb-2">
+            <span className="text-[14px] text-neutral-800">
+              사업자 번호 <span className="text-[#e64a45]">*</span>
+            </span>
+          </div>
+
+          <div className="relative mb-6">
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={bizNo}
+              onChange={handleChange}
+              placeholder="숫자만 입력"
+              className="w-full outline-none text-[16px] pb-2 pr-[80px]"
+            />
+
+            <button
+              type="button"
+              onClick={handleCheck}
+              disabled={checking}
+              className={`absolute right-0 top-0 px-4 py-1.5 rounded-full text-[13px] border transition-all ${
+                checking
+                  ? "bg-neutral-100 text-neutral-400 cursor-wait"
+                  : "bg-[#f3f3f3] text-[#9a9a9a] border-transparent hover:bg-white hover:text-[#e64a45] hover:border-[#e64a45]"
+              }`}
+            >
+              {checking ? "조회 중..." : "조회"}
+            </button>
+
+            <div className="h-[1px] w-full bg-neutral-200 mt-1" />
+
+            {message && (
+              <p
+                className={`text-[13px] ${
+                  isValid ? "text-[#1a7f37]" : "text-[#e64a45]"
+                }`}
+              >
+                {message}
+              </p>
+            )}
+          </div>
+        </main>
+
+        {/* 하단 버튼 */}
+        <div className="px-4 pb-8">
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={!isNextEnabled}
+            className={`w-full h-12 rounded-xl text-[15px] font-semibold ${
+              isNextEnabled
+                ? "bg-[#3A3A3A] text-white"
+                : "bg-neutral-300 text-white"
             }`}
           >
-            {message}
-          </p>
-        )}
-      </main>
-
-      {/* 하단 버튼 */}
-      <div className="px-4 pb-8">
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!isNextEnabled}
-          className={`w-full h-12 rounded-xl text-[15px] font-semibold ${
-            isNextEnabled
-              ? "bg-[#e64a45] text-white"
-              : "bg-neutral-300 text-white"
-          }`}
-        >
-          다음
-        </button>
+            다음
+          </button>
+        </div>
       </div>
     </div>
   );

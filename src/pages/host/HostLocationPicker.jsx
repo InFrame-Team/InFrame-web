@@ -135,157 +135,166 @@ export default function HostLocationPicker() {
     });
   };
 
+  // =========================
+  // 1. 주소 검색 화면
+  // =========================
   if (step === "search") {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        {/* 상단 헤더 */}
-        <header className="px-4 pt-4 pb-3 flex items-center justify-between border-b border-neutral-100">
-          <div className="flex items-center gap-2">
-            <img
-              src="/inframe-logo.png"
-              alt="in경산 로고"
-              className="h-8 object-contain"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="text-[18px] text-[#3A3A3A]"
-          >
-            ✕
-          </button>
-        </header>
-
-        {/* 본문 */}
-        <main className="px-5 pt-6 pb-4 flex-1 overflow-y-auto">
-          {/* 타이틀 */}
-          <h1 className="text-[26px] font-bold leading-snug mt-5">
-            호스트님의 위치를
-            <br />
-            설정해주세요
-          </h1>
-
-          {/* 검색 바 */}
-          <div className="mt-8">
-            <div className="flex items-center bg-white border-2 border-[#D4D4D4] rounded-lg px-4 py-3">
-              <input
-                type="text"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && runSearch()}
-                placeholder="지번, 도로명, 건물명으로 검색"
-                className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#D4D4D4]"
+      <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
+        <div className="w-full max-w-[480px] bg-white flex flex-col">
+          {/* 상단 헤더 */}
+          <header className="px-4 pt-4 pb-3 flex items-center justify-between border-b border-neutral-100">
+            <div className="flex items-center gap-2">
+              <img
+                src="/inframe-logo.png"
+                alt="in경산 로고"
+                className="h-8 object-contain"
               />
-              <button
-                type="button"
-                onClick={runSearch}
-                className="ml-2 text-[18px] text-[#D4D4D4] hover:text-[#b4b4b4]"
-              >
-                <MdArrowForwardIos />
-              </button>
             </div>
-          </div>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-[18px] text-[#3A3A3A]"
+            >
+              ✕
+            </button>
+          </header>
 
-          {/* 현재 위치로 설정 */}
-          <button
-            type="button"
-            onClick={handleUseCurrentLocation}
-            className="w-full flex items-center justify-center gap-2 py-3 mt-2 text-[14px] text-[#3A3A3A] hover:text-[#1f1f1f] transition-colors duration-200"
-          >
-            <span className="w-4 h-4 rounded-full flex items-center justify-center">
-              <LuCrosshair />
-            </span>
-            <span>현재 위치로 설정</span>
-          </button>
+          {/* 본문 */}
+          <main className="px-5 pt-6 pb-4 flex-1 overflow-y-auto">
+            {/* 타이틀 */}
+            <h1 className="text-[26px] font-bold leading-snug mt-5">
+              호스트님의 위치를
+              <br />
+              설정해주세요
+            </h1>
 
-          <div className="h-[9px] w-full bg-[#EFEFEF] my-2" />
-
-          {/* 검색 결과 리스트 */}
-          <div className="mt-1">
-            {searching && (
-              <p className="text-[13px] text-neutral-400">검색 중...</p>
-            )}
-
-            <div className="divide-y divide-neutral-100">
-              {results.map((item) => (
+            {/* 검색 바 */}
+            <div className="mt-8">
+              <div className="flex items-center bg-white border-2 border-[#D4D4D4] rounded-lg px-4 py-3">
+                <input
+                  type="text"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && runSearch()}
+                  placeholder="지번, 도로명, 건물명으로 검색"
+                  className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#D4D4D4]"
+                />
                 <button
-                  key={item.id}
                   type="button"
-                  onClick={() => handleSelectResult(item)}
-                  className="w-full text-left py-4"
+                  onClick={runSearch}
+                  className="ml-2 text-[18px] text-[#D4D4D4] hover:text-[#b4b4b4]"
                 >
-                  <div className="flex gap-3">
-                    <span className="mt-0.5 text-[20px] text-[#3A3A3A]">
-                      <IoLocationOutline />
-                    </span>
-                    <div>
-                      <p className="text-[16px] font-bold text-neutral-900">
-                        {item.roadAddress || item.jibunAddress || item.name}
-                      </p>
-                      <p className="text-[14px] text-[#3A3A3A] mt-0.5">
-                        {item.jibunAddress}
-                      </p>
-                    </div>
-                  </div>
+                  <MdArrowForwardIos />
                 </button>
-              ))}
-
-              {!searching && results.length === 0 && (
-                <p className="text-[12px] text-neutral-400 mt-3">
-                  주소를 검색하거나 현재 위치를 설정해 주세요.
-                </p>
-              )}
+              </div>
             </div>
-          </div>
-        </main>
+
+            {/* 현재 위치로 설정 */}
+            <button
+              type="button"
+              onClick={handleUseCurrentLocation}
+              className="w-full flex items-center justify-center gap-2 py-3 mt-2 text-[14px] text-[#3A3A3A] hover:text-[#1f1f1f] transition-colors duration-200"
+            >
+              <span className="w-4 h-4 rounded-full flex items-center justify-center">
+                <LuCrosshair />
+              </span>
+              <span>현재 위치로 설정</span>
+            </button>
+
+            <div className="h-[9px] w-full bg-[#EFEFEF] my-2" />
+
+            {/* 검색 결과 리스트 */}
+            <div className="mt-1">
+              {searching && (
+                <p className="text-[13px] text-neutral-400">검색 중...</p>
+              )}
+
+              <div className="divide-y divide-neutral-100">
+                {results.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSelectResult(item)}
+                    className="w-full text-left py-4"
+                  >
+                    <div className="flex gap-3">
+                      <span className="mt-0.5 text-[20px] text-[#3A3A3A]">
+                        <IoLocationOutline />
+                      </span>
+                      <div>
+                        <p className="text-[16px] font-bold text-neutral-900">
+                          {item.roadAddress || item.jibunAddress || item.name}
+                        </p>
+                        <p className="text-[14px] text-[#3A3A3A] mt-0.5">
+                          {item.jibunAddress}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {!searching && results.length === 0 && (
+                  <p className="text-[12px] text-neutral-400 mt-3">
+                    주소를 검색하거나 현재 위치를 설정해 주세요.
+                  </p>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
-  // ===================================================================
+  // =========================
   // 2. 지도 + 이 위치로 등록 화면
-  // ===================================================================
+  // =========================
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단 바 */}
-      <header className="relative px-4 pt-6 pb-3 flex items-center justify-center border-b border-neutral-100">
-        {/* 왼쪽 뒤로가기 버튼 */}
-        <button
-          type="button"
-          onClick={() => setStep("search")}
-          className="absolute left-4 text-xl text-neutral-700"
-        >
-          <MdArrowBackIos />
-        </button>
+    <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
+      <div className="w-full max-w-[480px] bg-white flex flex-col">
+        {/* 상단 바 */}
+        <header className="relative px-4 pt-6 pb-3 flex items-center justify-center border-b border-neutral-100">
+          {/* 왼쪽 뒤로가기 버튼 */}
+          <button
+            type="button"
+            onClick={() => setStep("search")}
+            className="absolute left-4 text-xl text-neutral-700"
+          >
+            <MdArrowBackIos />
+          </button>
 
-        {/* 중앙 타이틀 */}
-        <span className="text-[15px] font-semibold">위치 설정</span>
-      </header>
+          {/* 중앙 타이틀 */}
+          <span className="text-[15px] font-semibold">위치 설정</span>
+        </header>
 
-      <main className="flex-1 flex flex-col bg-neutral-100">
-        <div id="host-location-map" className="w-full flex-1" />
+        {/* 지도 + 하단 시트 */}
+        <main className="flex-1 flex flex-col bg-neutral-100">
+          {/* ✅ 헤더 아래 영역을 꽉 채우는 지도 컨테이너 */}
+          <div id="host-location-map" className="w-full flex-1" />
 
-        {selected && (
-          <div className="bg-white pt-8 pb-10 px-4 border-t border-neutral-200">
-            <p className="text-[18px] font-bold text-[#3A3A3A] mb-1">
-              {selected.address}
-            </p>
-            {selected.detail && (
-              <p className="text-[16px] text-[#3A3A3A] mb-4">
-                {selected.detail}
+          {selected && (
+            <div className="bg-white pt-8 pb-10 px-4 border-t border-neutral-200">
+              <p className="text-[18px] font-bold text-[#3A3A3A] mb-1">
+                {selected.address}
               </p>
-            )}
+              {selected.detail && (
+                <p className="text-[16px] text-[#3A3A3A] mb-4">
+                  {selected.detail}
+                </p>
+              )}
 
-            <button
-              type="button"
-              onClick={handleConfirm}
-              className="w-full h-11 rounded-lg bg-[#e64a45] text-white text-[14px] font-semibold"
-            >
-              이 위치로 등록
-            </button>
-          </div>
-        )}
-      </main>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className="w-full h-11 rounded-lg bg-[#e64a45] text-white text-[14px] font-semibold"
+              >
+                이 위치로 등록
+              </button>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

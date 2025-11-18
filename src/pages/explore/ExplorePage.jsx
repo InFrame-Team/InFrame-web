@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import BottomTab from "../../components/BottomTab";
-import { IoSearch, IoLocationSharp } from "react-icons/io5";
-import { BiSolidMessageDetail } from "react-icons/bi";
-import { AiOutlineHeart } from "react-icons/ai";
+import { IoSearch } from "react-icons/io5";
+import { AiFillStar } from "react-icons/ai";
 
 export default function ExplorePage() {
   const navigate = useNavigate();
@@ -30,15 +29,6 @@ export default function ExplorePage() {
     navigate(`/explore/result?query=${encodeURIComponent(text)}`);
   };
 
-  const recommendedHost = {
-    name: "이지섭 호스트",
-    subtitle: "흙을 담아 삶의 이야기를 빚어냅니다.",
-    avatar: "/host-pottery.png",
-    reviews: 129,
-    distance: "210m",
-    images: ["/potter-1.jpg", "/potter-2.jpg", "/potter-3.jpg"],
-  };
-
   const hotList = [
     {
       id: 1,
@@ -46,7 +36,7 @@ export default function ExplorePage() {
       rating: "4.50",
       reviews: 210,
       avatar: "/host-choco.png",
-      cover: "/choco-main.jpg",
+      background: "/chocolate-texture.jpg",
       classes: [
         {
           title: "나만의 초콜릿 만들기",
@@ -55,7 +45,7 @@ export default function ExplorePage() {
         },
         {
           title: "디핑 데코 체험",
-          desc: "녹인 초콜릿에 과일이나…",
+          desc: "녹인 초콜릿에 과일이나 …",
           img: "/choco2.jpg",
         },
         {
@@ -117,215 +107,278 @@ export default function ExplorePage() {
     },
   ];
 
-  return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단 헤더 */}
-      <header className="px-3 pt-2 pb-3 border-b border-neutral-100">
-        <div className="px-2 py-1 flex items-center justify-start">
-          <img
-            src="/inframe-logo.png"
-            alt=""
-            className="w-30 h-9 object-contain"
-            aria-hidden
-          />
-        </div>
+  const storyList = [
+    {
+      title: "데이터로 경산을 읽는 청년",
+      host: "한서윤 호스트",
+      img: "/story1.jpg",
+    },
+    {
+      title: "노포 주인의 단골 비법 이야기",
+      host: "최광호 호스트",
+      img: "/story2.jpg",
+    },
+    {
+      title: "세 번째 이야기",
+      host: "김민준 호스트",
+      img: "/story3.jpg",
+    },
+  ];
 
-        <h1 className="text-[18px] font-bold text-[#1D1D1D] mt-8 mb-3 leading-snug">
-          상황에 딱 맞는 로컬 체험을 찾아드립니다.
-        </h1>
+  const handleBooking = () => {
+    alert("예약 페이지로 이동합니다.");
+  };
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex items-center bg-[#f4f4f4] rounded-xl px-4 py-2.5 mb-2"
-        >
-          <input
-            type="text"
-            placeholder="오늘 하고 싶은 체험이나 기분을 적어주세요"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent text-[14px] focus:outline-none placeholder:text-neutral-400"
-          />
-          <button type="submit">
-            <IoSearch className="text-[20px]" />
-          </button>
-        </form>
+  /* ================== HOT 첫 카드(박서현님) ================== */
+  const FeaturedHostCard = ({ hostData }) => {
+    const backgroundStyle = {
+      backgroundImage: `url(${hostData.background || "/default-texture.jpg"})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          {scenarioButtons.map((text) => (
-            <button
-              key={text}
-              onClick={() => handleScenarioClick(text)}
-              className="shrink-0 px-3 py-1.5 border border-[#F1F1F1] rounded-full bg-[#FFFFFF] text-[11px] text-[#9D9D9D] text-left"
-            >
-              {text}
-            </button>
-          ))}
-        </div>
+    return (
+      <div className="w-[280px] shrink-0">
+        <div className="rounded-[26px] overflow-hidden bg-white shadow-[0_10px_26px_rgba(0,0,0,0.22)] border border-[#DADADA]">
+          {/* 배경 + 프로필 / 이름 */}
+          <div className="relative">
+            <div className="w-full h-[152px]" style={backgroundStyle} />
 
-        <div className="px-4 pt-4">
-          <div className="rounded-xl bg-[#F8F8F8] border border-[#F0F0F0] px-4 py-3 flex items-start justify-between">
-            <p className="text-[13px] font-bold text-[#F13030] mr-3 whitespace-nowrap">
-              TIP
-            </p>
-            <p className="flex-1 text-[13px] text-[#3A3A3A] leading-relaxed">
-              &quot;누구랑&quot; &quot;무엇을&quot; &quot;어떻게&quot; 등의
-              키워드를 정확하게 <br />
-              입력하면 원하는 체험을 쉽게 만나볼 수 있어요!
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* ===== 메인 컨텐츠 ===== */}
-      <main className="flex-1 overflow-y-auto pb-32 px-4 pt-5">
-        <section className="mb-6">
-          <h2 className="text-[20px] font-bold text-[#3A3A3A]">
-            이지혜님이 관심있어할 호스트
-          </h2>
-          <p className="mt-1 text-[15px] text-[#919191]">
-            이전에 전통 공예 장인을 만나셨군요!
-          </p>
-
-          <div className="mt-4 px-1">
-            <div className="rounded-[22px] bg-white px-3 pt-4 pb-5">
-              {/* 프로필 + 텍스트 그룹 */}
-              <div className="flex justify-between items-start">
-                {/* 왼쪽: 프로필 + 텍스트 */}
-                <div className="flex">
-                  {/* 프로필 이미지 (완전한 원형) */}
-                  <img
-                    src="/host-pottery.png"
-                    alt="이지섭 호스트"
-                    className="w-[72px] h-[72px] rounded-full object-cover mr-4 shrink-0"
-                  />
-
-                  {/* 오른쪽 텍스트 — 프로필의 높이를 기준으로 세로 배치 */}
-                  <div className="flex flex-col justify-between py-1">
-                    <div>
-                      <p className="text-[18px] font-bold text-[#3A3A3A] leading-tight">
-                        이지섭 호스트
-                      </p>
-                      <p className="mt-0.5 text-[13px] text-[#A0A0A0] leading-snug">
-                        흙을 담아 삶의 이야기를 빚어냅니다.
-                      </p>
-                    </div>
-
-                    {/* 후기 & 거리 — 프로필 하단 정렬 */}
-                    <div className="mt-2 flex items-center text-[13px] text-[#919191]">
-                      <div className="flex items-center mr-4">
-                        <BiSolidMessageDetail className="text-[13px] mr-1" />
-                        후기 129
-                      </div>
-
-                      <div className="flex items-center">
-                        <IoLocationSharp className="text-[13px] mr-1" />
-                        <span className="mr-1">내 위치에서</span>
-                        <span className="text-[#F13030] font-medium">210m</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 좋아요 버튼 */}
-                <button className="text-[#D3D3D3] mt-1">
-                  <AiOutlineHeart className="text-[24px]" />
-                </button>
-              </div>
-
-              {/* 아래 이미지 3장 */}
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <img
-                  src="/potter-1.jpg"
-                  className="w-full h-[95px] rounded-xl object-cover"
-                />
-                <img
-                  src="/potter-2.jpg"
-                  className="w-full h-[95px] rounded-xl object-cover"
-                />
-                <img
-                  src="/potter-3.jpg"
-                  className="w-full h-[95px] rounded-xl object-cover"
-                />
-              </div>
+            {/* 아바타 + 이름 (배경과 겹쳐서) */}
+            <div className="absolute left-6 bottom-[-44px] flex items-center gap-4">
+              <img
+                src={hostData.avatar}
+                alt={hostData.host}
+                className="w-[78px] h-[78px] rounded-full border-[3px] border-white bg-white object-cover shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
+              />
+              <span className="text-[23px] font-extrabold text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+                {hostData.host}
+              </span>
             </div>
           </div>
-        </section>
 
-        {/* ── HOT 지금 주목할만한 ─────────────────────────── */}
-        <section className="mt-1 mb-6 px-0">
-          <h2 className="text-[18px] font-bold text-[#3A3A3A] px-1">
-            <span className="text-[#F13030]">HOT</span> 지금 주목할만한
-          </h2>
-
-          <div className="mt-3 flex gap-4 overflow-x-auto no-scrollbar px-1 pb-2">
-            {hotList.map((item) => (
-              <div
-                key={item.id}
-                className="shrink-0 w-[280px] rounded-2xl bg-white border border-[#EDEDED] shadow-[0_4px_10px_rgba(0,0,0,0.06)] overflow-hidden"
+          {/* 아래 내용 */}
+          <div className="pt-14 px-6 pb-6">
+            {/* 평점 / 후기 줄 */}
+            <div className="flex items-center justify-center text-[14px] mb-5">
+              <AiFillStar className="text-[#F13030] mr-1 text-[18px]" />
+              <span className="font-semibold text-[#1D1D1D]">
+                {hostData.rating}
+              </span>
+              <span className="mx-1 text-[#C4C4C4]">·</span>
+              <button
+                type="button"
+                className="text-[#1D1D1D] underline underline-offset-[3px] decoration-[0.5px]"
               >
-                <div className="w-full h-[110px]">
-                  <img
-                    src={item.cover}
-                    alt={`${item.host} 배경`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                후기 {hostData.reviews}개
+              </button>
+            </div>
 
-                <div className="relative px-4">
-                  <div className="flex items-center -mt-7">
+            {/* 예약 버튼 */}
+            <button
+              onClick={handleBooking}
+              className="w-full bg-[#3A3A3A] text-white text-[17px] font-semibold py-3 rounded-[16px] mb-8 shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
+            >
+              예약 바로가기
+            </button>
+
+            {/* 클래스 리스트 */}
+            <div className="space-y-6">
+              {hostData.classes.map((item, idx) => (
+                <div key={idx} className="flex items-center">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="w-[78px] h-[78px] rounded-[22px] object-cover mr-4 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[17px] font-bold text-[#1D1D1D] mb-1 truncate">
+                      {item.title}
+                    </p>
+                    <p className="text-[13px] text-[#B1B1B1] leading-snug line-clamp-1">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ======================= 렌더 ======================= */
+
+  return (
+    <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
+      <div className="w-full max-w-[480px] bg-white relative">
+        {/* 상단 헤더 영역 */}
+        <header className="px-4 pt-4 pb-4 border-b border-neutral-100">
+          {/* 로고 */}
+          <div className="flex items-center justify-start">
+            <img
+              src="/inframe-logo.png"
+              alt="in경산 로고"
+              className="h-8 object-contain"
+            />
+          </div>
+
+          {/* 타이틀 문구 */}
+          <h1 className="text-[18px] font-bold text-[#1D1D1D] mt-7 mb-3 leading-snug">
+            상황에 딱 맞는 로컬 체험을 찾아드립니다.
+          </h1>
+
+          {/* 검색 바 */}
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-center bg-[#F4F4F4] rounded-[14px] px-4 py-2.5 mb-3 shadow-inner"
+          >
+            <input
+              type="text"
+              placeholder="오늘 하고 싶은 체험이나 기분을 적어주세요"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 bg-transparent text-[14px] focus:outline-none placeholder:text-[#B3B3B3]"
+            />
+            <button type="submit" className="pl-2">
+              <IoSearch className="text-[20px] text-[#7C7C7C]" />
+            </button>
+          </form>
+
+          {/* 시나리오 버튼들 */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {scenarioButtons.map((text) => (
+              <button
+                key={text}
+                onClick={() => handleScenarioClick(text)}
+                className="shrink-0 px-3 py-1.5 border border-[#F1F1F1] rounded-full bg-white text-[11px] text-[#9D9D9D] text-left"
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+
+          {/* TIP 박스 */}
+          <div className="mt-4 px-1">
+            <div className="rounded-[14px] bg-[#F8F8F8] border border-[#EFEFEF] px-4 py-3 flex items-start">
+              <p className="text-[13px] font-bold text-[#F13030] mr-3 pt-[2px] whitespace-nowrap">
+                TIP
+              </p>
+              <p className="flex-1 text-[13px] text-[#3A3A3A] leading-relaxed">
+                &quot;누구랑&quot; &quot;무엇을&quot; &quot;어떻게&quot; 등의
+                키워드를 정확하게 입력하면
+                <br />
+                원하는 체험을 쉽게 만나볼 수 있어요!
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* 메인 콘텐츠 */}
+        <main className="pb-[72px] pt-4">
+          {/* HOT 섹션 */}
+          <section className="mt-4">
+            <h2 className="text-[18px] font-bold text-[#1D1D1D] px-4 mb-4">
+              <span className="text-[#F13030]">HOT</span> 지금 주목할만한
+            </h2>
+
+            <div className="flex overflow-x-auto no-scrollbar gap-4 px-4 pb-2">
+              {/* 상세 카드 (박서현님) */}
+              {hotList[0] && <FeaturedHostCard hostData={hotList[0]} />}
+
+              {/* 나머지 카드들 */}
+              {hotList.slice(1).map((item) => (
+                <div key={item.id} className="w-[250px] shrink-0">
+                  <div className="rounded-[22px] overflow-hidden bg-white shadow-[0_8px_20px_rgba(0,0,0,0.18)] border border-[#E3E3E3]">
+                    {/* 상단 이미지 + 오버레이 */}
+                    <div
+                      className="relative h-[130px] bg-neutral-200"
+                      style={{
+                        backgroundImage: `url(${item.cover})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
+                      <div className="absolute bottom-3 left-4 right-4">
+                        <p className="text-[15px] font-bold text-white mb-1">
+                          {item.host}
+                        </p>
+                        <div className="flex items-center text-[12px] text-white/90">
+                          <AiFillStar className="text-[#FFD85A] mr-1 text-[14px]" />
+                          <span>{item.rating}</span>
+                          <span className="ml-2">후기 {item.reviews}개</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 클래스 2개 + 더보기 */}
+                    <div className="p-4 space-y-3 bg-white">
+                      {item.classes.slice(0, 2).map((cls, idx) => (
+                        <div key={idx} className="flex items-start">
+                          <img
+                            src={cls.img}
+                            alt={cls.title}
+                            className="w-11 h-11 rounded-[10px] object-cover mr-3 shrink-0"
+                          />
+                          <p className="text-[13px] font-semibold text-[#1D1D1D] truncate">
+                            {cls.title}
+                          </p>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="w-full text-center text-[12px] text-[#8D8D8D] mt-1"
+                      >
+                        더보기 &gt;
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 경산의 온기를 담은 이야기 섹션 */}
+          <section className="mt-10 mb-4">
+            <h2 className="text-[18px] font-bold text-[#1D1D1D] px-4 mb-4">
+              경산의 온기를 담은 이야기
+            </h2>
+
+            <div className="flex overflow-x-auto no-scrollbar gap-4 px-4 pb-2">
+              {storyList.map((story, index) => (
+                <div key={index} className="w-[200px] shrink-0">
+                  <div className="rounded-[20px] overflow-hidden h-[240px] shadow-[0_6px_18px_rgba(0,0,0,0.22)]">
                     <img
-                      src={item.avatar}
-                      alt={item.host}
-                      className="w-14 h-14 rounded-full border-4 border-white"
+                      src={story.img}
+                      alt={story.title}
+                      className="w-full h-full object-cover"
                     />
-                    <div className="ml-2 flex-1">
-                      <p className="text-[15px] text-[#FFFFFF] font-extrabold">
-                        {item.host}
-                      </p>
-                      <div className="flex items-center text-[12px] text-[#3A3A3A] gap-1">
-                        <span className="text-[#F13030]">★ </span> {item.rating}
-                        <span>·</span>
-                        <span>후기 {item.reviews}개</span>
+                    <div className="absolute" />
+                    <div className="absolute" />
+                    <div className="relative -mt-[240px] h-full">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-[16px] font-bold text-white leading-snug">
+                          {story.title}
+                        </p>
+                        <p className="text-[13px] text-white/90 mt-1">
+                          {story.host}
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  <button className="mt-3 w-full bg-[#3A3A3A] text-white rounded-lg py-2 text-[13px] font-medium">
-                    예약 바로가기
-                  </button>
                 </div>
+              ))}
+            </div>
+          </section>
+        </main>
 
-                <div className="mt-3 px-4 pb-4">
-                  {item.classes.map((cls, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex gap-3 ${
-                        idx !== item.classes.length - 1 ? "mb-3" : ""
-                      }`}
-                    >
-                      <img
-                        src={cls.img}
-                        alt={cls.title}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                      <div>
-                        <p className="text-[16px] text-[#1D1D1D] font-semibold">
-                          {cls.title}
-                        </p>
-                        <p className="text-[15px] text-[#6D6D6D]">{cls.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      {/* 하단 탭바 */}
-      <div className="fixed bottom-0 left-0 right-0">
-        <BottomTab active="explore" />
+        {/* 하단 탭바 */}
+        <div className="fixed bottom-0 left-0 right-0 z-10">
+          <BottomTab active="explore" />
+        </div>
       </div>
     </div>
   );

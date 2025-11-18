@@ -8,11 +8,13 @@ import { FaUser } from "react-icons/fa6";
 import { IoMdCamera } from "react-icons/io";
 import { MdArrowForwardIos } from "react-icons/md";
 
+// 24시간 시간 목록
 const TIMES = Array.from(
   { length: 24 },
   (_, i) => `${String(i).padStart(2, "0")}:00`
 );
 
+// 시간 선택 컴포넌트
 function TimeSelect({ value, onChange }) {
   const [open, setOpen] = useState(false);
 
@@ -52,22 +54,58 @@ function TimeSelect({ value, onChange }) {
   );
 }
 
+// 초기 상태를 설정하는 유틸리티 함수
+function getInitialState(baseInfo) {
+  let draft = {};
+  try {
+    const saved = sessionStorage.getItem("hostProfileDraft");
+    if (saved) {
+      draft = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.warn("[HostProfileSettings] draft 복원 실패:", e);
+  }
+
+  // baseInfo (useLocation().state에서 온 데이터, 주소 검색 후 복귀 시 최신)가
+  // sessionStorage보다 우선합니다.
+  return {
+    // 텍스트 입력 필드: draft 우선, 없으면 baseInfo, 없으면 ""
+    intro: draft.intro ?? baseInfo.intro ?? "",
+    description: draft.description ?? baseInfo.description ?? "",
+    cancelPolicy: draft.cancelPolicy ?? baseInfo.cancelPolicy ?? "",
+    startTime: draft.startTime ?? baseInfo.startTime ?? "09:00",
+    endTime: draft.endTime ?? baseInfo.endTime ?? "18:00",
+
+    // 주소: 주소 검색 후 돌아왔을 때는 baseInfo (location.state)의 최신 주소를 무조건 사용
+    address: baseInfo.addressBase ?? draft.address ?? "",
+    detail: baseInfo.addressDetail ?? draft.detail ?? "",
+
+    // 위치 정보: baseInfo에서만 가져옴
+    latitude: baseInfo.latitude ?? null,
+    longitude: baseInfo.longitude ?? null,
+  };
+}
+
 export default function HostProfileSettings() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const baseInfo = state || {};
+  const baseInfo = state || {}; // HostBasicInfo 또는 LocationPicker에서 온 데이터
 
-  const [address, setAddress] = useState(baseInfo.addressBase || "");
-  const [detail, setDetail] = useState(baseInfo.addressDetail || "");
-  const [intro, setIntro] = useState("");
-  const [description, setDescription] = useState("");
-  const [cancelPolicy, setCancelPolicy] = useState("");
+  const initialState = getInitialState(baseInfo);
 
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("18:00");
+  // --- 상태 초기화 ---
+  const [address, setAddress] = useState(initialState.address);
+  const [detail, setDetail] = useState(initialState.detail);
+  const [intro, setIntro] = useState(initialState.intro);
+  const [description, setDescription] = useState(initialState.description);
+  const [cancelPolicy, setCancelPolicy] = useState(initialState.cancelPolicy);
 
-  const [latitude] = useState(baseInfo.latitude ?? null);
-  const [longitude] = useState(baseInfo.longitude ?? null);
+  const [startTime, setStartTime] = useState(initialState.startTime);
+  const [endTime, setEndTime] = useState(initialState.endTime);
+
+  const [latitude] = useState(initialState.latitude);
+  const [longitude] = useState(initialState.longitude);
+  // --------------------
 
   const [userName, setUserName] = useState("");
 
@@ -88,10 +126,31 @@ export default function HostProfileSettings() {
     cancelPolicy: false,
     description: false,
   });
+
   const isFormValid = [intro, address, detail, cancelPolicy, description].every(
     (v) => v.trim() !== ""
   );
 
+  // ✅ [수정/확인] sessionStorage에 드래프트 저장 (모든 텍스트 상태 변경 시 실행)
+  useEffect(() => {
+    const draft = {
+      intro,
+      description,
+      cancelPolicy,
+      address,
+      detail,
+      startTime,
+      endTime,
+      // 이미지 URL은 드래프트에 저장하지 않고, DB에서 가져오거나 업로드 결과로만 관리
+    };
+    try {
+      sessionStorage.setItem("hostProfileDraft", JSON.stringify(draft));
+    } catch (e) {
+      console.warn("[HostProfileSettings] draft 저장 실패:", e);
+    }
+  }, [intro, description, cancelPolicy, address, detail, startTime, endTime]);
+
+  // 사용자 정보 (프로필 이미지, 이름) 불러오기
   useEffect(() => {
     (async () => {
       const { success, data, message } = await getMyInfo();
@@ -103,20 +162,41 @@ export default function HostProfileSettings() {
 
       setUserName(data.name || data.nickname || "");
 
+      // 기존 프로필 이미지 URL이 있다면 로드
       if (data.profileImageUrl) {
         setProfileImageUrl(data.profileImageUrl);
+      }
+      // 기존 회사 로고 URL이 있다면 로드
+      if (data.companyLogoUrl) {
+        setCompanyLogoUrl(data.companyLogoUrl);
       }
     })();
   }, []);
 
+  // 주소 검색 페이지로 이동
   const goLocationPicker = () => {
+    // 현재 입력된 모든 데이터를 state에 담아 다음 페이지로 넘깁니다.
+    // 다음 페이지에서 주소 정보를 선택하고 돌아오면 이 데이터가 location.state로 돌아옵니다.
     navigate("/host/location-picker", {
       state: {
-        ...baseInfo,
+        // 사업자 기본 정보 (변하지 않는 정보)
+        businessNumber: baseInfo.businessNumber,
+        category: baseInfo.category,
+        businessName: baseInfo.businessName,
+        businessPhoneNumber: baseInfo.businessPhoneNumber,
+        businessEmail: baseInfo.businessEmail,
+        kakaoAddress: baseInfo.kakaoAddress,
+
+        // 현재 화면에서 입력된 모든 데이터
         addressBase: address,
         addressDetail: detail,
         latitude,
         longitude,
+        intro,
+        description,
+        cancelPolicy,
+        startTime,
+        endTime,
       },
     });
   };
@@ -130,6 +210,7 @@ export default function HostProfileSettings() {
     const localUrl = URL.createObjectURL(file);
     setProfileImageUrl(localUrl);
 
+    // ✅ 이미지 업로드 API 호출
     const { success, url, message } = await uploadProfileImage(file);
     setUploadingProfile(false);
 
@@ -149,6 +230,7 @@ export default function HostProfileSettings() {
     const localUrl = URL.createObjectURL(file);
     setCompanyLogoUrl(localUrl);
 
+    // ✅ 이미지 업로드 API 호출
     const { success, url, message } = await uploadCompanyLogo(file);
     setUploadingLogo(false);
 
@@ -162,6 +244,7 @@ export default function HostProfileSettings() {
   const handleComplete = async () => {
     if (submitting) return;
 
+    // 유효성 검사
     const newErrors = {
       intro: intro.trim() === "",
       address: address.trim() === "",
@@ -176,23 +259,41 @@ export default function HostProfileSettings() {
       return;
     }
 
+    // 초기 사업자 정보 확인
     if (!baseInfo.businessNumber) {
       alert("사업자 기본 정보가 없습니다. 처음부터 다시 진행해주세요.");
       navigate("/host/business-number");
       return;
     }
 
+    // /api/v1/host/update 에 맞춘 payload 구성
     const payload = {
+      // 기본 정보 (HostBasicInfo에서 옴)
       businessNumber: baseInfo.businessNumber,
+      category: baseInfo.category,
       businessName: baseInfo.businessName,
       businessPhoneNumber: baseInfo.businessPhoneNumber,
       businessEmail: baseInfo.businessEmail,
       kakaoAddress: baseInfo.kakaoAddress,
-      description,
+
+      // 소개 (현재 화면 입력)
+      description: intro, // 짧은 한 줄 소개
+      detailedDescription: description, // 긴 상세 소개
+
+      // 위치 (현재 화면 입력 또는 LocationPicker에서 옴)
       addressBase: address,
       addressDetail: detail,
       latitude,
       longitude,
+
+      // 연락 가능 시간 & 취소 정책 (현재 화면 입력)
+      contactStartTime: startTime,
+      contactEndTime: endTime,
+      cancellationPolicy: cancelPolicy,
+
+      // 이미지 URL (업로드 후 결과)
+      profileImageUrl: profileImageUrl,
+      companyLogoUrl: companyLogoUrl,
     };
 
     console.log("▶︎ /host/update payload:", payload);
@@ -206,264 +307,274 @@ export default function HostProfileSettings() {
       return;
     }
 
+    // ✅ 저장 완료되면 초안 삭제
+    sessionStorage.removeItem("hostProfileDraft");
+
     navigate("/host/complete");
   };
 
   const buttonEnabled = isFormValid && !submitting;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단 헤더 */}
-      <header className="px-4 pt-4 pb-3 flex items-center justify-between border-b border-neutral-100">
-        <div className="flex items-center gap-2">
-          <img
-            src="/inframe-logo.png"
-            alt="in경산 로고"
-            className="h-8 object-contain"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="text-[18px] text-[#3A3A3A]"
-        >
-          ✕
-        </button>
-      </header>
+    <div className="min-h-[100dvh] bg-white text-neutral-900 flex justify-center">
+      <div className="w-full max-w-[480px] relative pb-24">
+        {/* 상단 헤더 */}
+        <header className="px-4 pt-4 pb-3 flex items-center justify-between border-b border-neutral-100">
+          <div className="flex items-center gap-2">
+            <img
+              src="/inframe-logo.png"
+              alt="in경산 로고"
+              className="h-8 object-contain"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-[18px] text-[#3A3A3A]"
+          >
+            ✕
+          </button>
+        </header>
 
-      {/* 본문 */}
-      <main className="px-4 pt-3 pb-4 flex-1 overflow-y-auto">
-        {/* 제목 */}
-        <h1 className="text-[26px] text-[#3A3A3A] font-bold mt-5 mb-3">
-          프로필 설정
-        </h1>
+        {/* 본문 */}
+        <main className="px-4 pt-3 pb-4 flex-1 overflow-y-auto">
+          {/* 제목 */}
+          <h1 className="text-[26px] text-[#3A3A3A] font-bold mt-5 mb-3">
+            프로필 설정
+          </h1>
 
-        <section className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+          {/* 프로필 + 한줄 소개 */}
+          <section className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => profileInputRef.current?.click()}
+                className="relative w-16 h-16 rounded-full bg-[#F0F0F0] flex items-center justify-center overflow-visible"
+              >
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt="프로필"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl text-[#D4D4D8]">
+                    <FaUser />
+                  </span>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm border border-neutral-200">
+                  <span className="text-[11px] text-neutral-500">
+                    <IoMdCamera />
+                  </span>
+                </div>
+              </button>
+
+              <div className="flex flex-col">
+                {userName && (
+                  <p className="text-[22px] font-bold text-[#3A3A3A]">
+                    {userName}
+                  </p>
+                )}
+                {uploadingProfile && (
+                  <span className="mt-1 text-[11px] text-neutral-500">
+                    프로필 이미지 업로드 중...
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={profileInputRef}
+              className="hidden"
+              onChange={handleSelectProfileImage}
+              // ✅ 중요: 파일 선택 후 같은 파일 재선택 시에도 onChange가 발생하도록 value를 초기화합니다.
+              onClick={(e) => (e.target.value = null)}
+            />
+
+            <p className="text-[12px] text-[#B6B6B6] mb-2">
+              25자 이내로 적어주세요
+            </p>
+
+            <div className="relative">
+              <textarea
+                rows={1}
+                maxLength={25}
+                value={intro}
+                onChange={(e) => {
+                  setIntro(e.target.value);
+                  setErrors((prev) => ({ ...prev, intro: false }));
+                }}
+                placeholder="예. 흙을 담아 삶의 이야기를 빚어냅니다."
+                className={`w-full border-b bg-transparent text-[15px] text-black outline-none placeholder:text-[#B6B6B6] focus:border-neutral-400 transition-colors resize-none pb-1 ${
+                  errors.intro ? "border-[#e64a45]" : "border-neutral-200"
+                }`}
+              />
+              <div className="absolute right-0 bottom-[-18px] text-[11px] text-neutral-400">
+                {intro.length} / 25
+              </div>
+            </div>
+          </section>
+
+          {/* 위치 */}
+          <section className="mb-8">
+            <p className="text-[20px] font-bold mb-2">위치</p>
+
             <button
               type="button"
-              onClick={() => profileInputRef.current?.click()}
-              className="relative w-16 h-16 rounded-full bg-[#F0F0F0] flex items-center justify-center overflow-visible"
+              onClick={goLocationPicker}
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-md border bg-white text-[13px] text-neutral-600 ${
+                errors.address ? "border-[#e64a45]" : "border-neutral-300"
+              }`}
             >
-              {profileImageUrl ? (
-                <img
-                  src={profileImageUrl}
-                  alt="프로필"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-3xl text-[#D4D4D8]">
-                  <FaUser />
-                </span>
-              )}
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm border border-neutral-200">
-                <span className="text-[11px] text-neutral-500">
-                  <IoMdCamera />
-                </span>
-              </div>
+              <span>{address || "지번, 도로명, 건물명으로 검색"}</span>
+              <span className="text-[16px] text-neutral-300">
+                <MdArrowForwardIos />
+              </span>
             </button>
 
-            <div className="flex flex-col">
-              {userName && (
-                <p className="text-[22px] font-bold text-[#3A3A3A]">
-                  {userName}
-                </p>
-              )}
-              {uploadingProfile && (
-                <span className="mt-1 text-[11px] text-neutral-500">
-                  프로필 이미지 업로드 중...
-                </span>
-              )}
-            </div>
-          </div>
-
-          <input
-            type="file"
-            accept="image/*"
-            ref={profileInputRef}
-            className="hidden"
-            onChange={handleSelectProfileImage}
-          />
-
-          <p className="text-[12px] text-[#B6B6B6] mb-2">
-            25자 이내로 적어주세요
-          </p>
-
-          <div className="relative">
-            <textarea
-              rows={1}
-              maxLength={25}
-              value={intro}
+            <input
+              type="text"
+              value={detail}
               onChange={(e) => {
-                setIntro(e.target.value);
-                setErrors((prev) => ({ ...prev, intro: false }));
+                setDetail(e.target.value);
+                setErrors((prev) => ({ ...prev, detail: false }));
               }}
-              placeholder="예. 흙을 담아 삶의 이야기를 빚어냅니다."
-              className={`w-full border-b bg-transparent text-[15px] text-black outline-none placeholder:text-[#B6B6B6] focus:border-neutral-400 transition-colors resize-none pb-1 ${
-                errors.intro ? "border-[#e64a45]" : "border-neutral-200"
+              placeholder="상세주소를 입력해주세요"
+              className={`mt-3 w-full px-3 py-3 rounded-md border bg-white text-[13px] text-black outline-none placeholder:text-[#B6B6B6] ${
+                errors.detail ? "border-[#e64a45]" : "border-neutral-300"
               }`}
             />
-            <div className="absolute right-0 bottom-[-18px] text-[11px] text-neutral-400">
-              {intro.length} / 25
+          </section>
+
+          {/* 연락 가능 시간 */}
+          <section className="mb-8">
+            <p className="text-[20px] font-bold mb-2">연락 가능 시간</p>
+
+            <div className="flex items-center gap-2">
+              <TimeSelect value={startTime} onChange={setStartTime} />
+              <span className="text-neutral-400 text-[13px]">-</span>
+              <TimeSelect value={endTime} onChange={setEndTime} />
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* 위치 */}
-        <section className="mb-8">
-          <p className="text-[20px] font-bold mb-2">위치</p>
-
-          <button
-            type="button"
-            onClick={goLocationPicker}
-            className={`w-full flex items-center justify-between px-3 py-3 rounded-md border bg-white text-[13px] text-neutral-600 ${
-              errors.address ? "border-[#e64a45]" : "border-neutral-300"
-            }`}
-          >
-            <span>{address || "지번, 도로명, 건물명으로 검색"}</span>
-            <span className="text-[16px] text-neutral-300">
-              <MdArrowForwardIos />
-            </span>
-          </button>
-
-          <input
-            type="text"
-            value={detail}
-            onChange={(e) => {
-              setDetail(e.target.value);
-              setErrors((prev) => ({ ...prev, detail: false }));
-            }}
-            placeholder="상세주소를 입력해주세요"
-            className={`mt-3 w-full px-3 py-3 rounded-md border bg-white text-[13px] text-black outline-none placeholder:text-[#B6B6B6] ${
-              errors.detail ? "border-[#e64a45]" : "border-neutral-300"
-            }`}
-          />
-        </section>
-
-        {/* 연락 가능 시간 */}
-        <section className="mb-8">
-          <p className="text-[20px] font-bold mb-2">연락 가능 시간</p>
-
-          <div className="flex items-center gap-2">
-            <TimeSelect value={startTime} onChange={setStartTime} />
-            <span className="text-neutral-400 text-[13px]">-</span>
-            <TimeSelect value={endTime} onChange={setEndTime} />
-          </div>
-        </section>
-
-        {/* 취소 정책 */}
-        <section className="mb-8">
-          <p className="text-[20px] font-bold mb-2">
-            취소 정책을 작성해주세요.
-          </p>
-          <div
-            className={`rounded-md px-3 py-2 border ${
-              errors.cancelPolicy ? "border-[#e64a45]" : "border-neutral-200"
-            }`}
-          >
-            <textarea
-              rows={4}
-              value={cancelPolicy}
-              onChange={(e) => {
-                setCancelPolicy(e.target.value);
-                setErrors((prev) => ({ ...prev, cancelPolicy: false }));
-              }}
-              placeholder="추가해 주세요."
-              className="w-full bg-transparent text-[13px] outline-none resize-none placeholder:text-[#B6B6B6]"
-            />
-          </div>
-        </section>
-
-        {/* 업체 관련 사진 */}
-        <section className="mb-8">
-          <p className="text-[20px] font-bold mb-1">업체 관련 사진</p>
-          <p className="text-[15px] font-medium text-[#969696] mb-3">
-            업체의 로고나 사진을 등록해주세요.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => logoInputRef.current?.click()}
-            className="w-20 h-20 border border-neutral-300 rounded-md flex flex-col items-center justify-center text-neutral-400 text-[11px] gap-1 overflow-hidden bg-white"
-          >
-            {companyLogoUrl ? (
-              <img
-                src={companyLogoUrl}
-                alt="업체 로고"
-                className="w-full h-full object-cover"
+          {/* 취소 정책 */}
+          <section className="mb-8">
+            <p className="text-[20px] font-bold mb-2">
+              취소 정책을 작성해주세요.
+            </p>
+            <div
+              className={`rounded-md px-3 py-2 border ${
+                errors.cancelPolicy ? "border-[#e64a45]" : "border-neutral-200"
+              }`}
+            >
+              <textarea
+                rows={4}
+                value={cancelPolicy}
+                onChange={(e) => {
+                  setCancelPolicy(e.target.value);
+                  setErrors((prev) => ({ ...prev, cancelPolicy: false }));
+                }}
+                placeholder="추가해 주세요."
+                className="w-full bg-white text-[13px] outline-none resize-none placeholder:text-[#B6B6B6]"
               />
-            ) : (
-              <>
-                <span className="text-[30px]">
-                  <IoMdCamera />
-                </span>
-                <span>0 / 1</span>
-              </>
+            </div>
+          </section>
+
+          {/* 업체 관련 사진 */}
+          <section className="mb-8">
+            <p className="text-[20px] font-bold mb-1">업체 관련 사진</p>
+            <p className="text-[15px] font-medium text-[#969696] mb-3">
+              업체의 로고나 사진을 등록해주세요.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="w-20 h-20 border border-neutral-300 rounded-md flex flex-col items-center justify-center text-neutral-400 text-[11px] gap-1 overflow-hidden bg-white"
+            >
+              {companyLogoUrl ? (
+                <img
+                  src={companyLogoUrl}
+                  alt="업체 로고"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <span className="text-[30px]">
+                    <IoMdCamera />
+                  </span>
+                  <span>0 / 1</span>
+                </>
+              )}
+            </button>
+
+            {uploadingLogo && (
+              <p className="mt-1 text-[11px] text-neutral-500">
+                로고 이미지 업로드 중...
+              </p>
             )}
-          </button>
 
-          {uploadingLogo && (
-            <p className="mt-1 text-[11px] text-neutral-500">
-              로고 이미지 업로드 중...
+            <input
+              type="file"
+              accept="image/*"
+              ref={logoInputRef}
+              className="hidden"
+              onChange={handleSelectCompanyLogo}
+              // ✅ 중요: 파일 선택 후 같은 파일 재선택 시에도 onChange가 발생하도록 value를 초기화합니다.
+              onClick={(e) => (e.target.value = null)}
+            />
+          </section>
+
+          {/* 상세 소개 */}
+          <section className="mb-4">
+            <p className="text-[20px] font-bold mb-2">
+              호스트에 대해 자세히 이야기해주세요.
             </p>
-          )}
 
-          <input
-            type="file"
-            accept="image/*"
-            ref={logoInputRef}
-            className="hidden"
-            onChange={handleSelectCompanyLogo}
-          />
-        </section>
+            <div className="rounded-md p-3 bg-[#F4F4F4] mb-2">
+              <p className="text-[13px] font-bold text-[#3A3A3A]">
+                이런 내용을 적어보세요!
+              </p>
+              <p className="mt-1 text-[13px] font-medium text-[#3A3A3A] leading-relaxed">
+                무엇을 만드는 곳인지, 어떤 사람들과 함께하고 있는지, 이 일을
+                시작하게 된 계기나 브랜드의 이야기를 들려주세요.
+              </p>
+            </div>
 
-        {/* 상세 소개 */}
-        <section className="mb-4">
-          <p className="text-[20px] font-bold mb-2">
-            호스트에 대해 자세히 이야기해주세요.
-          </p>
+            <textarea
+              rows={6}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setErrors((prev) => ({ ...prev, description: false }));
+              }}
+              className={`w-full border rounded-md text-[13px] p-2 outline-none resize-none ${
+                errors.description ? "border-[#e64a45]" : "border-[#E6E6E6]"
+              }`}
+              placeholder="예) 이 특별한 초콜릿 만들기 체험에서는 ‘카카오 블룸’ 디저트 바의 오너 파티시에 박서현님과 함께합니다. ..."
+            />
+            <div className="mt-1 text-right text-[11px] text-neutral-400">
+              {description.length} / 2000
+            </div>
+          </section>
+        </main>
 
-          <div className="rounded-md p-3 bg-neutral-50 mb-2">
-            <p className="text-[13px] font-bold text-[#3A3A3A]">
-              이런 내용을 적어보세요!
-            </p>
-            <p className="mt-1 text-[13px] font-medium text-[#3A3A3A] leading-relaxed">
-              무엇을 만드는 곳인지, 어떤 사람들과 함께하고 있는지, 이 일을
-              시작하게 된 계기나 브랜드의 이야기를 들려주세요.
-            </p>
-          </div>
-
-          <textarea
-            rows={6}
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              setErrors((prev) => ({ ...prev, description: false }));
-            }}
-            className={`w-full border rounded-md text-[13px] p-2 outline-none resize-none ${
-              errors.description ? "border-[#e64a45]" : "border-neutral-200"
+        {/* 하단 완료 버튼 */}
+        <footer className="px-4 pb-6 pt-3 border-t border-neutral-100 bg-white">
+          <button
+            type="button"
+            onClick={handleComplete}
+            disabled={!buttonEnabled}
+            className={`w-full h-11 rounded-xl text-[14px] font-semibold text-white ${
+              buttonEnabled ? "bg-[#3A3A3A]" : "bg-neutral-300"
             }`}
-            placeholder="예) 이 특별한 초콜릿 만들기 체험에서는 ‘카카오 블룸’ 디저트 바의 오너 파티시에 박서현님과 함께합니다. ..."
-          />
-          <div className="mt-1 text-right text-[11px] text-neutral-400">
-            {description.length} / 2000
-          </div>
-        </section>
-      </main>
-
-      {/* 하단 완료 버튼 */}
-      <footer className="px-4 pb-6 pt-3 border-t border-neutral-100 bg-white">
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={!buttonEnabled}
-          className={`w-full h-11 rounded-xl text-[14px] font-semibold text-white ${
-            buttonEnabled ? "bg-[#e64a45]" : "bg-neutral-300"
-          }`}
-        >
-          {submitting ? "저장 중..." : "완료"}
-        </button>
-      </footer>
+          >
+            {submitting ? "저장 중..." : "완료"}
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
