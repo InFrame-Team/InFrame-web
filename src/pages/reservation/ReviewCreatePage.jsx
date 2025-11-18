@@ -12,8 +12,27 @@ export default function ReviewCreatePage() {
   const { reservationId } = useParams();
   const location = useLocation();
 
-  const defaultTitle = location.state?.title || "프로그램 제목";
-  const defaultHostName = location.state?.hostName || "호스트 이름";
+  const reservationFromState = location.state?.reservation;
+
+  // 제목/호스트 이름도 reservation이 넘어온 경우까지 고려해서 fallback
+  const defaultTitle =
+    location.state?.title ??
+    reservationFromState?.experienceTitle ??
+    "프로그램 제목";
+
+  const defaultHostName =
+    location.state?.hostName ?? reservationFromState?.hostName ?? "호스트 이름";
+
+  // 🔹 썸네일 URL 우선순위:
+  // 1) state.thumbnailUrl
+  // 2) state.experienceThumbnailUrl
+  // 3) state.reservation.experienceThumbnailUrl
+  // 4) fallback: fake 이미지
+  const defaultThumbnailUrl =
+    location.state?.thumbnailUrl ??
+    location.state?.experienceThumbnailUrl ??
+    reservationFromState?.experienceThumbnailUrl ??
+    fakeProgramImg;
 
   const [rating, setRating] = useState(0); // 0~5 (정수)
   const [content, setContent] = useState("");
@@ -121,8 +140,8 @@ export default function ReviewCreatePage() {
           <section className="mb-5">
             <div className="flex items-center gap-3">
               <img
-                src={fakeProgramImg}
-                alt="host"
+                src={defaultThumbnailUrl}
+                alt="program"
                 className="w-[60px] h-[60px] rounded-[4px] object-cover"
               />
               <div className="flex flex-col">
