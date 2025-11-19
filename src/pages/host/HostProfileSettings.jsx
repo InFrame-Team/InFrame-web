@@ -1,3 +1,4 @@
+// src/pages/host/HostProfileSettings.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { updateHost } from "../../apis/host";
@@ -55,6 +56,7 @@ function TimeSelect({ value, onChange }) {
 }
 
 // 초기 상태를 설정하는 유틸리티 함수
+// baseInfo는 navigate로 전달받은 데이터 (HostDashboardView 또는 LocationPicker에서 옴)
 function getInitialState(baseInfo) {
   let draft = {};
   try {
@@ -66,10 +68,10 @@ function getInitialState(baseInfo) {
     console.warn("[HostProfileSettings] draft 복원 실패:", e);
   }
 
-  // baseInfo (useLocation().state에서 온 데이터, 주소 검색 후 복귀 시 최신)가
-  // sessionStorage보다 우선합니다.
+  // baseInfo (navigate state) > sessionStorage draft > ""/기본값 순으로 우선순위를 가집니다.
   return {
-    // 텍스트 입력 필드: draft 우선, 없으면 baseInfo, 없으면 ""
+    // 텍스트 입력 필드: draft/baseInfo가 있다면 사용
+    // HostDashboardView에서 me의 필드가 이 baseInfo로 전달됩니다.
     intro: draft.intro ?? baseInfo.intro ?? "",
     description: draft.description ?? baseInfo.description ?? "",
     cancelPolicy: draft.cancelPolicy ?? baseInfo.cancelPolicy ?? "",
@@ -89,11 +91,12 @@ function getInitialState(baseInfo) {
 export default function HostProfileSettings() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const baseInfo = state || {}; // HostBasicInfo 또는 LocationPicker에서 온 데이터
+  const baseInfo = state || {}; // HostBasicInfo, LocationPicker, HostDashboardView에서 온 데이터
 
+  // HostDashboardView에서 navigate로 전달한 정보를 initialState가 이미 사용하고 있습니다.
   const initialState = getInitialState(baseInfo);
 
-  // --- 상태 초기화 ---
+  // --- 상태 초기화 (navigate state 또는 sessionStorage 우선) ---
   const [address, setAddress] = useState(initialState.address);
   const [detail, setDetail] = useState(initialState.detail);
   const [intro, setIntro] = useState(initialState.intro);
@@ -141,7 +144,6 @@ export default function HostProfileSettings() {
       detail,
       startTime,
       endTime,
-      // 이미지 URL은 드래프트에 저장하지 않고, DB에서 가져오거나 업로드 결과로만 관리
     };
     try {
       sessionStorage.setItem("hostProfileDraft", JSON.stringify(draft));
@@ -150,36 +152,57 @@ export default function HostProfileSettings() {
     }
   }, [intro, description, cancelPolicy, address, detail, startTime, endTime]);
 
-  // 사용자 정보 (프로필 이미지, 이름) 불러오기
+  // ✅ [수정] 사용자 정보 및 기존 호스트 정보 불러와서 상태에 반영 (state/draft가 없을 때 DB 정보 사용)
   useEffect(() => {
     (async () => {
       const { success, data, message } = await getMyInfo();
-      if (!success) {
+      if (!success || !data) {
         console.warn("[HostProfileSettings] getMyInfo 실패:", message);
         return;
       }
-      if (!data) return;
 
       setUserName(data.name || data.nickname || "");
 
-      // 기존 프로필 이미지 URL이 있다면 로드
+      // 1. 이미지 URL 로드 (state/draft에 이미지 URL이 없으므로 DB 정보가 최우선)
       if (data.profileImageUrl) {
         setProfileImageUrl(data.profileImageUrl);
       }
-      // 기존 회사 로고 URL이 있다면 로드
       if (data.companyLogoUrl) {
         setCompanyLogoUrl(data.companyLogoUrl);
       }
+
+      // 2. 입력 필드에 DB 정보 반영 (state/draft에도 값이 없을 경우에만 DB 정보로 채우기)
+      // 이 로직은 필수입니다. baseInfo(navigate state)가 없는 초기 진입 시 DB 정보를 로드합니다.
+
+      const apiDataMap = {
+        intro: data.description, // 짧은 소개
+        description: data.detailedDescription, // 긴 상세 소개
+        cancelPolicy: data.cancellationPolicy,
+        address: data.addressBase,
+        detail: data.addressDetail,
+        startTime: data.contactStartTime,
+        endTime: data.contactEndTime,
+      };
+
+      // 현재 상태가 비어 있고, API 데이터에 값이 있다면 DB 값으로 채웁니다.
+      setIntro((prev) => prev || apiDataMap.intro || "");
+      setDescription((prev) => prev || apiDataMap.description || "");
+      setCancelPolicy((prev) => prev || apiDataMap.cancelPolicy || "");
+      setAddress((prev) => prev || apiDataMap.address || "");
+      setDetail((prev) => prev || apiDataMap.detail || "");
+
+      // 시간은 기본값이 있거나 state/draft에서 가져왔을 수 있으므로, API 데이터에 값이 있다면 덮어씁니다.
+      setStartTime((prev) => apiDataMap.startTime || prev);
+      setEndTime((prev) => apiDataMap.endTime || prev);
     })();
   }, []);
 
   // 주소 검색 페이지로 이동
   const goLocationPicker = () => {
     // 현재 입력된 모든 데이터를 state에 담아 다음 페이지로 넘깁니다.
-    // 다음 페이지에서 주소 정보를 선택하고 돌아오면 이 데이터가 location.state로 돌아옵니다.
     navigate("/host/location-picker", {
       state: {
-        // 사업자 기본 정보 (변하지 않는 정보)
+        // 사업자 기본 정보 (HostDashboardView에서 왔다면 baseInfo에 이미 담겨있음)
         businessNumber: baseInfo.businessNumber,
         category: baseInfo.category,
         businessName: baseInfo.businessName,
@@ -187,7 +210,7 @@ export default function HostProfileSettings() {
         businessEmail: baseInfo.businessEmail,
         kakaoAddress: baseInfo.kakaoAddress,
 
-        // 현재 화면에서 입력된 모든 데이터
+        // 현재 화면에서 입력된 모든 데이터 (주소 검색 후 돌아왔을 때 복원용)
         addressBase: address,
         addressDetail: detail,
         latitude,
@@ -268,7 +291,7 @@ export default function HostProfileSettings() {
 
     // /api/v1/host/update 에 맞춘 payload 구성
     const payload = {
-      // 기본 정보 (HostBasicInfo에서 옴)
+      // 기본 정보 (HostBasicInfo/HostDashboardView에서 옴)
       businessNumber: baseInfo.businessNumber,
       category: baseInfo.category,
       businessName: baseInfo.businessName,
@@ -562,7 +585,7 @@ export default function HostProfileSettings() {
         </main>
 
         {/* 하단 완료 버튼 */}
-        <footer className="px-4 pb-6 pt-3 border-t border-neutral-100 bg-white">
+        <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 pb-6 pt-3 bg-white border-t border-neutral-100">
           <button
             type="button"
             onClick={handleComplete}

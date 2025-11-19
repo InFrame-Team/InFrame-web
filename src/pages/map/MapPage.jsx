@@ -934,9 +934,12 @@ export default function MapPage() {
                           {host.price}
                         </span>
                       </div>
-                      <span className="px-3 py-1.5 rounded-full border border-[#E9E9EC] text-[15px] text-[#3A3A3A]">
+                      <button
+                        onClick={() => navigate(`/host/${host.id}`)}
+                        className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-[13px]"
+                      >
                         만나러 가기
-                      </span>
+                      </button>
                     </div>
                   </button>
                 );

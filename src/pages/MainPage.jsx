@@ -1,23 +1,39 @@
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import BottomTab from "../components/BottomTab";
-import { CiHeart } from "react-icons/ci";
-import { FaHeart } from "react-icons/fa";
+// 필요한 컴포넌트 및 아이콘
+import BottomTab from "../components/BottomTab"; // 실제 경로로 가정
+import { CiHeart } from "react-icons/ci"; // 빈 하트 (좋아요 아님)
+import { FaHeart } from "react-icons/fa"; // 채워진 하트 (좋아요 상태)
 import { MdArrowForwardIos } from "react-icons/md";
 import { IoSearch } from "react-icons/io5";
-import { FaStar } from "react-icons/fa"; // ⭐️ 평점 표시를 위해 추가
+import { FaStar } from "react-icons/fa";
 
-// POST API는 사용하지 않고, GET API만 사용합니다.
-import { getLikedHosts, getLikedExperiences } from "../apis/likes";
+// API 함수
+// toggleExperienceLike 함수는 현재 제공되지 않았으므로 주석 처리합니다.
+import {
+  getLikedHosts,
+  getLikedExperiences,
+  // toggleHostLike 함수는 import 했다고 가정합니다.
+  toggleHostLike,
+} from "../apis/likes";
+
+// 임시 함수 (toggleHostLike가 api 파일에 있다고 가정)
+// API 파일에 toggleHostLike가 없어서 오류가 나면 이 주석을 해제하고 사용하세요.
+// async function toggleHostLike(hostId) {
+//   console.log(`[Mock API] Host Like Toggled for ID: ${hostId}`);
+//   // 실제 API 호출 로직 (POST/DELETE)을 여기에 구현
+//   // try { await api.post(`/likes/host/${hostId}`); } catch (e) { throw e; }
+// }
 
 export default function MainPage() {
   const navigate = useNavigate();
 
   const goMessages = () => navigate("/messages");
   const goCategory = (key) => navigate(`/map?category=${key}`);
-  const goHostMore = () => navigate("/host/ezisub");
+  const goHostMore = () => navigate("/host/ezisub"); // 상세 페이지
   const goNearbyMap = () => navigate("/map");
+  const goExperienceDetail = (expId) => navigate(`/experiences/${expId}`);
 
   const [tab, setTab] = useState("host");
 
@@ -36,81 +52,154 @@ export default function MainPage() {
   const [error, setError] = useState(null);
 
   // ------------------------- 데이터 로딩 로직 (useEffect) -------------------------
-  useEffect(() => {
-    async function loadInitialData() {
-      setIsLoading(true);
-      setError(null);
 
-      try {
-        // 1. 호스트 목록 조회 (GET /api/v1/likes/host)
-        const hostResult = await getLikedHosts();
+  /**
+   * 서버로부터 초기 데이터를 불러와 상태를 업데이트하는 함수입니다.
+   */
+  async function loadInitialData() {
+    setIsLoading(true);
+    setError(null);
 
-        if (hostResult.success && hostResult.data) {
-          const likedHosts = hostResult.data;
+    try {
+      // 1. 호스트 목록 조회 (GET /api/v1/likes/host)
+      const hostResult = await getLikedHosts();
 
-          // ✅ 최근 2개만 저장하도록 .slice(0, 2) 적용
-          const recentHosts = likedHosts.slice(0, 2);
-          setSavedHosts(recentHosts);
+      if (hostResult.success && hostResult.data) {
+        const likedHosts = hostResult.data;
 
-          // 2. 좋아요 상태 초기화
-          const initialHostLikes = {};
-          recentHosts.forEach((h) => {
-            initialHostLikes[h.hostId] = true;
-          });
-          setHostLikeState(initialHostLikes);
-        } else {
-          console.error("좋아요 호스트 목록 조회 실패:", hostResult.message);
-          setError(hostResult.message);
+        const recentHosts = likedHosts.slice(0, 2);
+        setSavedHosts(recentHosts);
+
+        // 2. 좋아요 상태 초기화
+        const initialHostLikes = {};
+        recentHosts.forEach((h) => {
+          initialHostLikes[h.hostId] = true;
+        });
+        setHostLikeState(initialHostLikes);
+      } else {
+        // 데이터가 없거나 404/401이 아닌 단순 오류의 경우 에러 메시지를 콘솔에만 표시
+        console.error("좋아요 호스트 목록 조회 실패:", hostResult.message);
+        setSavedHosts([]); // 실패 시 목록 초기화
+        setHostLikeState({}); // 실패 시 상태 초기화
+        if (hostResult.message === "로그인이 필요해요.") {
+          // setError(hostResult.message); // 로그인 필요 메시지를 표시하려면 주석 해제
         }
-
-        // 3. 체험 목록 조회 (GET /api/v1/likes/experience)
-        const expResult = await getLikedExperiences();
-
-        if (expResult.success && expResult.data) {
-          const likedExperiences = expResult.data;
-
-          // ✅ 최근 2개만 저장하도록 .slice(0, 2) 적용
-          const recentExperiences = likedExperiences.slice(0, 2);
-          setExperienceList(recentExperiences);
-
-          // 4. 좋아요 상태 초기화
-          const initialExpLikes = {};
-          recentExperiences.forEach((e) => {
-            initialExpLikes[e.experienceId] = true;
-          });
-          setExperienceLikeState(initialExpLikes);
-        } else {
-          console.error("좋아요 체험 목록 조회 실패:", expResult.message);
-        }
-      } catch (e) {
-        setError("초기 데이터를 불러오는 중 네트워크 오류가 발생했습니다.");
-        console.error("Initial data load error:", e);
-      } finally {
-        setIsLoading(false);
       }
+
+      // 3. 체험 목록 조회 (GET /api/v1/likes/experience)
+      const expResult = await getLikedExperiences();
+
+      if (expResult.success && expResult.data) {
+        const likedExperiences = expResult.data;
+
+        const recentExperiences = likedExperiences.slice(0, 2);
+        setExperienceList(recentExperiences);
+
+        // 4. 좋아요 상태 초기화
+        const initialExpLikes = {};
+        recentExperiences.forEach((e) => {
+          initialExpLikes[e.experienceId] = true;
+        });
+        setExperienceLikeState(initialExpLikes);
+      } else {
+        console.error("좋아요 체험 목록 조회 실패:", expResult.message);
+        setExperienceList([]); // 실패 시 목록 초기화
+        setExperienceLikeState({}); // 실패 시 상태 초기화
+      }
+    } catch (e) {
+      setError("초기 데이터를 불러오는 중 네트워크 오류가 발생했습니다.");
+      setSavedHosts([]);
+      setExperienceList([]);
+      setHostLikeState({});
+      setExperienceLikeState({});
+      console.error("Initial data load error:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadInitialData();
+  }, []); // 컴포넌트 마운트 시 한 번 실행
+
+  // ------------------------- 하트 클릭 핸들러 -------------------------
+
+  const handleHostLikeClick = async (hostId) => {
+    // ⚠️ 오류 방어 코드 추가: hostId가 유효하지 않으면 즉시 종료합니다.
+    if (!hostId) {
+      console.error(
+        "오류: hostId가 누락되어 좋아요 토글을 실행할 수 없습니다."
+      );
+      alert("호스트 정보가 올바르지 않아 처리할 수 없습니다.");
+      return;
     }
 
-    loadInitialData();
-  }, []);
+    const wasLiked = hostLikeState[hostId];
 
-  // ------------------------- 하트 클릭 핸들러 (POST 호출 제거됨) -------------------------
-  const handleHostLikeClick = (hostId) => {
+    // 1. UI 즉시 반영 (낙관적 업데이트)
+    const optimisticNewState = !wasLiked;
     setHostLikeState((prev) => ({
       ...prev,
-      [hostId]: !prev[hostId],
+      [hostId]: optimisticNewState,
     }));
-    console.warn(
-      `[호스트 좋아요] ID ${hostId}의 클라이언트 상태만 변경되었습니다. (POST 호출 제거됨)`
-    );
+
+    if (wasLiked) {
+      // 좋아요를 취소하는 경우, 목록에서 즉시 제거
+      setSavedHosts((prevHosts) =>
+        prevHosts.filter((h) => h.hostId !== hostId)
+      );
+    }
+
+    // 2. ✅ API 호출 (영구 저장)
+    try {
+      // toggleHostLike는 좋아요 상태를 토글하는 POST/DELETE 역할을 한다고 가정
+      await toggleHostLike(hostId);
+      console.log(
+        `[호스트 좋아요] ID ${hostId} 상태가 서버에 반영되었습니다. (취소: ${wasLiked})`
+      );
+
+      // 3. ✅ 핵심 수정: API 호출 성공 시 최신 목록을 서버에서 다시 불러옵니다.
+      await loadInitialData(); // 목록 및 좋아요 상태 전체 갱신
+    } catch (error) {
+      console.error("좋아요 토글 API 호출 실패:", error);
+      alert("좋아요 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+
+      // API 실패 시, UI 상태 롤백을 위해 전체 데이터를 다시 불러오는 것이 가장 안전합니다.
+      await loadInitialData();
+    }
   };
 
   const handleExperienceLikeClick = (experienceId) => {
+    // ⚠️ 오류 방어 코드 추가
+    if (!experienceId) {
+      console.error(
+        "오류: experienceId가 누락되어 좋아요 토글을 실행할 수 없습니다."
+      );
+      alert("체험 정보가 올바르지 않아 처리할 수 없습니다.");
+      return;
+    }
+
+    // API 호출 전, UI를 먼저 업데이트합니다 (낙관적 업데이트)
+    const wasLiked = experienceLikeState[experienceId];
+    const isNowLiked = !wasLiked;
+
+    // 1. 좋아요 상태 토글 (UI 즉시 반영)
     setExperienceLikeState((prev) => ({
       ...prev,
-      [experienceId]: !prev[experienceId],
+      [experienceId]: isNowLiked,
     }));
+
+    // 2. experienceList 목록에서 제거/유지 (UI 즉시 반영)
+    if (wasLiked) {
+      // 좋아요를 취소하는 경우, 목록에서 제거
+      setExperienceList((prevExps) =>
+        prevExps.filter((e) => e.experienceId !== experienceId)
+      );
+    }
+
+    // 3. TODO: toggleExperienceLike API 호출 추가
     console.warn(
-      `[체험 좋아요] ID ${experienceId}의 클라이언트 상태만 변경되었습니다. (POST 호출 제거됨)`
+      `[체험 좋아요] ID ${experienceId}의 클라이언트 상태만 변경되었습니다. (API 호출 필요)`
     );
   };
 
@@ -128,13 +217,13 @@ export default function MainPage() {
   // ------------------------- 렌더링 시작 -------------------------
   return (
     <div className="min-h-[100dvh] bg-[#F7F7F7] text-neutral-900 flex justify-center">
-      <div className="w-full max-w-[480px] relative">
+      <div className="w-full max-w-[480px] flex flex-col h-[100dvh]">
         {/* 헤더 */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-neutral-200">
+        <header className="z-30 bg-white/80 backdrop-blur border-b border-neutral-200">
           <div className="px-5 py-3 flex items-center justify-between">
             <img
               src="/inframe-logo.png"
-              alt=""
+              alt="Inframe 로고"
               className="w-30 h-9 object-contain"
               aria-hidden
             />
@@ -143,7 +232,7 @@ export default function MainPage() {
               <button
                 type="button"
                 onClick={goMessages}
-                aria-label="검색으로 이동"
+                aria-label="메시지로 이동"
                 className="p-2 text-[22px] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
               >
                 <IoSearch />
@@ -152,8 +241,8 @@ export default function MainPage() {
           </div>
         </header>
 
-        {/* 메인 */}
-        <main className="px-5 pt-4 pb-0 space-y-8">
+        {/* 메인 (스크롤 영역) */}
+        <main className="flex-1 overflow-y-auto px-5 pt-4 pb-20 space-y-8">
           {/* 카테고리 + 내 주변 */}
           <section>
             <div className="grid grid-cols-2 gap-3">
@@ -263,44 +352,61 @@ export default function MainPage() {
               <div className="text-center text-red-500 py-10">{error}</div>
             )}
 
-            {/* 탭 내용 - 호스트 (이미지 1705aa.jpg) */}
+            {/* 탭 내용 - 호스트 */}
             {!isLoading && !error && tab === "host" && (
-              <div className="bg-white ml-[-20px] !w-[calc(100%+40px)] -mb-24 pb-24">
+              // 좋아요 목록이 없으면 카드 배경을 제거하고 텍스트만 표시
+              <div
+                className={`-mx-5 bg-white ${
+                  savedHosts.length > 0
+                    ? "rounded-xl shadow-lg border border-neutral-100 p-4 space-y-4"
+                    : ""
+                }`}
+              >
                 {savedHosts.length > 0 ? (
                   savedHosts.map((host) => (
-                    <article key={host.hostId} className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={host.avatar || host.profileImageUrl}
-                          alt=""
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="text-[15px] font-bold">
-                                {host.name || host.hostName}
-                              </div>
-                              <div className="text-[12px] text-neutral-500">
-                                {host.tagline || "호스트 태그라인"}
-                              </div>
+                    <article
+                      key={host.hostId}
+                      className="border-b border-neutral-100 last:border-b-0 pb-4 last:pb-0"
+                    >
+                      {/* 상단 호스트 정보 */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={
+                              host.avatar ||
+                              host.profileImageUrl ||
+                              "/default-avatar.png"
+                            }
+                            alt={`${host.name || host.hostName} 아바타`}
+                            className="w-10 h-10 rounded-full object-cover border border-neutral-200"
+                          />
+                          <div className="flex flex-col">
+                            <div className="text-[16px] font-bold">
+                              {host.name || host.hostName || "이름 없음"} 호스트
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleHostLikeClick(host.hostId)}
-                              aria-pressed={hostLikeState[host.hostId]}
-                              className="p-1 -mr-1"
-                            >
-                              {hostLikeState[host.hostId] ? (
-                                <FaHeart className="w-5 h-5 text-rose-600" />
-                              ) : (
-                                <CiHeart className="w-5 h-5 text-[#D8D8D8]" />
-                              )}
-                            </button>
+                            <div className="text-[13px] text-neutral-600">
+                              {host.tagline ||
+                                host.hostIntro ||
+                                "전통을 익히고, 트렌드를 빚어내요."}
+                            </div>
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => handleHostLikeClick(host.hostId)}
+                          aria-pressed={hostLikeState[host.hostId]}
+                          className="p-1 shrink-0 mt-1"
+                        >
+                          {/* ✅ 좋아요 상태에 따라 FaHeart (채워진 하트)와 CiHeart (빈 하트) 토글 */}
+                          {hostLikeState[host.hostId] ? (
+                            <FaHeart className="w-5 h-5 text-rose-600" />
+                          ) : (
+                            <CiHeart className="w-6 h-6 text-[#D8D8D8]" />
+                          )}
+                        </button>
                       </div>
 
+                      {/* 하단 3개 이미지 그리드 */}
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {(host.experiences || host.experienceImageUrls)
                           ?.slice(0, 3)
@@ -312,7 +418,7 @@ export default function MainPage() {
                             >
                               <img
                                 src={typeof exp === "string" ? exp : exp.img}
-                                alt=""
+                                alt={`체험 이미지 ${index + 1}`}
                                 className="w-full h-full object-cover"
                                 loading="lazy"
                               />
@@ -322,74 +428,85 @@ export default function MainPage() {
                     </article>
                   ))
                 ) : (
-                  <div className="bg-white rounded-lg p-6 text-center text-neutral-500 -mx-5">
+                  <div className="p-6 text-center text-neutral-500">
                     좋아요를 누른 호스트가 없습니다.
                   </div>
                 )}
               </div>
             )}
 
-            {/* 탭 내용 - 상품 (체험) - 이미지 17086c.jpg 레이아웃 적용 */}
+            {/* 탭 내용 - 상품 (체험) */}
             {!isLoading && !error && tab === "product" && (
-              <div className="ml-[-20px] !w-[calc(100%+40px)]">
+              <div className="flex gap-4 overflow-x-scroll no-scrollbar pb-5 -mx-5 px-5">
                 {experienceList.length > 0 ? (
-                  // 2열 그리드 + 수평 스크롤 컨테이너
-                  <div className="px-5 pb-5 flex gap-3 overflow-x-scroll no-scrollbar">
-                    {experienceList.map((exp) => (
-                      <article
-                        key={exp.experienceId}
-                        className="flex-shrink-0 w-40 bg-white rounded-lg shadow-sm overflow-hidden"
+                  experienceList.map((exp) => (
+                    <article
+                      key={exp.experienceId}
+                      className="flex-shrink-0 w-[160px] bg-white rounded-lg overflow-hidden shadow-md"
+                    >
+                      <button
+                        onClick={() => goExperienceDetail(exp.experienceId)}
+                        className="w-full text-left"
                       >
                         {/* 상품 카드: 160px 너비 */}
                         <div className="relative aspect-square">
                           <img
-                            // API 응답 구조에 맞게 필드명 사용
-                            src={exp.experienceImageUrls?.[0] || exp.img}
-                            alt={exp.title || "체험 이미지"}
+                            src={
+                              exp.experienceImageUrls?.[0] ||
+                              exp.img ||
+                              "/default-exp.png"
+                            }
+                            alt={exp.title || "체험 상품명"}
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
                           <button
                             type="button"
-                            onClick={() =>
-                              handleExperienceLikeClick(exp.experienceId)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation(); // 버튼 클릭 시 상품 상세 이동 방지
+                              handleExperienceLikeClick(exp.experienceId);
+                            }}
                             aria-pressed={experienceLikeState[exp.experienceId]}
-                            className="absolute top-2 right-2 p-1 text-white bg-black/30 rounded-full"
+                            className="absolute top-2 right-2 p-1 text-white bg-transparent"
                           >
-                            {/* 빨간 하트와 투명 하트 */}
-                            {experienceLikeState[exp.experienceId] ? (
-                              <FaHeart className="w-5 h-5 text-rose-500" />
-                            ) : (
-                              <CiHeart className="w-5 h-5 text-white" />
-                            )}
+                            <FaHeart
+                              className={`w-6 h-6 ${
+                                experienceLikeState[exp.experienceId]
+                                  ? "text-rose-600"
+                                  : "text-white opacity-70"
+                              }`}
+                            />
                           </button>
                         </div>
 
                         <div className="p-3 text-sm space-y-1">
                           {/* 가격 */}
-                          <div className="font-bold text-base">
-                            {exp.price || "가격 미정"}
+                          <div className="text-[18px] font-bold text-neutral-900">
+                            {exp.price
+                              ? `${exp.price.toLocaleString()}원`
+                              : "가격 미정"}
                           </div>
                           {/* 제목 */}
-                          <p className="line-clamp-2 text-neutral-800 h-10">
+                          <p className="line-clamp-2 text-[14px] text-neutral-800 h-10 leading-tight">
                             {exp.title || "체험 상품명"}
                           </p>
                           {/* 호스트 */}
-                          <div className="text-neutral-500 text-xs mt-1">
+                          <div className="text-neutral-500 text-xs mt-1 pt-1">
                             {exp.hostName || "호스트 이름"}
                           </div>
                           {/* 평점 */}
                           <div className="flex items-center text-xs text-neutral-500 pt-1">
-                            <FaStar className="w-3 h-3 text-yellow-400 mr-1" />
-                            <span>{exp.rating || "N/A"}</span>
+                            <FaStar className="w-3 h-3 text-[#B3B3B3] mr-1" />
+                            <span className="text-[13px] text-neutral-500">
+                              {exp.rating ? exp.rating.toFixed(2) : "N/A"}
+                            </span>
                           </div>
                         </div>
-                      </article>
-                    ))}
-                  </div>
+                      </button>
+                    </article>
+                  ))
                 ) : (
-                  <div className="bg-white rounded-lg p-6 text-center text-neutral-500 -mx-5 mt-5">
+                  <div className="bg-white rounded-lg p-6 text-center text-neutral-500 w-full">
                     좋아요를 누른 체험(상품)이 없습니다.
                   </div>
                 )}
@@ -398,6 +515,7 @@ export default function MainPage() {
           </section>
         </main>
 
+        {/* BottomTab */}
         <BottomTab />
       </div>
     </div>

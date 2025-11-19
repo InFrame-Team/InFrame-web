@@ -24,6 +24,8 @@ import HostBasicInfo from "./pages/host/HostBasicInfo";
 import HostComplete from "./pages/host/HostComplete";
 import HostProfileSettings from "./pages/host/HostProfileSettings";
 import HostLocationPicker from "./pages/host/HostLocationPicker";
+import TermsPage from "./pages/host/TermsPage"; // TermsPage 컴포넌트 import
+
 import ExplorePage from "./pages/explore/ExplorePage";
 import ExploreResultPage from "./pages/explore/ExploreResultPage";
 
@@ -77,6 +79,9 @@ export default function App() {
             path="/host/location-picker"
             element={<HostLocationPicker />}
           />
+          {/* ⭐️ 충돌 해결: TermsPage 라우트 추가 */}
+          <Route path="/host/termspage" element={<TermsPage />} />
+
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
@@ -124,7 +129,7 @@ export default function App() {
             path="/my/reservations/:reservationId/cancel/done"
             element={<ReservationCancelDonePage />}
           />
-          ;
+          {/* 세미콜론(;) 제거 */}
         </Routes>
       </BrowserRouter>
     </AuthProvider>
