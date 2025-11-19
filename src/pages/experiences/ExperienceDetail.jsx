@@ -158,7 +158,7 @@ export default function ExperienceDetailPage() {
           showTopBar ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="h-14 bg-white/95 backdrop-blur border-b border-[#EEE] relative flex items-center">
+        <div className="h-14 bg-white/95 border-b border-[#EEE] relative flex items-center">
           <div className="absolute ml-2 flex items-center">
             <button
               aria-label="뒤로가기"
@@ -212,21 +212,21 @@ export default function ExperienceDetailPage() {
               <button
                 aria-label="뒤로가기"
                 onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-full backdrop-blur flex items-center justify-center text-white/70"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
               >
                 <IoChevronBack size={22} />
               </button>
               <button
                 aria-label="홈"
                 onClick={() => navigate("/app")}
-                className="w-9 h-9 rounded-full backdrop-blur flex items-center justify-center text-white/70"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
               >
                 <RiHome5Line size={22} />
               </button>
             </div>
             <button
               aria-label="저장"
-              className="w-9 h-9 rounded-full backdrop-blur flex items-center justify-center text-white/70"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
             >
               <FaRegHeart size={20} />
             </button>
