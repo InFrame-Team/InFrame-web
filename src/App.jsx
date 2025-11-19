@@ -34,7 +34,10 @@ import Step3 from "./pages/experiences/create/Step3";
 import Step4 from "./pages/experiences/create/Step4";
 import { ExperienceCreateProvider } from "./contexts/ExperienceCreateContext";
 import ReservationHistoryPage from "./pages/reservation/ReservationHistoryPage";
-import ReviewCreatePage from "./components/reservation/ReviewCreatePage";
+import ReviewCreatePage from "./pages/reservation/ReviewCreatePage";
+import ReservationDetailPage from "./pages/reservation/ReservationDetailPage";
+import ReservationCancelPage from "./pages/reservation/ReservationCancelPage";
+import ReservationCancelDonePage from "./pages/reservation/ReservationCancelDonePage";
 
 function ExperienceCreateLayout() {
   return (
@@ -51,14 +54,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<MobileApp />} />
-
           {/* 탐색 탭 */}
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/explore/result" element={<ExploreResultPage />} />
-
           <Route path="/map" element={<MapPage />} />
           <Route path="/nearby" element={<NearbyListPage />} />
-
           <Route path="/register-host" element={<RegisterHost />} />
           <Route
             path="/host/business-number"
@@ -74,18 +74,15 @@ export default function App() {
             path="/host/location-picker"
             element={<HostLocationPicker />}
           />
-
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
-
           <Route path="/signup" element={<SignupLayout />}>
             <Route path="name" element={<Name />} />
             <Route path="nickname" element={<Nickname />} />
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
-
           <Route
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
@@ -98,13 +95,25 @@ export default function App() {
             <Route path="step4" element={<Step4 />} />
             <Route path="certificate" element={<CertificateForm />} />
           </Route>
-
           {/* 예약 내역 */}
           <Route path="/my/reservations" element={<ReservationHistoryPage />} />
           <Route
             path="/my/reservations/:reservationId/review"
             element={<ReviewCreatePage />}
           />
+          <Route
+            path="/my/reservations/:reservationId"
+            element={<ReservationDetailPage />}
+          />
+          <Route
+            path="/my/reservations/:reservationId/cancel"
+            element={<ReservationCancelPage />}
+          />
+          <Route
+            path="/my/reservations/:reservationId/cancel/done"
+            element={<ReservationCancelDonePage />}
+          />
+          ;
         </Routes>
       </BrowserRouter>
     </AuthProvider>

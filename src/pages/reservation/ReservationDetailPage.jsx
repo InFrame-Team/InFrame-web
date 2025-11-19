@@ -46,11 +46,13 @@ export default function ReservationDetailPage() {
       try {
         setLoading(true);
         setError(null);
+
         const data = await fetchMyReservations(controller.signal);
 
         const found = data.find(
           (item) => String(item.reservationId) === String(reservationId)
         );
+
         if (!found) {
           setError("예약 정보를 찾을 수 없어요.");
         } else {
@@ -65,18 +67,19 @@ export default function ReservationDetailPage() {
     };
 
     loadReservation();
-
     return () => controller.abort();
   }, [location.state, reservationId]);
 
-  const handleBack = () => navigate(-1);
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-[#F5F5F5] flex justify-center">
         <div className="w-full max-w-[480px] bg-white flex flex-col">
-          <header className="sticky top-0 z-20 bg-white border-b border-[#F2F2F2]">
-            <div className="h-12 flex items-center px-3">
+          <header className="sticky top-0 z-10 bg-white">
+            <div className="h-12 flex items-center px-3 border-b border-[#F1F1F1]">
               <button
                 type="button"
                 aria-label="뒤로가기"
@@ -85,9 +88,10 @@ export default function ReservationDetailPage() {
               >
                 <IoChevronBack size={22} className="text-[#3A3A3A]" />
               </button>
-              <h1 className="flex-1 text-center text-[16px] font-semibold text-[#3A3A3A] -ml-9">
+              <h1 className="flex-1 text-center text-[16px] font-semibold text-[#222]">
                 예약 상세
               </h1>
+              <div className="w-9 h-9" />
             </div>
           </header>
           <div className="flex-1 flex items-center justify-center text-[14px] text-[#8C8C8C]">
@@ -102,8 +106,8 @@ export default function ReservationDetailPage() {
     return (
       <div className="min-h-[100dvh] bg-[#F5F5F5] flex justify-center">
         <div className="w-full max-w-[480px] bg-white flex flex-col">
-          <header className="sticky top-0 z-20 bg-white border-b border-[#F2F2F2]">
-            <div className="h-12 flex items-center px-3">
+          <header className="sticky top-0 z-10 bg-white">
+            <div className="h-12 flex items-center px-3 border-b border-[#F1F1F1]">
               <button
                 type="button"
                 aria-label="뒤로가기"
@@ -112,9 +116,10 @@ export default function ReservationDetailPage() {
               >
                 <IoChevronBack size={22} className="text-[#3A3A3A]" />
               </button>
-              <h1 className="flex-1 text-center text-[16px] font-semibold text-[#3A3A3A] -ml-9">
+              <h1 className="flex-1 text-center text-[16px] font-semibold text-[#222]">
                 예약 상세
               </h1>
+              <div className="w-9 h-9" />
             </div>
           </header>
           <div className="flex-1 flex items-center justify-center text-[14px] text-[#FF4B4B] px-6 text-center">
@@ -129,20 +134,35 @@ export default function ReservationDetailPage() {
     hostName,
     hostProfileImageUrl,
     experienceTitle,
-    experienceThumbnailUrl, // 🔹 썸네일 필드 추가
+    title,
+    totalParticipants,
+    caution,
     reservedStartTime,
     totalPrice,
+    hostSubtitle,
+    amount,
+    reservationId: idFromData,
+    status,
   } = reservation;
 
   const avatarSrc = hostProfileImageUrl || fakeProfile2;
+  const finalPrice = totalPrice ?? amount ?? 0;
+  const displayedTitle = experienceTitle || title || "";
+  const idForPath = idFromData ?? reservationId;
+  const isCancelled = status === "CANCELLED";
+  const isCompleted = status === "COMPLETED";
 
-  const handleGoReview = () => {
-    navigate(`/my/reservations/${reservation.reservationId}/review`, {
-      state: {
-        title: experienceTitle,
-        hostName,
-        thumbnailUrl: experienceThumbnailUrl, // 🔹 ReviewCreatePage로 넘길 값
-      },
+  const safeParticipants =
+    typeof totalParticipants === "number" && totalParticipants > 0
+      ? totalParticipants
+      : 1;
+
+  const perPersonPrice = finalPrice / safeParticipants;
+
+  const handleGoCancel = () => {
+    if (isCancelled || isCompleted) return;
+    navigate(`/my/reservations/${idForPath}/cancel`, {
+      state: { reservation },
     });
   };
 
@@ -150,28 +170,29 @@ export default function ReservationDetailPage() {
     <div className="min-h-[100dvh] bg-[#F5F5F5] flex justify-center">
       <div className="w-full max-w-[480px] bg-white flex flex-col">
         {/* 상단 헤더 */}
-        <header className="sticky top-0 z-20 bg-white border-b border-[#F2F2F2]">
-          <div className="h-12 flex items-center px-3">
+        <header className="sticky top-0 z-10 bg-white">
+          <div className="h-12 flex items-center px-3 border-b border-[#F1F1F1]">
             <button
               type="button"
               aria-label="뒤로가기"
-              onClick={handleBack}
+              onClick={() => navigate(-1)}
               className="w-9 h-9 flex items-center justify-center"
             >
               <IoChevronBack size={22} className="text-[#3A3A3A]" />
             </button>
-            <h1 className="flex-1 text-center text-[16px] font-semibold text-[#3A3A3A] -ml-9">
+            <h1 className="flex-1 text-center text-[16px] font-semibold text-[#222]">
               예약 상세
             </h1>
+            <div className="w-9 h-9" />
           </div>
         </header>
 
-        {/* 내용 */}
-        <main className="flex-1 overflow-y-auto pb-24">
+        {/* 본문 */}
+        <main className="flex-1 overflow-y-auto pt-3.5 pb-24">
           {/* 호스트 정보 */}
-          <section className="px-5 py-4 border-b border-[#F5F5F5] flex items-center justify-between">
+          <section className="px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-[52px] h-[52px] rounded-full bg-[#FFEFEF] overflow-hidden flex items-center justify-center">
+              <div className="w-[55px] h-[55px] rounded-full overflow-hidden bg-[#FFEFEF] mr-1">
                 <img
                   src={avatarSrc}
                   alt={hostName}
@@ -179,114 +200,143 @@ export default function ReservationDetailPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <p className="text-[15px] font-semibold text-[#3A3A3A]">
-                  {hostName} 호스트
+                <p className="text-[20px] font-bold text-[#3A3A3A]">
+                  {hostName}
                 </p>
-                <p className="text-[12px] text-[#A0A0A0]">3회 차 만나는 중</p>
+                <p className="text-[14px] text-[#3A3A3A] font-medium">
+                  {hostSubtitle ?? ""}
+                </p>
               </div>
             </div>
+
             <button
               type="button"
               className="w-6 h-6 flex items-center justify-center"
             >
-              <IoChevronForward size={18} className="text-[#C4C4C4]" />
+              <IoChevronForward size={25} className="text-[#9D9D9D]" />
             </button>
           </section>
 
           {/* 예약 정보 */}
-          <section className="px-5 pt-5 pb-4 border-b border-[#F5F5F5]">
-            <h2 className="text-[15px] font-semibold text-[#3A3A3A] mb-3">
+          <section className="px-5 pt-6 pb-4">
+            <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
               예약 정보
             </h2>
-            <dl className="space-y-2 text-[14px]">
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">클래스명</dt>
-                <dd className="text-right text-[#3A3A3A]">{experienceTitle}</dd>
+
+            <div className="space-y-3 text-[15px] font-medium">
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">클래스명</span>
+                <p className="flex-1 text-[#3A3A3A] break-keep">
+                  {displayedTitle}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">일시</dt>
-                <dd className="text-right text-[#3A3A3A]">
+
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">일시</span>
+                <p className="flex-1 text-[#3A3A3A]">
                   {formatDateTimeKorean(reservedStartTime)}
-                </dd>
+                </p>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">예약 인원</dt>
-                <dd className="text-right text-[#3A3A3A]">1명</dd>
+
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">예약 인원</span>
+                <p className="flex-1 text-[#3A3A3A]">{safeParticipants}명</p>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">예약 번호</dt>
-                <dd className="text-right text-[#3A3A3A]">
-                  {reservation.reservationId ?? "-"}
-                </dd>
-              </div>
-            </dl>
+            </div>
           </section>
 
-          {/* 클래스 정보 (주소 섹션 생략) */}
-          <section className="px-5 pt-5 pb-4 border-b border-[#F5F5F5]">
-            <h2 className="text-[15px] font-semibold text-[#3A3A3A] mb-3">
+          {/* 클래스 정보 */}
+          <section className="px-5 pt-5 pb-4">
+            <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
               클래스 정보
             </h2>
-            <dl className="space-y-2 text-[14px]">
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">소요시간</dt>
-                <dd className="text-right text-[#3A3A3A]">2시간</dd>
+
+            <div className="space-y-2 text-[15px] font-medium pb-3">
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">소요시간</span>
+                <p className="flex-1 text-[#3A3A3A]">2시간</p>
               </div>
-            </dl>
-            <p className="mt-3 text-[13px] leading-relaxed text-[#7E8082]">
-              15분 이상 지각 시 체험 시간이 단축될 수 있어요.
-              <br />
-              마감 하루 전부터 일정 변경 및 취소는 불가하니
-              <br />
-              일정을 꼭 확인하시고 예약해주세요.
-            </p>
+            </div>
+
+            <div className="space-y-2 text-[15px] font-medium">
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">유의사항</span>
+                <p className="flex-1 text-[#3A3A3A] leading-[1.5] break-keep">
+                  {caution ? (
+                    caution
+                  ) : (
+                    <>
+                      15분 이상 지각 시 체험 시간이 단축될 수 있어요.
+                      <br />
+                      마감 하루 전부터 일정 변경 및 취소는 불가하니 꼭
+                      확인해주세요.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
           </section>
 
           {/* 결제 안내 */}
           <section className="px-5 pt-5 pb-4">
-            <h2 className="text-[15px] font-semibold text-[#3A3A3A] mb-3">
+            <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
               결제 안내
             </h2>
-            <dl className="space-y-2 text-[14px]">
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">이용 금액</dt>
-                <dd className="text-right text-[#3A3A3A]">
-                  {totalPrice?.toLocaleString()}원
-                </dd>
+
+            <div className="space-y-3 text-[15px] font-medium">
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#969696]">클래스 이용료</span>
+                <p className="flex-1 text-[#3A3A3A]">
+                  1인 {perPersonPrice.toLocaleString()}원
+                </p>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-[#9E9E9E]">이용료</dt>
-                <dd className="text-right text-[#3A3A3A]">0원</dd>
+
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#9E9E9E]">총 이용료</span>
+                <p className="flex-1 text-[#3A3A3A]">
+                  {finalPrice.toLocaleString()}원
+                </p>
               </div>
-              <div className="flex justify-between pt-2 mt-1 border-t border-[#F2F2F2]">
-                <dt className="text-[#9E9E9E]">총 결제 금액</dt>
-                <dd className="text-right text-[15px] font-semibold text-[#3A3A3A]">
-                  {totalPrice?.toLocaleString()}원
-                </dd>
+
+              <div className="flex items-start">
+                <span className="w-[100px] text-[#9E9E9E]">결제 방법</span>
+                <p className="flex-1 text-[#3A3A3A] leading-[1.5] break-keep">
+                  현장 결제 (현금 / 계좌이체 / 간편결제)
+                  <br />
+                  <span className="text-[12px] text-[#F13030] mt-1.5 inline-block">
+                    결제는 호스트의 사전 안내를 통해 진행됩니다.
+                  </span>
+                </p>
               </div>
-            </dl>
-            <p className="mt-3 text-[12px] text-[#B0B0B0] leading-relaxed">
-              취소 수수료는 호스트의 취소 규정에 따라 적용됩니다.
-            </p>
+            </div>
           </section>
         </main>
 
         {/* 하단 버튼 */}
-        <footer className="sticky bottom-0 bg-white border-t border-[#EEEEEE] px-5 py-3 flex gap-2">
-          <button
-            type="button"
-            className="flex-1 h-[48px] rounded-[8px] border border-[#E0E0E0] text-[15px] font-medium text-[#7E8082] bg-white"
-          >
-            예약 취소
-          </button>
-          <button
-            type="button"
-            onClick={handleGoReview}
-            className="flex-1 h-[48px] rounded-[8px] text-[15px] font-semibold text-white bg-[#F13030]"
-          >
-            리뷰 작성하기
-          </button>
-        </footer>
+        {!isCompleted && (
+          <footer className="sticky bottom-0 bg-white border-t border-[#EEEEEE] px-5 py-3 flex gap-2">
+            <button
+              type="button"
+              onClick={handleGoCancel}
+              disabled={isCancelled}
+              className={`flex-[2] h-[48px] rounded-[8px] text-[16px] font-semibold
+                ${
+                  isCancelled
+                    ? "bg-[#D8D8D8] text-white border-none cursor-not-allowed"
+                    : "border border-[#B6B6B6] text-[#3A3A3A] bg-white"
+                }`}
+            >
+              예약 취소
+            </button>
+
+            <button
+              type="button"
+              className="flex-[3] h-[48px] rounded-[8px] border border-[#B6B6B6] text-[16px] font-semibold text-[#3A3A3A] bg-white"
+            >
+              호스트에게 연락하기
+            </button>
+          </footer>
+        )}
       </div>
     </div>
   );
