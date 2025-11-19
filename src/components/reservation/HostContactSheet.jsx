@@ -21,7 +21,7 @@ function formatToHHMM(timeString) {
   return timeString;
 }
 
-export default function HostContactSheet({ open, onClose, hostId, hostName }) {
+export default function HostContactSheet({ open, onClose, hostId }) {
   const [hostDetail, setHostDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -78,7 +78,7 @@ export default function HostContactSheet({ open, onClose, hostId, hostName }) {
       topOffsetPx={490}
       footer={null}
     >
-      <div className=" px-5 pb-[24px] pt-1 ml-1">
+      <div className="px-5 pb-[24px] pt-1 ml-1">
         <p className="text-[15px] font-medium text-[#3A3A3A] mb-1">
           문의시간: {contactTime}
         </p>
@@ -87,46 +87,34 @@ export default function HostContactSheet({ open, onClose, hostId, hostName }) {
 
         <div className="space-y-4 opacity-100 mt-5">
           {/* 전화 */}
-          <button
-            type="button"
-            className="w-full flex items-center gap-3"
-            onClick={() => onClose?.()}
-          >
+          <div className="w-full flex items-center gap-3 cursor-default select-none">
             <span className="w-8 h-8 rounded-full flex items-center justify-center">
               <img src={callIcon} alt="call" className="w-[30px] h-[30px]" />
             </span>
             <span className="text-[16px] font-medium text-[#3A3A3A]">
               {loading ? "전화 정보 불러오는 중..." : phoneText}
             </span>
-          </button>
+          </div>
 
           {/* 카카오 */}
-          <button
-            type="button"
-            className="w-full flex items-center gap-3"
-            onClick={() => onClose?.()}
-          >
+          <div className="w-full flex items-center gap-3 cursor-default select-none">
             <span className="w-8 h-8 rounded-full flex items-center justify-center">
               <img src={kakaoIcon} alt="kakao" className="w-[30px] h-[30px]" />
             </span>
             <span className="text-[16px] font-medium text-[#3A3A3A]">
               {loading ? "카카오 채널 불러오는 중..." : kakaoText}
             </span>
-          </button>
+          </div>
 
           {/* 이메일 */}
-          <button
-            type="button"
-            className="w-full flex items-center gap-3"
-            onClick={() => onClose?.()}
-          >
+          <div className="w-full flex items-center gap-3 cursor-default select-none">
             <span className="w-8 h-8 rounded-full flex items-center justify-center">
               <img src={mailIcon} alt="email" className="w-[30px] h-[30px]" />
             </span>
             <span className="text-[16px] font-medium text-[#3A3A3A]">
               {loading ? "이메일 정보 불러오는 중..." : emailText}
             </span>
-          </button>
+          </div>
         </div>
       </div>
     </BaseAppSheet>
