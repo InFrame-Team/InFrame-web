@@ -57,3 +57,9 @@ export async function uploadExperienceImages(experienceId, files, signal) {
   );
   return res.data;
 }
+
+// 체험 상세 조회
+export async function fetchExperienceDetail(experienceId, signal) {
+  const res = await api.get(`host/experiences/${experienceId}`, { signal });
+  return res.data;
+}

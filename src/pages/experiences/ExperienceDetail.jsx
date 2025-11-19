@@ -16,25 +16,7 @@ import { RiHome5Line } from "react-icons/ri";
 import fakeImg from "../../assets/fakeImg.svg";
 import fakeProfile from "../../assets/fakeProfile.svg";
 import ReservationSection from "../../components/experience/ReservationSection";
-
-/*  목업 데이터 */
-const fakeExperience = {
-  id: 1,
-  tags: ["초콜릿", "일일클래스"],
-  title: "한 입의 예술, 핸드메이드 초콜릿",
-  subtitle: "Chocolate One Day Class",
-  rating: 4.5,
-  ratingCount: 230,
-  durationText: "1시간",
-  ageText: "전 연령 이용 가능",
-  host: {
-    name: "박서현",
-    intro1: "벨기에 수료 5년, 디저트로",
-    intro2: "이야기를 빚는 쇼콜라티에",
-    avatarEmoji: fakeProfile,
-  },
-  heroImage: fakeImg,
-};
+import { fetchExperienceDetail } from "../../apis/experiences";
 
 /* 별점 */
 function Stars({ value = 0 }) {
@@ -54,11 +36,31 @@ function Stars({ value = 0 }) {
   );
 }
 
-export default function ExperienceDetailPage({ data = fakeExperience }) {
-  const navigate = useNavigate();
-  const { experienceId } = useParams(); // URL에서 체험 ID 수신
+function mapApiToViewModel(api) {
+  if (!api) return null;
 
-  // 헤더 페이드
+  return {
+    id: api.experienceId,
+    title: api.title,
+    subtitle: api.experienceIntro,
+    rating: api.rating,
+    ratingCount: api.reviewCount,
+    durationText: api.durationInHours,
+    ageText: "전 연령 이용 가능",
+    host: {
+      name: api.hostName,
+      intro1: api.hostIntro,
+      intro2: "",
+      avatarEmoji: api.hostProfile || fakeProfile,
+    },
+    heroImage: (api.imageUrls && api.imageUrls[0]) || fakeImg,
+    price: api.price,
+  };
+}
+
+export default function ExperienceDetailPage() {
+  const navigate = useNavigate();
+  const { experienceId } = useParams();
   const heroRef = useRef(null);
   const topSentinelRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
@@ -76,6 +78,69 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
   // 탭 상태
   const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
+
+  // 체험 상세 데이터
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (!experienceId) return;
+
+    const ac = new AbortController();
+    setLoading(true);
+    setErrorMsg("");
+    setData(null);
+
+    fetchExperienceDetail(experienceId, ac.signal)
+      .then((apiRes) => {
+        const viewModel = mapApiToViewModel(apiRes);
+        setData(viewModel);
+      })
+      .catch((e) => {
+        if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
+        console.error(e);
+        if (e.response?.status === 404)
+          setErrorMsg("체험 정보를 찾을 수 없습니다.");
+        else setErrorMsg("체험 정보를 불러오지 못했습니다.");
+      })
+      .finally(() => setLoading(false));
+
+    return () => ac.abort();
+  }, [experienceId]);
+
+  if (loading || !data) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex flex-col items-center">
+        <div className="w-full max-w-[480px] flex-1 flex items-center justify-center">
+          <p className="text-sm text-[#888]">체험 정보를 불러오는 중입니다…</p>
+        </div>
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-30">
+          <BottomTab />
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex flex-col items-center">
+        <div className="w-full max-w-[480px] px-5 pt-16">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mb-4 text-sm text-[#555]"
+          >
+            ← 뒤로가기
+          </button>
+          <p className="text-sm text-red-500">{errorMsg}</p>
+        </div>
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-30">
+          <BottomTab />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-white flex flex-col items-center">
@@ -103,7 +168,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
             </button>
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 text-[15px] font-semibold text-[#2B2B2B] truncate max-w-[200px] text-center">
-            초콜릿 원데이 클래스
+            {data.title}
           </div>
           <div className="absolute right-3">
             <button
@@ -162,16 +227,19 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
         {/* 소개 섹션 */}
         <div className="px-5 py-5">
-          <div className="flex gap-2 mb-2">
-            {data.tags.map((t) => (
-              <span
-                key={t}
-                className="px-2 py-1 rounded-full bg-[#F8F8F8] text-[#9D9D9D] text-[12px] font-semibold"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
+          {/* 태그는 데이터가 있을 때만 표시 */}
+          {data.tags && data.tags.length > 0 && (
+            <div className="flex gap-2 mb-2">
+              {data.tags.map((t) => (
+                <span
+                  key={t}
+                  className="px-2 py-1 rounded-full bg-[#F8F8F8] text-[#9D9D9D] text-[12px] font-semibold"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
 
           <h1 className="text-[24px] font-bold text-[#3A3A3A]">{data.title}</h1>
           <p className="text-[15px] font-medium text-[#A0A0A0] mt-1">
@@ -189,7 +257,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
           <div className="mt-2 space-y-1.5 border-b pb-5">
             <div className="flex items-center gap-2 text-[15px] font-medium text-[#555558]">
               <IoMdTime className="w-[15px] h-[15px] text-[#8E8E93]" />
-              <span>{data.durationText}</span>
+              <span>{data.durationText}시간</span>
             </div>
             <div className="flex items-center gap-2 text-[15px] font-medium text-[#555558]">
               <FaUser className="w-[14px] h-[14px] text-[#C9C9C9]" />
@@ -217,14 +285,16 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
                   <p className="text-[13px] text-[#A0A0A0] font-medium pt-2">
                     {data.host.intro1}
                   </p>
-                  <p className="text-[13px] text-[#A0A0A0] font-medium">
-                    {data.host.intro2}
-                  </p>
+                  {data.host.intro2 && (
+                    <p className="text-[13px] text-[#A0A0A0] font-medium">
+                      {data.host.intro2}
+                    </p>
+                  )}
                 </div>
               </div>
               <img
                 src={data.host.avatarEmoji}
-                className="w-[80px] h-[80px] mr-2"
+                className="w-[80px] h-[80px] mr-2 rounded-full object-cover"
                 alt="host"
               />
             </div>
@@ -269,19 +339,12 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
 
         {/* 탭 컨텐츠 */}
         <div className="relative w-full">
-          {/* 예약하기 탭 */}
           {tab === "reserve" && (
-            <ReservationSection
-              experienceId={experienceId ?? data.id}
-              price={data.price} // 실제 연동 시 API 값 넣어줄 예정
-            />
+            <ReservationSection experienceId={data.id} price={data.price} />
           )}
 
-          {/* 상세정보 탭 */}
           {tab === "detail" && (
-            <div className="px-5 pt-4 pb-12">
-              {/* 상세 정보 콘텐츠는 추후 작성 */}
-            </div>
+            <div className="px-5 pt-4 pb-12">{/* 상세 정보는 추후 구현 */}</div>
           )}
         </div>
       </div>
