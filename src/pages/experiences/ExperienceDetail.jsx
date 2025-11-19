@@ -21,22 +21,19 @@ import ExperienceDetailInfoSection from "../../components/experience/ExperienceD
 
 /* 별점 */
 function Stars({ value = 0 }) {
-  const full = Math.floor(value);
-  const hasHalf = value - full >= 0.5;
-  const empty = 5 - full - (hasHalf ? 1 : 0);
+  // 소수 둘째 자리까지 표시
+  const display = Number(value || 0).toFixed(2);
+
   return (
-    <div className="flex items-center">
-      {Array.from({ length: full }).map((_, i) => (
-        <AiFillStar key={`f-${i}`} className="w-4 h-4 text-[#F13030]" />
-      ))}
-      {hasHalf && <AiFillStar className="w-4 h-4 text-[#E7E7E7]" />}
-      {Array.from({ length: empty }).map((_, i) => (
-        <AiFillStar key={`e-${i}`} className="w-4 h-4 text-[#E7E7E7]" />
-      ))}
+    <div className="flex items-center gap-1">
+      <AiFillStar className="w-4 h-4 text-[#F13030]" />
+
+      <span className="text-[14px] font-semibold text-[#3A3A3A]">
+        {display}
+      </span>
     </div>
   );
 }
-
 function mapApiToViewModel(api) {
   if (!api) return null;
 
@@ -256,10 +253,6 @@ export default function ExperienceDetailPage() {
 
           <div className="flex items-center gap-1.5 mt-3">
             <Stars value={data.rating} />
-            <span className="text-[14px] font-semibold text-[#3A3A3A]">
-              {data.ratingCount}
-            </span>
-            <IoChevronForward className="text-[#A0A0A0] cursor-pointer" />
           </div>
 
           <div className="mt-2 space-y-1.5 border-b pb-5">
