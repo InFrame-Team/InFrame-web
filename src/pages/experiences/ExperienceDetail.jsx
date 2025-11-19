@@ -58,6 +58,11 @@ function mapApiToViewModel(api) {
     price: api.price,
     location: api.location,
     phoneNumber: api.businessPhoneNumber,
+    caution: api.caution,
+    contactStartTime: api.contactStartTime,
+    contactEndTime: api.contactEndTime,
+    businessEmail: api.businessEmail,
+    kakaoAddress: api.kakaoAddress,
   };
 }
 
@@ -353,6 +358,11 @@ export default function ExperienceDetailPage() {
                 phoneNumber={data.phoneNumber}
                 experienceId={data.id}
                 totalReviewCount={data.ratingCount}
+                caution={data.caution}
+                contactStartTime={data.contactStartTime}
+                contactEndTime={data.contactEndTime}
+                businessEmail={data.businessEmail}
+                kakaoAddress={data.kakaoAddress}
               />
             </div>
           )}

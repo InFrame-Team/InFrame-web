@@ -3,12 +3,26 @@ import { MdLocationOn } from "react-icons/md";
 import { IoIosCall } from "react-icons/io";
 import ExperienceReviewSection from "./ExperienceReviewSection";
 
+function formatContactTime(start, end) {
+  if (!start || !end) return null;
+
+  const toHM = (t) => (typeof t === "string" ? t.slice(0, 5) : t);
+  return `${toHM(start)} ~ ${toHM(end)}`;
+}
+
 export default function ExperienceDetailInfoSection({
   location,
   phoneNumber,
   experienceId,
   totalReviewCount,
+  caution,
+  contactStartTime,
+  contactEndTime,
+  businessEmail,
+  kakaoAddress,
 }) {
+  const contactTimeText = formatContactTime(contactStartTime, contactEndTime);
+
   return (
     <div className="pb-10 space-y-8">
       {/* 장소 */}
@@ -52,6 +66,50 @@ export default function ExperienceDetailInfoSection({
         experienceId={experienceId}
         totalReviewCount={totalReviewCount}
       />
+
+      {/* 유의사항 섹션 */}
+      <section className="pt-6 border-t">
+        <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
+          예약 시 꼭 확인해 주세요!
+        </h2>
+
+        <p className="text-[16px] font-medium text-[#555558] mb-1">
+          프로그램 유의사항
+        </p>
+        <p className="text-[16px] leading-[1.6] text-[#555558] whitespace-pre-line mb-4">
+          {caution
+            ? caution
+            : "호스트가 제공하는 유의사항을 예약 전·후에 한 번 더 확인해 주세요."}
+        </p>
+
+        {/* 문의시간 / 연락처 정보 */}
+        <div className="mt-2 space-y-1.5 text-[15px] text-[#555558]">
+          {contactTimeText && (
+            <div className="flex gap-3">
+              <span className="w-[70px] text-[#A0A0A0]">문의시간</span>
+              <span className="flex-1">{contactTimeText}</span>
+            </div>
+          )}
+          {phoneNumber && (
+            <div className="flex gap-3">
+              <span className="w-[70px] text-[#A0A0A0]">전화번호</span>
+              <span className="flex-1">{phoneNumber}</span>
+            </div>
+          )}
+          {kakaoAddress && (
+            <div className="flex gap-3">
+              <span className="w-[70px] text-[#A0A0A0]">카카오 채널</span>
+              <span className="flex-1 break-all">{kakaoAddress}</span>
+            </div>
+          )}
+          {businessEmail && (
+            <div className="flex gap-3">
+              <span className="w-[70px] text-[#A0A0A0]">이메일</span>
+              <span className="flex-1">{businessEmail}</span>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
