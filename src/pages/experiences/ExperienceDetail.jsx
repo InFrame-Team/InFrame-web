@@ -347,11 +347,11 @@ export default function ExperienceDetailPage() {
 
         {/* 탭 컨텐츠 */}
         <div className="relative w-full">
-          {tab === "reserve" && (
+          <div className={tab === "reserve" ? "block" : "hidden"}>
             <ReservationSection experienceId={data.id} price={data.price} />
-          )}
+          </div>
 
-          {tab === "detail" && (
+          <div className={tab === "detail" ? "block" : "hidden"}>
             <div className="px-5 pt-4 pb-12">
               <ExperienceDetailInfoSection
                 location={data.location}
@@ -365,7 +365,7 @@ export default function ExperienceDetailPage() {
                 kakaoAddress={data.kakaoAddress}
               />
             </div>
-          )}
+          </div>
         </div>
       </div>
 
