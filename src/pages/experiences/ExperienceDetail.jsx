@@ -54,31 +54,6 @@ function Stars({ value = 0 }) {
   );
 }
 
-/* 액션 아이템 */
-function ActionItem({ icon, label, toggleable = false }) {
-  const [active, setActive] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => toggleable && setActive((p) => !p)}
-      className="flex flex-col items-center py-3 rounded-xl"
-    >
-      <div className="w-10 h-10 rounded-full flex items-center justify-center">
-        {toggleable ? (
-          active ? (
-            <FaHeart size={20} color="#F13030" />
-          ) : (
-            <FaRegHeart size={20} color="#3A3A3A" />
-          )
-        ) : (
-          icon
-        )}
-      </div>
-      <span className="text-[14px] font-medium text-[#555558]">{label}</span>
-    </button>
-  );
-}
-
 export default function ExperienceDetailPage({ data = fakeExperience }) {
   const navigate = useNavigate();
   const { experienceId } = useParams(); // URL에서 체험 ID 수신
@@ -211,7 +186,7 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
             <IoChevronForward className="text-[#A0A0A0] cursor-pointer" />
           </div>
 
-          <div className="mt-2 space-y-1.5">
+          <div className="mt-2 space-y-1.5 border-b pb-5">
             <div className="flex items-center gap-2 text-[15px] font-medium text-[#555558]">
               <IoMdTime className="w-[15px] h-[15px] text-[#8E8E93]" />
               <span>{data.durationText}</span>
@@ -222,15 +197,8 @@ export default function ExperienceDetailPage({ data = fakeExperience }) {
             </div>
           </div>
 
-          <div className="mt-6 pb-2 grid grid-cols-4 gap-2 border-t border-b text-center">
-            <ActionItem toggleable label="저장하기" />
-            <ActionItem icon={<IoMapOutline size={20} />} label="지도보기" />
-            <ActionItem icon={<CiStar size={28} />} label="리뷰쓰기" />
-            <ActionItem icon={<IoShareOutline size={23} />} label="공유하기" />
-          </div>
-
           {/* 호스트 정보 */}
-          <div className="mt-4 border-[#EDEEF0] pt-5">
+          <div className="mt-4 border-[#EDEEF0] pt-2">
             <div className="flex gap-1.5">
               <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
                 호스트 정보
