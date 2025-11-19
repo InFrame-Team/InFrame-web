@@ -34,11 +34,10 @@ export default function ReservationCancelDonePage() {
     return null;
   }
 
-  const { experienceTitle, title, reservedStartTime, reservationId } =
+  const { experienceTitle, title, reservedStartTime, totalParticipants } =
     reservation;
 
   const displayedTitle = experienceTitle || title || "";
-  const peopleCount = 1;
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
@@ -63,7 +62,7 @@ export default function ReservationCancelDonePage() {
               </dd>
 
               <dt className="text-[#969696]">예약 인원</dt>
-              <dd className="text-[#3A3A3A]">{peopleCount}명</dd>
+              <dd className="text-[#3A3A3A]">{totalParticipants}명</dd>
             </dl>
           </section>
         </main>
