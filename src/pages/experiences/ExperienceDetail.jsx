@@ -351,6 +351,8 @@ export default function ExperienceDetailPage() {
               <ExperienceDetailInfoSection
                 location={data.location}
                 phoneNumber={data.phoneNumber}
+                experienceId={data.id}
+                totalReviewCount={data.ratingCount}
               />
             </div>
           )}

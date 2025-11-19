@@ -22,3 +22,11 @@ export async function createReview(reservationId, reviewData, imageFiles = []) {
 
   return res.data;
 }
+
+// 특정 체험의 리뷰 목록 조회
+export async function fetchReviewsByExperience(experienceId, signal) {
+  const res = await api.get(`/reviews/experience/${experienceId}`, {
+    signal,
+  });
+  return res.data;
+}

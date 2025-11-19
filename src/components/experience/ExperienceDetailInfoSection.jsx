@@ -1,10 +1,16 @@
 import React from "react";
 import { MdLocationOn } from "react-icons/md";
 import { IoIosCall } from "react-icons/io";
+import ExperienceReviewSection from "./ExperienceReviewSection";
 
-export default function ExperienceDetailInfoSection({ location, phoneNumber }) {
+export default function ExperienceDetailInfoSection({
+  location,
+  phoneNumber,
+  experienceId,
+  totalReviewCount,
+}) {
   return (
-    <div className="pb-10">
+    <div className="pb-10 space-y-8">
       {/* 장소 */}
       <section className="pt-6">
         <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">장소</h2>
@@ -40,6 +46,12 @@ export default function ExperienceDetailInfoSection({ location, phoneNumber }) {
           길찾기
         </button>
       </section>
+
+      {/* 리뷰 섹션 */}
+      <ExperienceReviewSection
+        experienceId={experienceId}
+        totalReviewCount={totalReviewCount}
+      />
     </div>
   );
 }
