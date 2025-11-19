@@ -34,3 +34,11 @@ export async function fetchMyHostProfile(signal) {
   const res = await api.get("host/me", { signal });
   return res.data;
 }
+
+// 특정 호스트 상세 정보 조회
+export async function fetchHostDetail(hostId, signal) {
+  const res = await api.get(`host/${hostId}`, {
+    signal,
+  });
+  return res.data;
+}

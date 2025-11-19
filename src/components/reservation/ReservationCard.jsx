@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 
-export default function ReservationCard({ reservation, onClickReview }) {
+export default function ReservationCard({
+  reservation,
+  onClickReview,
+  onClickContactHost,
+}) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
 
@@ -19,12 +23,13 @@ export default function ReservationCard({ reservation, onClickReview }) {
     isUpcoming,
     reviewWritten,
     status,
+    experienceId,
   } = reservation;
 
   const isCancelled = status === "CANCELLED";
-
+  const isReserved = status === "RESERVED";
+  const showContactHost = isCancelled || isReserved;
   const avatarSrc = hostProfileImageUrl || fakeProfile2;
-
   const primaryLabel = isCancelled
     ? "길찾기"
     : isUpcoming
@@ -33,15 +38,15 @@ export default function ReservationCard({ reservation, onClickReview }) {
     ? "후기 작성 완료"
     : "후기 작성";
 
-  const secondaryLabel = isCancelled
+  const secondaryLabel = showContactHost
     ? "호스트에게 연락하기"
-    : isUpcoming
-    ? "호스트에게 연락하기"
-    : "같은 곳으로 예약하기";
+    : "같은 건으로 예약하기";
 
   // 지난 예약 + 리뷰 작성한 경우에만 비활성
   const primaryDisabled = !isUpcoming && reviewWritten;
+
   const handlePrimaryClick = () => {
+    // 지난 예약 + 아직 리뷰 안 썼을 때만 리뷰 작성 페이지 이동
     if (!isUpcoming && !reviewWritten && onClickReview) {
       onClickReview(reservation);
     }
@@ -51,6 +56,15 @@ export default function ReservationCard({ reservation, onClickReview }) {
     navigate(`/my/reservations/${id}`, {
       state: { reservation },
     });
+  };
+
+  const handleSecondaryClick = () => {
+    if (showContactHost) {
+      onClickContactHost?.(reservation);
+    } else {
+      if (!experienceId) return;
+      navigate(`/experiences/${experienceId}`);
+    }
   };
 
   return (
@@ -144,6 +158,7 @@ export default function ReservationCard({ reservation, onClickReview }) {
 
         <button
           type="button"
+          onClick={handleSecondaryClick}
           className="h-[45px] rounded-[10px] border border-[#B6B6B6] text-[16px] font-semibold text-[#3A3A3A] bg-white flex-[3]"
         >
           {secondaryLabel}

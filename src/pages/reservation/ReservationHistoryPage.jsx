@@ -4,6 +4,7 @@ import { IoChevronBack, IoSearch } from "react-icons/io5";
 import ReservationCard from "../../components/reservation/ReservationCard";
 import { fetchMyReservations } from "../../apis/reservations";
 import { formatKoreanDate, getDDayLabel } from "../../utils/dateUtils";
+import HostContactSheet from "../../components/reservation/HostContactSheet";
 
 function isUpcomingReservation(reservedStartTime) {
   if (!reservedStartTime) return false;
@@ -25,6 +26,8 @@ export default function ReservationHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
+  const [contactSheetOpen, setContactSheetOpen] = useState(false);
+  const [selectedForContact, setSelectedForContact] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,6 +48,7 @@ export default function ReservationHistoryPage() {
             experienceId: item.experienceId,
             status: item.status,
             hostName: `${item.hostName} 호스트`,
+            hostId: item.hostId,
             hostProfileImageUrl: item.hostProfileImageUrl,
             title: item.experienceTitle,
             amount: item.totalPrice,
@@ -95,6 +99,11 @@ export default function ReservationHistoryPage() {
       return target.includes(keyword.toLowerCase());
     });
   }, [reservations, searchText]);
+
+  const handleOpenContactSheet = (reservation) => {
+    setSelectedForContact(reservation);
+    setContactSheetOpen(true);
+  };
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
@@ -171,10 +180,17 @@ export default function ReservationHistoryPage() {
                       },
                     })
                   }
+                  onClickContactHost={() => handleOpenContactSheet(item)}
                 />
               ))}
           </div>
         </main>
+        {/* 호스트 연락 시트 */}
+        <HostContactSheet
+          open={contactSheetOpen}
+          onClose={() => setContactSheetOpen(false)}
+          hostId={selectedForContact?.hostId}
+        />
       </div>
     </div>
   );

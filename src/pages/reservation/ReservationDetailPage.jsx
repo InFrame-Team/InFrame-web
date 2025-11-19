@@ -3,6 +3,7 @@ import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 import { fetchMyReservations } from "../../apis/reservations";
+import HostContactSheet from "../../components/reservation/HostContactSheet"; // ✅ 추가
 
 function formatDateTimeKorean(isoString) {
   if (!isoString) return "-";
@@ -30,12 +31,12 @@ export default function ReservationDetailPage() {
   const navigate = useNavigate();
   const { reservationId } = useParams();
   const location = useLocation();
-
   const [reservation, setReservation] = useState(
     location.state?.reservation || null
   );
   const [loading, setLoading] = useState(!location.state?.reservation);
   const [error, setError] = useState(null);
+  const [contactSheetOpen, setContactSheetOpen] = useState(false);
 
   useEffect(() => {
     // 리스트에서 state로 넘어온 값이 있으면 API 호출 안 함
@@ -143,6 +144,7 @@ export default function ReservationDetailPage() {
     amount,
     reservationId: idFromData,
     status,
+    hostId,
   } = reservation;
 
   const avatarSrc = hostProfileImageUrl || fakeProfile2;
@@ -164,6 +166,10 @@ export default function ReservationDetailPage() {
     navigate(`/my/reservations/${idForPath}/cancel`, {
       state: { reservation },
     });
+  };
+
+  const handleOpenContactSheet = () => {
+    setContactSheetOpen(true);
   };
 
   return (
@@ -331,12 +337,21 @@ export default function ReservationDetailPage() {
 
             <button
               type="button"
+              onClick={handleOpenContactSheet}
               className="flex-[3] h-[48px] rounded-[8px] border border-[#B6B6B6] text-[16px] font-semibold text-[#3A3A3A] bg-white"
             >
               호스트에게 연락하기
             </button>
           </footer>
         )}
+
+        {/* 호스트 연락 시트 */}
+        <HostContactSheet
+          open={contactSheetOpen}
+          onClose={() => setContactSheetOpen(false)}
+          hostId={hostId}
+          hostName={hostName}
+        />
       </div>
     </div>
   );
