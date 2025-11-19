@@ -17,6 +17,7 @@ import fakeImg from "../../assets/fakeImg.svg";
 import fakeProfile from "../../assets/fakeProfile.svg";
 import ReservationSection from "../../components/experience/ReservationSection";
 import { fetchExperienceDetail } from "../../apis/experiences";
+import ExperienceDetailInfoSection from "../../components/experience/ExperienceDetailInfoSection";
 
 /* 별점 */
 function Stars({ value = 0 }) {
@@ -55,6 +56,8 @@ function mapApiToViewModel(api) {
     },
     heroImage: (api.imageUrls && api.imageUrls[0]) || fakeImg,
     price: api.price,
+    location: api.location,
+    phoneNumber: api.businessPhoneNumber,
   };
 }
 
@@ -344,7 +347,12 @@ export default function ExperienceDetailPage() {
           )}
 
           {tab === "detail" && (
-            <div className="px-5 pt-4 pb-12">{/* 상세 정보는 추후 구현 */}</div>
+            <div className="px-5 pt-4 pb-12">
+              <ExperienceDetailInfoSection
+                location={data.location}
+                phoneNumber={data.phoneNumber}
+              />
+            </div>
           )}
         </div>
       </div>
