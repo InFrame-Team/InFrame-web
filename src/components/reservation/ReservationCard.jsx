@@ -28,28 +28,36 @@ export default function ReservationCard({
 
   const isCancelled = status === "CANCELLED";
   const isReserved = status === "RESERVED";
-  const showContactHost = isCancelled || isReserved;
-  const avatarSrc = hostProfileImageUrl || fakeProfile2;
-  const primaryLabel = isCancelled
-    ? "길찾기"
-    : isUpcoming
-    ? "길찾기"
-    : reviewWritten
-    ? "후기 작성 완료"
-    : "후기 작성";
+  const isCompleted = status === "COMPLETED";
 
+  // 연락 버튼 노출: 예약 중 or 취소
+  const showContactHost = isCancelled || isReserved;
+
+  const avatarSrc = hostProfileImageUrl || fakeProfile2;
+  const primaryLabel =
+    isReserved || isCancelled
+      ? "길찾기"
+      : isCompleted && reviewWritten
+      ? "후기 작성 완료"
+      : isCompleted
+      ? "후기 작성"
+      : "길찾기";
+
+  // secondary 버튼 라벨
   const secondaryLabel = showContactHost
     ? "호스트에게 연락하기"
     : "같은 건으로 예약하기";
 
-  // 지난 예약 + 리뷰 작성한 경우에만 비활성
-  const primaryDisabled = !isUpcoming && reviewWritten;
+  // COMPLETED + 리뷰 작성한 경우에만 비활성
+  const primaryDisabled = isCompleted && reviewWritten;
 
   const handlePrimaryClick = () => {
-    // 지난 예약 + 아직 리뷰 안 썼을 때만 리뷰 작성 페이지 이동
-    if (!isUpcoming && !reviewWritten && onClickReview) {
+    // COMPLETED + 아직 리뷰 안 썼을 때만 리뷰 작성 페이지 이동
+    if (isCompleted && !reviewWritten && onClickReview) {
       onClickReview(reservation);
     }
+
+    // RESERVED / CANCELLED 의 "길찾기"는 아직 동작 없음 (추후 연동)
   };
 
   const handleClickDetail = () => {
@@ -60,8 +68,10 @@ export default function ReservationCard({
 
   const handleSecondaryClick = () => {
     if (showContactHost) {
+      // 호스트에게 연락하기
       onClickContactHost?.(reservation);
     } else {
+      // 같은 건으로 예약하기 → 체험 상세로 이동
       if (!experienceId) return;
       navigate(`/experiences/${experienceId}`);
     }
@@ -150,7 +160,7 @@ export default function ReservationCard({
           className={`h-[45px] rounded-[10px] text-[16px] font-semibold flex-[2] ${
             primaryDisabled
               ? "bg-[#D8D8D8] text-white cursor-not-allowed"
-              : " border border-[#B6B6B6] bg-white text-[#3A3A3A]"
+              : "border border-[#B6B6B6] bg-white text-[#3A3A3A]"
           }`}
         >
           {primaryLabel}
