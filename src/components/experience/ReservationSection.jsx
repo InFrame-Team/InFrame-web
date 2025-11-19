@@ -93,13 +93,14 @@ export default function ReservationSection({
   // 인원수
   const [adult, setAdult] = useState(0);
   const [child, setChild] = useState(0);
+  const totalPeople = adult + child; // 총 인원
 
   // 합계/예약 가능 여부
   const total = useMemo(
-    () => (adult + child) * pricePerPerson,
-    [adult, child, pricePerPerson]
+    () => totalPeople * pricePerPerson,
+    [totalPeople, pricePerPerson]
   );
-  const canReserve = adult + child > 0 && !!selectedSlot;
+  const canReserve = totalPeople > 0 && !!selectedSlot;
 
   // 상단 월 표시
   const monthLabel = useMemo(() => {
@@ -129,12 +130,26 @@ export default function ReservationSection({
     setSelectedSlot(null);
   };
 
-  // 하단 요약용 날짜 포맷
+  // 하단 고정 바에 쓰는 날짜 포맷
   const fmtPicked = useMemo(() => {
     const d = pickedDate;
     if (!d) return selectedDate?.label || "";
     return `${d.getMonth() + 1}.${d.getDate()} ${dayLabels[d.getDay()]}`;
   }, [pickedDate, selectedDate]);
+
+  // 예약확인 카드용 날짜+시간 포맷 (11.10(월) 13:00)
+  const reservationLabel = useMemo(() => {
+    if (!pickedDate || !selectedSlot) return "";
+    const d = pickedDate;
+    const month = d.getMonth() + 1;
+    const date = d.getDate();
+    const day = dayLabels[d.getDay()];
+    const time = toDisplayHM(selectedSlot);
+    return `${String(month).padStart(2, "0")}.${String(date).padStart(
+      2,
+      "0"
+    )}(${day}) ${time}`;
+  }, [pickedDate, selectedSlot]);
 
   // 예약 생성
   const [reserveLoading, setReserveLoading] = useState(false);
@@ -285,7 +300,7 @@ export default function ReservationSection({
         </div>
 
         {/* 회차선택 */}
-        <div className="mt-6">
+        <div className="mt-6 border-b pb-8">
           <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
             회차선택
           </h3>
@@ -326,6 +341,32 @@ export default function ReservationSection({
             })}
           </div>
         </div>
+
+        {/* 예약확인 + 합계 섹션 */}
+        <div className="mt-6">
+          <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-2">
+            예약확인
+          </h3>
+          <div className="rounded-[10px] border border-[#E9E9EC] px-5 py-3 flex items-center justify-between text-[16px] font-medium text-[#3A3A3A] bg-white">
+            {canReserve ? (
+              <>
+                <span className="truncate">{reservationLabel}</span>
+                <span className="ml-4 whitespace-nowrap">{totalPeople}인</span>
+              </>
+            ) : (
+              <span className="text-[#A0A0A0]">
+                날짜, 시간, 인원을 선택하면 예약 정보가 표시됩니다.
+              </span>
+            )}
+          </div>
+
+          <div className="mt-6 border-t-2 border-t-[#3A3A3A] font-bold pt-5 flex items-center justify-between">
+            <span className="text-[20px] text-[#3A3A3A]">합계</span>
+            <span className="text-[22px] text-[#F13030]">
+              {total.toLocaleString()}원
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* 고정 하단 영역 (합계/예약버튼) */}
@@ -336,7 +377,7 @@ export default function ReservationSection({
               {total.toLocaleString()}원
             </p>
             <p className="text-[12px] text-[#8E8E93]">
-              {fmtPicked} · {adult + child}명
+              {fmtPicked} · {totalPeople}명
             </p>
           </div>
           <button
