@@ -376,10 +376,13 @@ export default function Step1() {
         title="전문 분야를 선택해주세요."
         options={specialties}
         selectedId={specialtyId}
-        onSelect={setSpecialtyId}
+        primaryLabel="다음"
         onNext={(newId) => {
           setSpecialtyId(newId);
           setOpenSpecialty(false);
+          if (newId) {
+            setOpenSub(true);
+          }
         }}
         onClose={() => setOpenSpecialty(false)}
       />
@@ -390,7 +393,11 @@ export default function Step1() {
         title="상세 분야를 선택해주세요."
         options={filteredDetailFields}
         selectedId={subId}
-        onSelect={setSubId}
+        showPrev={true}
+        onPrev={() => {
+          setOpenSub(false);
+          setOpenSpecialty(true);
+        }}
         onNext={(newId) => {
           setSubId(newId);
           setOpenSub(false);

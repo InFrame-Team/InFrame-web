@@ -12,6 +12,7 @@ export default function FieldSheet({
   showPrev = false,
   onPrev,
   onClose,
+  primaryLabel = "적용",
 }) {
   const [tempId, setTempId] = useState(selectedId);
 
@@ -31,7 +32,7 @@ export default function FieldSheet({
             <button
               type="button"
               onClick={onPrev}
-              className="h-[48px] min-w-[92px] px-4 rounded-[10px] border border-[#E6E6E6] text-[15px] bg-white"
+              className="h-[48px] min-w-[92px] px-4 rounded-[10px] border-[2px] border-[#E6E6E6] font-semibold text-[16px] bg-white"
             >
               이전
             </button>
@@ -42,7 +43,7 @@ export default function FieldSheet({
             onClick={() => onNext(tempId)}
             className="w-full h-[48px] rounded-[10px] text-[16px] font-bold bg-[#3A3A3A] text-white"
           >
-            적용
+            {primaryLabel}
           </button>
         </div>
       }
