@@ -57,6 +57,8 @@ export default function ReservationHistoryPage() {
             reviewWritten: item.reviewWritten,
             isUpcoming,
             experienceThumbnailUrl: item.experienceThumbnailUrl,
+            totalParticipants: item.totalParticipants,
+            caution: item.caution,
           };
         });
 
