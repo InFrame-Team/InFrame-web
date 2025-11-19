@@ -100,12 +100,12 @@ export default function ExperienceReviewSection({
             {/* 상단: 프로필, 닉네임, 별점, 날짜 */}
             <div className="flex gap-3 mb-2">
               <img
-                src={fakeProfile}
-                alt="avatar"
-                className="w-[35px] h-[35px] rounded-full object-cover"
+                src={review.writerProfileImageUrl || fakeProfile}
+                alt={review.writerNickname}
+                className="w-[40px] h-[40px] rounded-full object-cover mt-1"
               />
               <div className="flex-1">
-                <span className="text-[17px] font-bold text-[#3A3A3A]">
+                <span className="text-[17px] font-bold text-[#3A3A3A] ml-0.5">
                   {review.writerNickname}
                 </span>
 
