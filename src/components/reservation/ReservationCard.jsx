@@ -18,17 +18,24 @@ export default function ReservationCard({ reservation, onClickReview }) {
     avatarBg = "#FFEFEF",
     isUpcoming,
     reviewWritten,
+    status,
   } = reservation;
+
+  const isCancelled = status === "CANCELLED";
 
   const avatarSrc = hostProfileImageUrl || fakeProfile2;
 
-  const primaryLabel = isUpcoming
+  const primaryLabel = isCancelled
+    ? "길찾기"
+    : isUpcoming
     ? "길찾기"
     : reviewWritten
     ? "후기 작성 완료"
     : "후기 작성";
 
-  const secondaryLabel = isUpcoming
+  const secondaryLabel = isCancelled
+    ? "호스트에게 연락하기"
+    : isUpcoming
     ? "호스트에게 연락하기"
     : "같은 곳으로 예약하기";
 
@@ -50,7 +57,14 @@ export default function ReservationCard({ reservation, onClickReview }) {
     <section className="w-full bg-white rounded-[10px] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       {/* 상단 날짜 + 상태 */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[14px] font-medium text-[#A0A0A0]">{dateLabel}</p>
+        <p className="text-[14px] font-medium text-[#A0A0A0]">
+          {dateLabel}
+          {isCancelled && (
+            <span className="ml-3 text-[14px] font-medium text-[#F13030]">
+              취소
+            </span>
+          )}
+        </p>
         <button
           type="button"
           onClick={handleClickDetail}
@@ -104,8 +118,12 @@ export default function ReservationCard({ reservation, onClickReview }) {
       {/* 결제액 */}
       <div className="flex items-center justify-between ml-0.5 mb-4">
         <span className="text-[16px] font-bold text-[#3A3A3A]">결제금액</span>
-        <span className="text-[16px] font-bold text-[#3A3A3A]">
-          {amount.toLocaleString()}원
+        <span
+          className={`text-[16px] font-bold ${
+            isCancelled ? "text-[#B2B3B5]" : "text-[#3A3A3A]"
+          }`}
+        >
+          {amount.toLocaleString()}원{isCancelled && " 취소"}
         </span>
       </div>
 
