@@ -18,6 +18,7 @@ const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 export default function ReservationSection({
   experienceId,
   price, // 인당 가격
+  showContent = true,
 }) {
   const pricePerPerson = price ?? 50000;
 
@@ -184,190 +185,198 @@ export default function ReservationSection({
   return (
     <>
       {/* 예약 섹션 본문 */}
-      <div className="px-5 pt-2 pb-8 border-t border-[#F0F0F0]">
-        {/* 상단 타이틀 (월) */}
-        <div className="flex items-center justify-between mt-3 mb-4">
-          <h2 className="text-[20px] font-bold text-[#3A3A3A]">{monthLabel}</h2>
-          <button
-            type="button"
-            className="flex items-center gap-1 text-[16px] font-semibold text-[#3A3A3A]"
-            onClick={toggleCalendar}
-            aria-pressed={showCalendar}
-          >
-            <LuCalendarDays className="w-4 h-4 text-[#C9C9C9]" />
-            달력보기
-          </button>
-        </div>
+      {showContent && (
+        <div className="px-5 pt-2 pb-8 border-t border-[#F0F0F0]">
+          {/* 상단 타이틀 (월) */}
+          <div className="flex items-center justify-between mt-3 mb-4">
+            <h2 className="text-[20px] font-bold text-[#3A3A3A]">
+              {monthLabel}
+            </h2>
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[16px] font-semibold text-[#3A3A3A]"
+              onClick={toggleCalendar}
+              aria-pressed={showCalendar}
+            >
+              <LuCalendarDays className="w-4 h-4 text-[#C9C9C9]" />
+              달력보기
+            </button>
+          </div>
 
-        {/* 날짜/금액 영역 → 달력 토글 */}
-        <div className="-mx-5 px-5 border-b pb-2">
-          {showCalendar ? (
-            <div className="py-1">
-              <Calendar
-                value={pickedDate || selectedDate?.dateObj || new Date()}
-                onChange={handleCalendarChange}
-                minDate={minDate}
-                maxDate={maxDate}
-              />
-            </div>
-          ) : (
-            <div className="flex gap-2 overflow-x-auto snap-x pb-2">
-              {dateStrip.map((d, idx) => {
-                const active = idx === selectedDateIdx;
-                return (
-                  <button
-                    key={d.key}
-                    type="button"
-                    onClick={() => handleStripPick(idx)}
-                    className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
-                      active
-                        ? "bg-[#F13030] text-white"
-                        : "bg-white border-[#C5C5C7] text-[#3A3A3A]"
-                    }`}
-                  >
-                    <div className="text-[16px] font-bold">{d.label}</div>
-                    <div
-                      className={`text-[11px] ${
-                        active ? "text-[#ECFFE7]" : "text-[#3A3A3A]"
+          {/* 날짜/금액 영역 → 달력 토글 */}
+          <div className="-mx-5 px-5 border-b pb-2">
+            {showCalendar ? (
+              <div className="py-1">
+                <Calendar
+                  value={pickedDate || selectedDate?.dateObj || new Date()}
+                  onChange={handleCalendarChange}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                />
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto snap-x pb-2">
+                {dateStrip.map((d, idx) => {
+                  const active = idx === selectedDateIdx;
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() => handleStripPick(idx)}
+                      className={`w-[109px] h-[56px] min-w-[92px] snap-start rounded-full border px-4 py-1 text-center ${
+                        active
+                          ? "bg-[#F13030] text-white"
+                          : "bg-white border-[#C5C5C7] text-[#3A3A3A]"
                       }`}
                     >
-                      {d.price.toLocaleString()}원
-                    </div>
+                      <div className="text-[16px] font-bold">{d.label}</div>
+                      <div
+                        className={`text-[11px] ${
+                          active ? "text-[#ECFFE7]" : "text-[#3A3A3A]"
+                        }`}
+                      >
+                        {d.price.toLocaleString()}원
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 인원 선택 */}
+          <div className="mt-5 border-b pb-7">
+            <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
+              인원선택
+            </h3>
+            <div className="space-y-1.5 pl-1">
+              {/* 성인 */}
+              <div className="flex items-center justify-between">
+                <span className="text-[16px] font-semibold text-[#555558]">
+                  성인
+                </span>
+                <div className="flex items-center gap-5">
+                  <button
+                    type="button"
+                    onClick={() => setAdult((n) => Math.max(0, n - 1))}
+                    className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                  >
+                    −
+                  </button>
+                  <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
+                    {adult}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAdult((n) => n + 1)}
+                    className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                  >
+                    ＋
+                  </button>
+                </div>
+              </div>
+              {/* 아동 */}
+              <div className="flex items-center justify-between">
+                <span className="text-[16px] font-semibold text-[#555558]">
+                  아동
+                </span>
+                <div className="flex items-center gap-5">
+                  <button
+                    type="button"
+                    onClick={() => setChild((n) => Math.max(0, n - 1))}
+                    className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                  >
+                    −
+                  </button>
+                  <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
+                    {child}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setChild((n) => n + 1)}
+                    className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
+                  >
+                    ＋
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 회차선택 */}
+          <div className="mt-6 border-b pb-8">
+            <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
+              회차선택
+            </h3>
+
+            {/* 상태 메시지 */}
+            {loadingSlots && (
+              <p className="text-sm text-[#888]">
+                예약 가능 시간을 불러오는 중…
+              </p>
+            )}
+            {!loadingSlots && slotsError && (
+              <p className="text-sm text-red-500">{slotsError}</p>
+            )}
+            {!loadingSlots && !slotsError && slots.length === 0 && (
+              <p className="text-sm text-[#888]">
+                해당 날짜에는 예약 가능한 시간이 없습니다.
+              </p>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {slots.map((raw) => {
+                const display = toDisplayHM(raw);
+                const active = selectedSlot === raw;
+                return (
+                  <button
+                    key={raw}
+                    type="button"
+                    onClick={() =>
+                      setSelectedSlot((prev) => (prev === raw ? null : raw))
+                    }
+                    className={`py-3 rounded-lg border border-[#E9E9EC] text-[14px] font-medium ${
+                      active
+                        ? "outline outline-2 outline-[#3A3A3A] text-[#3A3A3A] font-semibold"
+                        : "text-[#555558]"
+                    }`}
+                  >
+                    {display}
                   </button>
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* 인원 선택 */}
-        <div className="mt-5 border-b pb-7">
-          <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
-            인원선택
-          </h3>
-          <div className="space-y-1.5 pl-1">
-            {/* 성인 */}
-            <div className="flex items-center justify-between">
-              <span className="text-[16px] font-semibold text-[#555558]">
-                성인
-              </span>
-              <div className="flex items-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => setAdult((n) => Math.max(0, n - 1))}
-                  className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
-                >
-                  −
-                </button>
-                <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
-                  {adult}
+          {/* 예약확인 + 합계 섹션 */}
+          <div className="mt-6">
+            <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-2">
+              예약확인
+            </h3>
+            <div className="rounded-[10px] border border-[#E9E9EC] px-5 py-3 flex items-center justify-between text-[16px] font-medium text-[#3A3A3A] bg-white">
+              {canReserve ? (
+                <>
+                  <span className="truncate">{reservationLabel}</span>
+                  <span className="ml-4 whitespace-nowrap">
+                    {totalPeople}인
+                  </span>
+                </>
+              ) : (
+                <span className="text-[#A0A0A0]">
+                  날짜, 시간, 인원을 선택하면 예약 정보가 표시됩니다.
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setAdult((n) => n + 1)}
-                  className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
-                >
-                  ＋
-                </button>
-              </div>
+              )}
             </div>
-            {/* 아동 */}
-            <div className="flex items-center justify-between">
-              <span className="text-[16px] font-semibold text-[#555558]">
-                아동
+
+            <div className="mt-6 border-t-2 border-t-[#3A3A3A] font-bold pt-5 flex items-center justify-between">
+              <span className="text-[20px] text-[#3A3A3A]">합계</span>
+              <span className="text-[22px] text-[#F13030]">
+                {total.toLocaleString()}원
               </span>
-              <div className="flex items-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => setChild((n) => Math.max(0, n - 1))}
-                  className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
-                >
-                  −
-                </button>
-                <span className="w-4 text-center text-[16px] font-semibold text-[#3A3A3A]">
-                  {child}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setChild((n) => n + 1)}
-                  className="w-8 h-8 rounded-full border border-[#E5E5EA] text-[#3A3A3A] leading-none"
-                >
-                  ＋
-                </button>
-              </div>
             </div>
           </div>
         </div>
-
-        {/* 회차선택 */}
-        <div className="mt-6 border-b pb-8">
-          <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-4">
-            회차선택
-          </h3>
-
-          {/* 상태 메시지 */}
-          {loadingSlots && (
-            <p className="text-sm text-[#888]">예약 가능 시간을 불러오는 중…</p>
-          )}
-          {!loadingSlots && slotsError && (
-            <p className="text-sm text-red-500">{slotsError}</p>
-          )}
-          {!loadingSlots && !slotsError && slots.length === 0 && (
-            <p className="text-sm text-[#888]">
-              해당 날짜에는 예약 가능한 시간이 없습니다.
-            </p>
-          )}
-
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            {slots.map((raw) => {
-              const display = toDisplayHM(raw);
-              const active = selectedSlot === raw;
-              return (
-                <button
-                  key={raw}
-                  type="button"
-                  onClick={() =>
-                    setSelectedSlot((prev) => (prev === raw ? null : raw))
-                  }
-                  className={`py-3 rounded-lg border border-[#E9E9EC] text-[14px] font-medium ${
-                    active
-                      ? "outline outline-2 outline-[#3A3A3A] text-[#3A3A3A] font-semibold"
-                      : "text-[#555558]"
-                  }`}
-                >
-                  {display}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 예약확인 + 합계 섹션 */}
-        <div className="mt-6">
-          <h3 className="text-[20px] font-bold text-[#3A3A3A] mb-2">
-            예약확인
-          </h3>
-          <div className="rounded-[10px] border border-[#E9E9EC] px-5 py-3 flex items-center justify-between text-[16px] font-medium text-[#3A3A3A] bg-white">
-            {canReserve ? (
-              <>
-                <span className="truncate">{reservationLabel}</span>
-                <span className="ml-4 whitespace-nowrap">{totalPeople}인</span>
-              </>
-            ) : (
-              <span className="text-[#A0A0A0]">
-                날짜, 시간, 인원을 선택하면 예약 정보가 표시됩니다.
-              </span>
-            )}
-          </div>
-
-          <div className="mt-6 border-t-2 border-t-[#3A3A3A] font-bold pt-5 flex items-center justify-between">
-            <span className="text-[20px] text-[#3A3A3A]">합계</span>
-            <span className="text-[22px] text-[#F13030]">
-              {total.toLocaleString()}원
-            </span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* 고정 하단 영역 (합계/예약버튼) */}
       <div className="fixed bottom-[64px] left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-40">

@@ -347,9 +347,11 @@ export default function ExperienceDetailPage() {
 
         {/* 탭 컨텐츠 */}
         <div className="relative w-full">
-          <div className={tab === "reserve" ? "block" : "hidden"}>
-            <ReservationSection experienceId={data.id} price={data.price} />
-          </div>
+          <ReservationSection
+            experienceId={data.id}
+            price={data.price}
+            showContent={tab === "reserve"}
+          />
 
           <div className={tab === "detail" ? "block" : "hidden"}>
             <div className="px-5 pt-4 pb-12">

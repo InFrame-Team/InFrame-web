@@ -17,8 +17,8 @@ export default function BottomTab() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-20">
-      <div className="grid grid-cols-5 text-[10px]">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-20 h-[64px]">
+      <div className="grid grid-cols-5 h-full text-[10px]">
         {tabs.map((t, i) => {
           const isActive = location.pathname.startsWith(t.path);
           const Icon = t.icon;
@@ -27,7 +27,7 @@ export default function BottomTab() {
               key={i}
               type="button"
               onClick={() => navigate(t.path)}
-              className={`py-2 flex flex-col items-center gap-1 transition-colors duration-150 ${
+              className={`flex flex-col items-center justify-center gap-1 transition-colors duration-150 ${
                 isActive
                   ? "text-[#222222]"
                   : "text-[#c5c5c5] hover:text-[#222222]"
