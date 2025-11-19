@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import BaseAppSheet from "../experience_create/BaseAppSheet";
+import BottomFixedSheet from "./BottomFixedSheet";
 import { fetchHostDetail } from "../../apis/host";
 import callIcon from "../../assets/call.png";
 import kakaoIcon from "../../assets/kakao.png";
@@ -71,11 +71,11 @@ export default function HostContactSheet({ open, onClose, hostId }) {
       : "09:00 ~ 18:00";
 
   return (
-    <BaseAppSheet
+    <BottomFixedSheet
       open={open}
       onClose={onClose}
       title="도움이 필요하신가요?"
-      topOffsetPx={490}
+      topOffsetPx={160}
       footer={null}
     >
       <div className="px-5 pb-[24px] pt-1 ml-1">
@@ -117,6 +117,6 @@ export default function HostContactSheet({ open, onClose, hostId }) {
           </div>
         </div>
       </div>
-    </BaseAppSheet>
+    </BottomFixedSheet>
   );
 }
