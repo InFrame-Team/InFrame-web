@@ -11,6 +11,20 @@ export async function fetchLikedExperiences() {
   return res.data;
 }
 
+//  체험 하트 토글
+export async function toggleExperienceLikes(experienceId) {
+  const res = await api.post(`/likes/experience/${experienceId}`);
+  return res.data;
+}
+
+// 호스트 좋아요 토글
+export async function toggleHostLikes(hostId, signal) {
+  const res = await api.post(`/likes/host/${hostId}`, null, {
+    signal,
+  });
+  return res.data;
+}
+
 /**
  * 1. GET /api/v1/likes/host - 내가 '하트' 누른 호스트 목록 조회
  */

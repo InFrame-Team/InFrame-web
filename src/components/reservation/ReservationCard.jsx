@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
-import { toggleHostLike } from "../../apis/likes";
+import { toggleHostLikes } from "../../apis/likes";
 
 export default function ReservationCard({
   reservation,
@@ -92,7 +92,7 @@ export default function ReservationCard({
     setLiked(next);
 
     try {
-      await toggleHostLike(hostId);
+      await toggleHostLikes(hostId);
     } catch (err) {
       console.error(err);
       setLiked(!next);
