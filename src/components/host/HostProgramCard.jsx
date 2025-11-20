@@ -17,7 +17,12 @@ export default function HostProgramCard({
   const [liked, setLiked] = useState(false);
 
   return (
-    <button type="button" onClick={onClick} className="text-left w-full">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      className="text-left w-full cursor-pointer"
+    >
       {/* 이미지 영역 */}
       <div className="relative w-full rounded-[5px] overflow-hidden mb-2.5">
         <img
@@ -27,20 +32,19 @@ export default function HostProgramCard({
         />
 
         {/* 하트 아이콘 */}
-        <button
-          type="button"
+        <div
           onClick={(e) => {
-            e.stopPropagation(); // 카드 클릭과 분리
+            e.stopPropagation(); // 카드 전체 클릭 방지
             setLiked((prev) => !prev);
           }}
-          className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
         >
           {liked ? (
             <FaHeart size={20} className="text-[#F13030]" />
           ) : (
             <FaRegHeart size={20} className="text-white/90" />
           )}
-        </button>
+        </div>
       </div>
 
       {/* 가격 */}
@@ -69,6 +73,6 @@ export default function HostProgramCard({
           </span>
         )}
       </div>
-    </button>
+    </div>
   );
 }
