@@ -81,6 +81,7 @@ export default function ReservationHistoryPage() {
     return () => controller.abort();
   }, []);
 
+  // 리뷰 작성 후 돌아왔을 때 reviewWritten 갱신
   useEffect(() => {
     const reviewedId = location.state?.reviewedReservationId;
     if (!reviewedId) return;
@@ -103,6 +104,20 @@ export default function ReservationHistoryPage() {
   const handleOpenContactSheet = (reservation) => {
     setSelectedForContact(reservation);
     setContactSheetOpen(true);
+  };
+
+  // 🔥 새로 추가: 길찾기 버튼 눌렀을 때 /map 으로 이동 + hostId 전달
+  const handleOpenMap = (reservation) => {
+    if (!reservation?.hostId) {
+      alert("호스트 위치 정보를 찾을 수 없어요.");
+      return;
+    }
+
+    navigate("/map", {
+      state: {
+        focusHostId: reservation.hostId,
+      },
+    });
   };
 
   return (
@@ -181,6 +196,8 @@ export default function ReservationHistoryPage() {
                     })
                   }
                   onClickContactHost={() => handleOpenContactSheet(item)}
+                  // 🔥 여기 추가
+                  onClickDirections={() => handleOpenMap(item)}
                 />
               ))}
           </div>
