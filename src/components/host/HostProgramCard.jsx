@@ -3,8 +3,10 @@ import { AiFillStar } from "react-icons/ai";
 import { IoMdTime } from "react-icons/io";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import fakeImg from "../../assets/fakeImg.svg";
+import { toggleExperienceLike } from "../../apis/likes";
 
 export default function HostProgramCard({
+  experienceId,
   mainImageUrl,
   title,
   price,
@@ -13,8 +15,20 @@ export default function HostProgramCard({
   onClick,
 }) {
   const imgSrc = mainImageUrl || fakeImg;
-
   const [liked, setLiked] = useState(false);
+
+  const handleHeartClick = async (e) => {
+    e.stopPropagation();
+    setLiked((prev) => !prev);
+
+    try {
+      await toggleExperienceLike(experienceId);
+    } catch (error) {
+      console.error("하트 토글 실패:", error);
+      setLiked((prev) => !prev);
+      alert("하트를 저장하는 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+    }
+  };
 
   return (
     <div
@@ -33,10 +47,7 @@ export default function HostProgramCard({
 
         {/* 하트 아이콘 */}
         <div
-          onClick={(e) => {
-            e.stopPropagation(); // 카드 전체 클릭 방지
-            setLiked((prev) => !prev);
-          }}
+          onClick={handleHeartClick}
           className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
         >
           {liked ? (
