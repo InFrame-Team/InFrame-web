@@ -8,7 +8,7 @@ import fakeProfile from "../../assets/fakeProfile.svg";
 import programImg1 from "../../assets/programImg1.png";
 import programIcon1 from "../../assets/programIcon1.png";
 import { fetchHostDetail, fetchHostProgramsByHost } from "../../apis/host";
-import { toggleHostLike } from "../../apis/likes";
+import { toggleHostLikes } from "../../apis/likes";
 import BottomTab from "../../components/BottomTab";
 import HostProgramCard from "../../components/host/HostProgramCard";
 
@@ -67,7 +67,7 @@ export default function HostDetailPage() {
     setLiked(next);
 
     try {
-      await toggleHostLike(hostId);
+      await toggleHostLikes(hostId);
     } catch (e) {
       console.error(e);
       setLiked(!next);

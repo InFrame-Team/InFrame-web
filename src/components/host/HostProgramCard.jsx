@@ -3,7 +3,7 @@ import { AiFillStar } from "react-icons/ai";
 import { IoMdTime } from "react-icons/io";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import fakeImg from "../../assets/fakeImg.svg";
-import { toggleExperienceLike } from "../../apis/likes";
+import { toggleExperienceLikes } from "../../apis/likes";
 
 export default function HostProgramCard({
   experienceId,
@@ -29,7 +29,7 @@ export default function HostProgramCard({
     if (!experienceId) return;
 
     try {
-      await toggleExperienceLike(experienceId);
+      await toggleExperienceLikes(experienceId);
       setLiked((prev) => !prev);
     } catch (error) {
       console.error("하트 토글 실패:", error);
