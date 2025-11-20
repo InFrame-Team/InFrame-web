@@ -2,7 +2,6 @@ import api from "./api"; // Axios 인스턴스라고 가정
 
 /**
  * 1. GET /api/v1/likes/host - 내가 '하트' 누른 호스트 목록 조회
- * @returns {Promise<{success: boolean, data?: Array<Object>, message?: string}>}
  */
 export async function getLikedHosts() {
   try {
@@ -28,7 +27,6 @@ export async function getLikedHosts() {
 
 /**
  * 2. GET /api/v1/likes/experience - 내가 '하트' 누른 체험 목록 조회
- * @returns {Promise<{success: boolean, data?: Array<Object>, message?: string}>}
  */
 export async function getLikedExperiences() {
   try {
@@ -54,10 +52,8 @@ export async function getLikedExperiences() {
 
 /**
  * 3. POST /api/v1/likes/host/{hostId} - 호스트 '하트' 토글
- * @param {number} hostId - 하트를 누르거나 취소할 호스트 ID
- * @returns {Promise<{success: boolean, message?: string}>}
  */
-// 🟢 수정된 부분: 인자를 단일 값(hostId)으로 받도록 변경했습니다.
+// 🟢 인자를 단일 값(hostId)으로 받는 버전
 export async function toggleHostLike(hostId) {
   if (!hostId) {
     return { success: false, message: "호스트 ID가 필요합니다." };
@@ -87,17 +83,14 @@ export async function toggleHostLike(hostId) {
 
 /**
  * 4. POST /api/v1/likes/experience/{experienceId} - 체험 '하트' 토글
- * @param {number} experienceId - 하트를 누르거나 취소할 체험 ID
- * @returns {Promise<{success: boolean, message?: string}>}
  */
-// 🟢 수정된 부분: 인자를 단일 값(experienceId)으로 받도록 변경했습니다.
+// 🟢 인자를 단일 값(experienceId)으로 받는 버전
 export async function toggleExperienceLike(experienceId) {
   if (!experienceId) {
     return { success: false, message: "체험 ID가 필요합니다." };
   }
 
   try {
-    // POST 요청은 응답으로 string이 올 수 있으므로 data 대신 status로 성공 확인
     await api.post(`/likes/experience/${experienceId}`);
 
     return {
@@ -116,21 +109,4 @@ export async function toggleExperienceLike(experienceId) {
       message,
     };
   }
-}
-
-/**
- * 특정 호스트에 대해 '좋아요'를 누르거나 취소합니다 (토글).
- * @param {number} hostId - 좋아요를 누를 호스트의 ID
- * @returns {Promise<any>}
- */
-export async function toggleHostLike(hostId) {
-  if (!hostId) {
-    throw new Error("hostId가 필요합니다.");
-  }
-  // API 경로: POST /api/v1/likes/host/{hostId}
-  const endpoint = `likes/host/${hostId}`;
-
-  const res = await api.post(endpoint);
-  // 서버는 '하트 성공 또는 취소 성공' 이라는 문자열을 반환합니다.
-  return res.data;
 }
