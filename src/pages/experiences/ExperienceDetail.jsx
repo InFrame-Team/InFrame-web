@@ -18,22 +18,22 @@ import fakeProfile from "../../assets/fakeProfile.svg";
 import ReservationSection from "../../components/experience/ReservationSection";
 import { fetchExperienceDetail } from "../../apis/experiences";
 import ExperienceDetailInfoSection from "../../components/experience/ExperienceDetailInfoSection";
+import { toggleExperienceLikes } from "../../apis/likes";
 
 /* 별점 */
 function Stars({ value = 0 }) {
-  // 소수 둘째 자리까지 표시
   const display = Number(value || 0).toFixed(2);
 
   return (
     <div className="flex items-center gap-1">
       <AiFillStar className="w-4 h-4 text-[#F13030]" />
-
       <span className="text-[14px] font-semibold text-[#3A3A3A]">
         {display}
       </span>
     </div>
   );
 }
+
 function mapApiToViewModel(api) {
   if (!api) return null;
 
@@ -45,6 +45,7 @@ function mapApiToViewModel(api) {
     ratingCount: api.reviewCount,
     durationText: api.durationInHours,
     ageText: "전 연령 이용 가능",
+    isLiked: api.isLiked,
     host: {
       id: api.hostId,
       name: api.hostName,
@@ -70,6 +71,15 @@ export default function ExperienceDetailPage() {
   const heroRef = useRef(null);
   const topSentinelRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
+  const [liked, setLiked] = useState(false);
+
+  // 탭 상태
+  const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
+
+  // 체험 상세 데이터
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const el = topSentinelRef.current;
@@ -82,14 +92,6 @@ export default function ExperienceDetailPage() {
     return () => io.disconnect();
   }, []);
 
-  // 탭 상태
-  const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
-
-  // 체험 상세 데이터
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-
   useEffect(() => {
     if (!experienceId) return;
 
@@ -98,24 +100,50 @@ export default function ExperienceDetailPage() {
     setErrorMsg("");
     setData(null);
 
-    fetchExperienceDetail(experienceId, ac.signal)
-      .then((apiRes) => {
-        const viewModel = mapApiToViewModel(apiRes);
+    (async () => {
+      try {
+        const res = await fetchExperienceDetail(experienceId, ac.signal);
+        // res = { success, data, message }
+
+        if (!res.success) {
+          console.error("체험 상세 조회 실패:", res.message, res.data);
+          setErrorMsg(res.message || "체험 정보를 불러오지 못했습니다.");
+          setData(null);
+          return;
+        }
+
+        const viewModel = mapApiToViewModel(res.data);
         setData(viewModel);
-      })
-      .catch((e) => {
+        setLiked(!!viewModel.isLiked);
+      } catch (e) {
         if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
-        console.error(e);
-        if (e.response?.status === 404)
-          setErrorMsg("체험 정보를 찾을 수 없습니다.");
-        else setErrorMsg("체험 정보를 불러오지 못했습니다.");
-      })
-      .finally(() => setLoading(false));
+        console.error("fetchExperienceDetail 호출 중 예외:", e);
+        setErrorMsg("체험 정보를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    })();
 
     return () => ac.abort();
   }, [experienceId]);
 
-  if (loading || !data) {
+  const handleToggleLike = async () => {
+    if (!data?.id) return;
+
+    const prev = liked;
+    const next = !prev;
+    setLiked(next);
+
+    try {
+      await toggleExperienceLikes(data.id);
+    } catch (e) {
+      console.error("체험 좋아요 토글 실패:", e);
+      setLiked(prev);
+    }
+  };
+
+  // 로딩 / 에러 / 데이터 없음 분기 정리
+  if (loading) {
     return (
       <div className="min-h-[100dvh] bg-white flex flex-col items-center">
         <div className="w-full max-w-[480px] flex-1 flex items-center justify-center">
@@ -140,6 +168,19 @@ export default function ExperienceDetailPage() {
             ← 뒤로가기
           </button>
           <p className="text-sm text-red-500">{errorMsg}</p>
+        </div>
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-30">
+          <BottomTab />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-[100dvh] bg-white flex flex-col items-center">
+        <div className="w-full max-w-[480px] flex-1 flex items-center justify-center">
+          <p className="text-sm text-[#888]">체험 정보를 찾을 수 없습니다.</p>
         </div>
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-[#EEE] bg-white z-30">
           <BottomTab />
@@ -179,9 +220,14 @@ export default function ExperienceDetailPage() {
           <div className="absolute right-3">
             <button
               aria-label="저장"
+              onClick={handleToggleLike}
               className="w-9 h-9 flex items-center justify-center"
             >
-              <FaRegHeart size={20} className="text-[#3A3A3A]" />
+              {liked ? (
+                <FaHeart size={20} className="text-[#F13030]" />
+              ) : (
+                <FaRegHeart size={20} className="text-[#3A3A3A]" />
+              )}
             </button>
           </div>
         </div>
@@ -224,16 +270,20 @@ export default function ExperienceDetailPage() {
             </div>
             <button
               aria-label="저장"
+              onClick={handleToggleLike}
               className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
             >
-              <FaRegHeart size={20} />
+              {liked ? (
+                <FaHeart size={20} className="text-[#F13030]" />
+              ) : (
+                <FaRegHeart size={20} />
+              )}
             </button>
           </div>
         </div>
 
         {/* 소개 섹션 */}
         <div className="px-5 py-5">
-          {/* 태그는 데이터가 있을 때만 표시 */}
           {data.tags && data.tags.length > 0 && (
             <div className="flex gap-2 mb-2">
               {data.tags.map((t) => (

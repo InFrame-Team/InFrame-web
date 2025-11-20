@@ -3,10 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { IoChevronForward, IoChevronBack } from "react-icons/io5";
 import { AiFillStar } from "react-icons/ai";
 import { RiHome5Line } from "react-icons/ri";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import fakeProfile from "../../assets/fakeProfile.svg";
 import programImg1 from "../../assets/programImg1.png";
 import programIcon1 from "../../assets/programIcon1.png";
 import { fetchHostDetail, fetchHostProgramsByHost } from "../../apis/host";
+import { toggleHostLikes } from "../../apis/likes";
 import BottomTab from "../../components/BottomTab";
 import HostProgramCard from "../../components/host/HostProgramCard";
 
@@ -31,7 +33,7 @@ export default function HostDetailPage() {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [liked, setLiked] = useState(false); // 하트 토글(아직 사용 X)
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -44,6 +46,10 @@ export default function HostDetailPage() {
 
         setHost(hostData);
         setPrograms(programList || []);
+
+        if (hostData && typeof hostData.isLiked !== "undefined") {
+          setLiked(!!hostData.isLiked);
+        }
       } catch (e) {
         console.error(e);
         setError(e);
@@ -54,6 +60,20 @@ export default function HostDetailPage() {
 
     load();
   }, [hostId]);
+
+  const handleToggleLike = async () => {
+    if (!hostId) return;
+    const next = !liked;
+    setLiked(next);
+
+    try {
+      await toggleHostLikes(hostId);
+    } catch (e) {
+      console.error(e);
+      setLiked(!next);
+      alert("호스트 좋아요 처리 중 오류가 발생했어요.");
+    }
+  };
 
   if (loading) {
     return (
@@ -121,6 +141,7 @@ export default function HostDetailPage() {
           {/* 어두운 그라데이션 */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent" />
 
+          {/* 헤더 */}
           <header className="absolute top-0 left-0 right-0 h-12 flex items-center justify-between px-4 pt-3">
             <div className="flex items-center">
               <button
@@ -140,6 +161,20 @@ export default function HostDetailPage() {
                 <RiHome5Line size={22} />
               </button>
             </div>
+
+            {/* 호스트 좋아요 */}
+            <button
+              type="button"
+              aria-label="호스트 좋아요"
+              onClick={handleToggleLike}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white/80"
+            >
+              {liked ? (
+                <FaHeart size={20} className="text-[#FF4B4B]" />
+              ) : (
+                <FaRegHeart size={20} className="text-white" />
+              )}
+            </button>
           </header>
 
           {/* 프로필 아바타 */}
@@ -207,11 +242,13 @@ export default function HostDetailPage() {
                 {programs.slice(0, 2).map((p) => (
                   <HostProgramCard
                     key={p.experienceId}
+                    experienceId={p.experienceId}
                     mainImageUrl={p.mainImageUrl}
                     title={p.title}
                     price={p.price}
                     durationInHours={formatDuration(p.durationInHours)}
                     rating={p.rating}
+                    isLiked={p.isLiked}
                     onClick={() => navigate(`/experiences/${p.experienceId}`)}
                   />
                 ))}
