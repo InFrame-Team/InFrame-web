@@ -1,5 +1,5 @@
 // src/pages/NearbyListPage.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { BiSolidMessageDetail } from "react-icons/bi";
@@ -9,7 +9,8 @@ import { TbAdjustmentsHorizontal } from "react-icons/tb";
 import { MdArrowBackIosNew } from "react-icons/md";
 import { FiRotateCw } from "react-icons/fi";
 
-import { getHostMap } from "../../apis/map"; // ✅ MapPage에서 쓰는 API 그대로 사용
+// API 함수 (경로가 올바른지 확인하세요)
+import { getHostMap } from "../../apis/map";
 
 const MIN_PRICE = 0;
 const MAX_PRICE = 200000;
@@ -25,7 +26,7 @@ const TIME_SLOTS = [
   { key: "5h+", label: "5시간 이상", minMinutes: 360, maxMinutes: null },
 ];
 
-// 백엔드 category → 프론트 key 매핑 (MapPage랑 동일)
+// 백엔드 category → 프론트 key 매핑
 function mapBackendCategory(code) {
   if (!code) return "artisan";
   const upper = code.toString().toUpperCase();
@@ -70,7 +71,7 @@ function formatPriceLabel(value, isMax = false) {
   return result + "원";
 }
 
-// 전문 분야 고정 목록 (NearbyListPage에서도 재사용)
+// 전문 분야 고정 목록
 const FIELD_OPTIONS = [
   { code: "CRAFT_CREATION", description: "공예/창작" },
   { code: "FOOD_DESSERT", description: "음식/디저트" },
@@ -92,7 +93,7 @@ export default function NearbyListPage() {
   // 내 위치 (거리 계산용)
   const [myPos, setMyPos] = useState({ lat: 35.825, lng: 128.741 });
 
-  // ✅ 실제 호스트 데이터
+  // 실제 호스트 데이터
   const [hosts, setHosts] = useState([]);
   const [loadingHosts, setLoadingHosts] = useState(false);
 
@@ -115,7 +116,7 @@ export default function NearbyListPage() {
   const trackRef = useRef(null);
   const [draggingHandle, setDraggingHandle] = useState(null);
 
-  // ⭐ BottomSheet 높이 측정용 State 및 Ref 추가
+  // BottomSheet 높이 측정용 State 및 Ref
   const [sheetHeight, setSheetHeight] = useState(0);
   const sheetHeightRef = useRef(null);
 
@@ -133,7 +134,7 @@ export default function NearbyListPage() {
     }
   }, []);
 
-  // ⭐ BottomSheet 높이 동적 측정 useEffect
+  // BottomSheet 높이 동적 측정 useEffect
   useEffect(() => {
     if (showFilterSheet && sheetHeightRef.current) {
       // 탭 내용 변경 직후 높이를 정확히 측정하기 위해 setTimeout 사용
@@ -147,20 +148,9 @@ export default function NearbyListPage() {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [showFilterSheet, activeFilterTab, sheetHeight]); // 탭이나 시트 상태 변경 시 재측정
+  }, [showFilterSheet, activeFilterTab, sheetHeight]);
 
-  // ❌ [수정 사항] 필터 탭 변경 시 기본값 초기화 로직 (URL 값으로 덮어쓰던 로직)을 제거했습니다.
-  //    초기화는 오직 리셋 버튼을 통해서만 이루어지도록 변경됩니다.
-  // /* 기존 코드:
-  // useEffect(() => {
-  //   setPriceRange([MIN_PRICE, MAX_PRICE]);
-  //   setSelectedTimeSlot(null);
-  //   setSelectedCategory(categoryFromQuery || null);
-  //   setSelectedField(null);
-  // }, [activeFilterTab, categoryFromQuery]);
-  // */
-
-  // ✅ MapPage와 동일한 /host/map 데이터 가져오기
+  // MapPage와 동일한 /host/map 데이터 가져오기
   useEffect(() => {
     async function fetchHosts() {
       setLoadingHosts(true);
@@ -190,7 +180,7 @@ export default function NearbyListPage() {
         const lng =
           lngRaw !== null && lngRaw !== undefined ? Number(lngRaw) : null;
 
-        // ⭐ [핵심 수정] 정렬 기준이 되는 priceNumber 계산 로직 강화
+        // 가격 계산 로직 강화
         const priceSource = h.minPrice ?? h.price ?? h.lowestPrice ?? null;
 
         let numericPrice = 0;
@@ -199,7 +189,7 @@ export default function NearbyListPage() {
           numericPrice = Number(cleanedPrice) || 0;
         }
 
-        // ✅ 체험 소요 시간(분) – 백엔드 필드 이름에 맞춰 한 번에 모아둠
+        // 체험 소요 시간(분)
         const durationMinutes =
           h.durationMinutes ??
           h.durationMin ??
@@ -208,10 +198,10 @@ export default function NearbyListPage() {
           null;
 
         return {
+          // ⭐ host.id를 useNavigate에 사용하기 위해 hostId를 id로 설정
           id: String(h.hostId ?? h.id ?? `host-${idx}`),
           category: mapBackendCategory(h.category),
           name: h.hostName || h.name || "이름 없는 호스트",
-          // title 필드는 detailField나 title에서 가져오며, 전문분야 필터링에 사용됨
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
           lat,
@@ -220,7 +210,7 @@ export default function NearbyListPage() {
           priceNumber: numericPrice,
           priceText: h.lowestPrice || null, // 표시용 텍스트 (예: "20,000원")
           available: h.availableHours ?? h.available ?? [],
-          durationMinutes, // ✅ 추가
+          durationMinutes,
         };
       });
 
@@ -255,38 +245,31 @@ export default function NearbyListPage() {
     }
   };
 
-  // MapPage.jsx (컴포넌트 함수 내부)
-
-  // ... 기존 상태 및 useEffects
-
-  // ⭐️ [MapPage 필수 추가] 상태와 URL 쿼리 동기화 로직
+  // 상태와 URL 쿼리 동기화 로직
   useEffect(() => {
     const currentParams = new URLSearchParams(location.search);
     let shouldUpdate = false;
 
-    // 카테고리 상태 변경 시 URL 동기화
     if (selectedCategory) {
       if (currentParams.get("category") !== selectedCategory) {
         currentParams.set("category", selectedCategory);
         shouldUpdate = true;
       }
     } else {
-      // selectedCategory가 null일 때, URL에서 category 파라미터 삭제
       if (currentParams.has("category")) {
         currentParams.delete("category");
         shouldUpdate = true;
       }
     }
 
-    // (만약 다른 필터 상태도 URL에 남아있다면 여기서 함께 처리)
+    // 다른 필터 값도 URL에 반영이 필요하면 여기에 추가
 
     if (shouldUpdate) {
-      // 쿼리가 변경되었으면 URL 업데이트 (히스토리를 덮어쓰는 replace 사용)
       navigate(`${location.pathname}?${currentParams.toString()}`, {
         replace: true,
       });
     }
-  }, [selectedCategory, navigate, location.search, location.pathname]); // 필요한 의존성 추가
+  }, [selectedCategory, navigate, location.search, location.pathname]);
 
   useEffect(() => {
     if (!draggingHandle) return;
@@ -314,7 +297,7 @@ export default function NearbyListPage() {
     };
   }, [draggingHandle]);
 
-  // ✅ 실제 hosts 데이터에 필터 + 정렬 적용
+  // 실제 hosts 데이터에 필터 + 정렬 적용
   const filteredHosts = useMemo(() => {
     if (!hosts || hosts.length === 0) return [];
 
@@ -341,9 +324,8 @@ export default function NearbyListPage() {
       if (slot) {
         base = base.filter((h) => {
           const d = h.durationMinutes;
-          if (d == null) return true; // 시간 정보 없으면 그냥 통과(필터 때문에 사라지지 않게)
+          if (d == null) return true;
           if (slot.maxMinutes == null) {
-            // "5시간 이상" 같은 경우
             return d >= slot.minMinutes;
           }
           return d >= slot.minMinutes && d < slot.maxMinutes;
@@ -353,7 +335,6 @@ export default function NearbyListPage() {
 
     // 전문분야 필터 (detailField 등과 매칭)
     if (selectedField) {
-      // selectedField는 description(문자열)을 저장한다고 가정
       base = base.filter((h) => h.title === selectedField);
     }
 
@@ -370,11 +351,9 @@ export default function NearbyListPage() {
         return a.distance - b.distance;
       });
     }
-    // ⭐ 가격 낮은 순 정렬
     if (sortKey === "priceLow") {
       base.sort((a, b) => a.priceNumber - b.priceNumber);
     }
-    // ⭐ 가격 높은 순 정렬
     if (sortKey === "priceHigh") {
       base.sort((a, b) => b.priceNumber - a.priceNumber);
     }
@@ -571,7 +550,11 @@ export default function NearbyListPage() {
                       : `${host.priceText}원~` || "가격 문의"}
                   </span>
                 </div>
-                <button className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-[13px]">
+                {/* ⭐️ 수정된 부분: 호스트 상세 페이지로 이동 */}
+                <button
+                  onClick={() => navigate(`/host/${host.id}`)}
+                  className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-[13px]"
+                >
                   만나러 가기
                 </button>
               </div>
@@ -579,15 +562,12 @@ export default function NearbyListPage() {
           ))}
         </main>
 
-        {/* ⭐ 인물 지도 보기 버튼 (유동적인 위치 처리) ⭐ */}
+        {/* 인물 지도 보기 버튼 */}
         <div
-          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 z-[50]" // z-index를 BottomSheet(z-40)보다 높게 설정
+          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 z-[50]"
           style={{
             pointerEvents: "auto",
-            // [핵심 수정] BottomSheet의 측정된 높이를 기반으로 위치 계산
-            bottom: showFilterSheet
-              ? `${sheetHeight + 10}px` // sheetHeight에 따라 유동적으로 위치
-              : "40px", // BottomSheet가 닫혔을 때 (기존 10px에서 40px로 수정하여 하단에서 더 띄움)
+            bottom: showFilterSheet ? `${sheetHeight + 10}px` : "40px",
             transition: "bottom 0.3s ease-out",
           }}
         >
@@ -617,7 +597,6 @@ export default function NearbyListPage() {
             />
             <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center">
               <div className="w-full max-w-[1000px] relative">
-                {/* ⭐ 높이 측정을 위해 ref 연결 ⭐ */}
                 <div
                   ref={sheetHeightRef}
                   className="bg-white rounded-t-3xl pt-4 pb-6 shadow-[0_-4px_16px_rgba(0,0,0,0.25)]"
@@ -808,8 +787,7 @@ export default function NearbyListPage() {
                     <button
                       className="w-20 h-12 text-[#C9C9C9] rounded-lg bg-white border border-neutral-200 flex items-center justify-center text-[20px]"
                       onClick={() => {
-                        // ✅ [수정된 초기화 로직] 모든 필터 상태를 초기값/null로 설정합니다.
-                        // 이제 이 로직이 다른 곳에서 덮어쓰이지 않습니다.
+                        // 모든 필터 상태 초기화
                         setPriceRange([MIN_PRICE, MAX_PRICE]);
                         setSelectedTimeSlot(null);
                         setSelectedCategory(null);
