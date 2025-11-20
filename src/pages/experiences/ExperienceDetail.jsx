@@ -18,6 +18,7 @@ import fakeProfile from "../../assets/fakeProfile.svg";
 import ReservationSection from "../../components/experience/ReservationSection";
 import { fetchExperienceDetail } from "../../apis/experiences";
 import ExperienceDetailInfoSection from "../../components/experience/ExperienceDetailInfoSection";
+import { toggleExperienceLike } from "../../apis/likes";
 
 /* 별점 */
 function Stars({ value = 0 }) {
@@ -45,6 +46,7 @@ function mapApiToViewModel(api) {
     ratingCount: api.reviewCount,
     durationText: api.durationInHours,
     ageText: "전 연령 이용 가능",
+    isLiked: api.isLiked,
     host: {
       id: api.hostId,
       name: api.hostName,
@@ -70,6 +72,7 @@ export default function ExperienceDetailPage() {
   const heroRef = useRef(null);
   const topSentinelRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     const el = topSentinelRef.current;
@@ -102,6 +105,7 @@ export default function ExperienceDetailPage() {
       .then((apiRes) => {
         const viewModel = mapApiToViewModel(apiRes);
         setData(viewModel);
+        setLiked(!!viewModel.isLiked);
       })
       .catch((e) => {
         if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
@@ -114,6 +118,21 @@ export default function ExperienceDetailPage() {
 
     return () => ac.abort();
   }, [experienceId]);
+
+  const handleToggleLike = async () => {
+    if (!data?.id) return;
+
+    const prev = liked;
+    const next = !prev;
+    setLiked(next);
+
+    try {
+      await toggleExperienceLike(data.id);
+    } catch (e) {
+      console.error("체험 좋아요 토글 실패:", e);
+      setLiked(prev);
+    }
+  };
 
   if (loading || !data) {
     return (
@@ -179,9 +198,14 @@ export default function ExperienceDetailPage() {
           <div className="absolute right-3">
             <button
               aria-label="저장"
+              onClick={handleToggleLike}
               className="w-9 h-9 flex items-center justify-center"
             >
-              <FaRegHeart size={20} className="text-[#3A3A3A]" />
+              {liked ? (
+                <FaHeart size={20} className="text-[#F13030]" />
+              ) : (
+                <FaRegHeart size={20} className="text-[#3A3A3A]" />
+              )}
             </button>
           </div>
         </div>
@@ -224,9 +248,14 @@ export default function ExperienceDetailPage() {
             </div>
             <button
               aria-label="저장"
+              onClick={handleToggleLike}
               className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
             >
-              <FaRegHeart size={20} />
+              {liked ? (
+                <FaHeart size={20} className="text-[#F13030]" />
+              ) : (
+                <FaRegHeart size={20} />
+              )}
             </button>
           </div>
         </div>
