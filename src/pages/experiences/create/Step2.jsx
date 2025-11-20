@@ -66,6 +66,7 @@ export default function Step2() {
     data.maxCapacityPerSlot ? capacityToLabel(data.maxCapacityPerSlot) : ""
   );
 
+  // 이미지 최대 3장
   const [images, setImages] = useState(() => {
     if (data.mainImageFile) {
       return [
@@ -81,7 +82,7 @@ export default function Step2() {
 
   const fileInputRef = useRef(null);
 
-  const countText = useMemo(() => `${images.length}/1`, [images.length]);
+  const countText = useMemo(() => `${images.length}/3`, [images.length]);
   const descCount = useMemo(() => description.length, [description]);
 
   const saveStep2ToContext = () => {
@@ -94,7 +95,10 @@ export default function Step2() {
       price,
       durationInHours,
       maxCapacityPerSlot,
+      // 대표 이미지는 첫 번째 것
       mainImageFile: images[0]?.file || null,
+      // 필요하면 추가 이미지 배열도 나중에 활용 가능
+      // imageFiles: images.map((img) => img.file),
     });
   };
 
@@ -110,21 +114,32 @@ export default function Step2() {
   }, [title, description, price, duration, capacity, images.length]);
 
   const openFileDialog = () => {
-    if (images.length >= 1) return;
+    if (images.length >= 3) return;
     fileInputRef.current?.click();
   };
 
   const onFilesChange = (e) => {
-    const file = (e.target.files || [])[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    const item = { id: `${Date.now()}`, url: URL.createObjectURL(file), file };
-    setImages([item]);
+    setImages((prev) => {
+      const remain = 3 - prev.length;
+      if (remain <= 0) return prev;
+
+      const toAdd = files.slice(0, remain).map((file) => ({
+        id: `${file.name}-${file.lastModified}-${Math.random()}`,
+        url: URL.createObjectURL(file),
+        file,
+      }));
+
+      return [...prev, ...toAdd];
+    });
+
     e.target.value = "";
   };
 
-  const removeImage = () => {
-    setImages([]);
+  const removeImage = (id) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
   const toggleSingle = (current, value, setter) => {
@@ -180,30 +195,36 @@ export default function Step2() {
                 <span className="text-[12px] text-[#969696]">{countText}</span>
               </button>
 
-              {/* 이미지 썸네일 */}
-              {images[0] && (
-                <div className="relative w-[64px] h-[64px] rounded-[12px] overflow-hidden border border-[#EDEDED]">
-                  <img
-                    src={images[0].url}
-                    alt="preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    aria-label="이미지 삭제"
-                    onClick={removeImage}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+              {/* 이미지 썸네일들 */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {images.map((img) => (
+                  <div
+                    key={img.id}
+                    className="relative w-[64px] h-[64px] rounded-[12px] overflow-hidden border border-[#EDEDED]"
                   >
-                    <RxCross2 size={14} />
-                  </button>
-                </div>
-              )}
+                    <img
+                      src={img.url}
+                      alt="preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label="이미지 삭제"
+                      onClick={() => removeImage(img.id)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                    >
+                      <RxCross2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={onFilesChange}
               className="hidden"
             />

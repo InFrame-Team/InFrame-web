@@ -46,6 +46,7 @@ function mapApiToViewModel(api) {
     durationText: api.durationInHours,
     ageText: "전 연령 이용 가능",
     host: {
+      id: api.hostId,
       name: api.hostName,
       intro1: api.hostIntro,
       intro2: "",
@@ -275,6 +276,7 @@ export default function ExperienceDetailPage() {
               <IoChevronForward
                 size={22}
                 className="text-[#7F7F7F] cursor-pointer mt-1"
+                onClick={() => navigate(`/host/${data.host.id}`)}
               />
             </div>
             <div className="flex justify-between rounded-2xl">

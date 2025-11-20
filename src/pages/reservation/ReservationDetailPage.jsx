@@ -3,7 +3,7 @@ import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 import { fetchMyReservations } from "../../apis/reservations";
-import HostContactSheet from "../../components/reservation/HostContactSheet"; // ✅ 추가
+import HostContactSheet from "../../components/reservation/HostContactSheet";
 
 function formatDateTimeKorean(isoString) {
   if (!isoString) return "-";
@@ -219,7 +219,14 @@ export default function ReservationDetailPage() {
               type="button"
               className="w-6 h-6 flex items-center justify-center"
             >
-              <IoChevronForward size={25} className="text-[#9D9D9D]" />
+              <IoChevronForward
+                size={25}
+                className="text-[#9D9D9D]"
+                onClick={() => {
+                  if (!hostId) return;
+                  navigate(`/host/${hostId}`);
+                }}
+              />
             </button>
           </section>
 
