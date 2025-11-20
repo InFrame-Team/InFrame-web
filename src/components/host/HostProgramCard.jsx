@@ -20,7 +20,11 @@ export default function HostProgramCard({
     <button type="button" onClick={onClick} className="text-left w-full">
       {/* 이미지 영역 */}
       <div className="relative w-full rounded-[5px] overflow-hidden mb-2.5">
-        <img src={imgSrc} alt={title} className="w-full h-auto object-cover" />
+        <img
+          src={imgSrc}
+          alt={title}
+          className="w-full h-[200px] object-cover"
+        />
 
         {/* 하트 아이콘 */}
         <button
@@ -29,7 +33,7 @@ export default function HostProgramCard({
             e.stopPropagation(); // 카드 클릭과 분리
             setLiked((prev) => !prev);
           }}
-          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
         >
           {liked ? (
             <FaHeart size={20} className="text-[#F13030]" />
