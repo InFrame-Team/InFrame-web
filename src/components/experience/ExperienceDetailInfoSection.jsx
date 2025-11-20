@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdLocationOn } from "react-icons/md";
 import { IoIosCall } from "react-icons/io";
 import ExperienceReviewSection from "./ExperienceReviewSection";
+import { getHostMap } from "../../apis/map";
 
 function formatContactTime(start, end) {
   if (!start || !end) return null;
@@ -22,7 +23,8 @@ export default function ExperienceDetailInfoSection({
   businessEmail,
   kakaoAddress,
 
-  // ✅ 새로 추가: 위도/경도
+  // ✅ 새로 추가: 호스트 ID + (있으면) 위/경도
+  hostId,
   latitude,
   longitude,
 }) {
@@ -31,16 +33,66 @@ export default function ExperienceDetailInfoSection({
   const markerOverlayRef = useRef(null);
   const navigate = useNavigate();
 
+  // ✅ 실제로 사용할 좌표 상태 (props → 우선, 없으면 getHostMap으로 채움)
+  const [coords, setCoords] = useState(() => ({
+    lat: latitude != null ? Number(latitude) : null,
+    lng: longitude != null ? Number(longitude) : null,
+  }));
+
+  // props가 바뀌면 coords도 동기화
+  useEffect(() => {
+    setCoords({
+      lat: latitude != null ? Number(latitude) : null,
+      lng: longitude != null ? Number(longitude) : null,
+    });
+  }, [latitude, longitude]);
+
+  // ✅ hostId가 있고, coords가 비어있을 때 getHostMap으로 위경도 가져오기
+  useEffect(() => {
+    if (!hostId) return;
+    if (coords.lat != null && coords.lng != null) return; // 이미 값 있으면 패스
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await getHostMap();
+        if (!mounted) return;
+
+        if (!res?.success || !Array.isArray(res.data)) return;
+
+        const found = res.data.find((h) => String(h.hostId) === String(hostId));
+        if (!found) return;
+
+        const latRaw = found.latitude ?? found.lat;
+        const lngRaw = found.longitude ?? found.lng;
+
+        if (latRaw == null || lngRaw == null) return;
+
+        setCoords({
+          lat: Number(latRaw),
+          lng: Number(lngRaw),
+        });
+      } catch (e) {
+        console.error("getHostMap 으로 호스트 위치 가져오는 중 오류:", e);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [hostId, coords.lat, coords.lng]);
+
   // 🔹 카카오맵 + host-marker 마커 렌더링
   useEffect(() => {
     if (!mapRef.current) return;
-    if (latitude == null || longitude == null) return;
+    if (coords.lat == null || coords.lng == null) return;
 
     const drawMap = () => {
       const { kakao } = window;
       if (!kakao || !kakao.maps) return;
 
-      const center = new kakao.maps.LatLng(Number(latitude), Number(longitude));
+      const center = new kakao.maps.LatLng(coords.lat, coords.lng);
 
       const map = new kakao.maps.Map(mapRef.current, {
         center,
@@ -53,7 +105,7 @@ export default function ExperienceDetailInfoSection({
         markerOverlayRef.current = null;
       }
 
-      // ✅ host-marker DOM 생성 (index.css 스타일 사용)
+      // ✅ host-marker DOM 생성 (index.css에 정의된 .host-marker 스타일 사용)
       const el = document.createElement("div");
       el.className = "host-marker";
       el.innerHTML = `<span style="font-size:26px;">😊</span>`;
@@ -70,7 +122,6 @@ export default function ExperienceDetailInfoSection({
       markerOverlayRef.current = overlay;
     };
 
-    // 스크립트 로드 여부에 따라 처리
     if (window.kakao && window.kakao.maps) {
       if (window.kakao.maps.load) {
         window.kakao.maps.load(drawMap);
@@ -78,7 +129,6 @@ export default function ExperienceDetailInfoSection({
         drawMap();
       }
     } else {
-      // 아직 카카오 스크립트 안 불러왔으면 동적으로 로드
       const script = document.createElement("script");
       script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${
         import.meta.env.VITE_KAKAO_JS_KEY
@@ -96,19 +146,20 @@ export default function ExperienceDetailInfoSection({
         markerOverlayRef.current = null;
       }
     };
-  }, [latitude, longitude]);
+  }, [coords.lat, coords.lng]);
 
   // 🔹 길찾기 버튼 → /map 으로 이동 + 위도/경도 전달
   const handleDirections = () => {
-    if (latitude == null || longitude == null) {
+    if (coords.lat == null || coords.lng == null) {
       alert("위치 정보를 찾을 수 없어요.");
       return;
     }
 
     navigate("/map", {
       state: {
-        focusLat: Number(latitude),
-        focusLng: Number(longitude),
+        focusLat: coords.lat,
+        focusLng: coords.lng,
+        focusHostId: hostId ?? null,
       },
     });
   };
@@ -121,7 +172,7 @@ export default function ExperienceDetailInfoSection({
 
         {/* ✅ 지도 영역: 카카오맵 + host-marker */}
         <div className="w-full h-[170px] rounded-[10px] bg-[#F5F5F5] mb-5 overflow-hidden">
-          {latitude != null && longitude != null ? (
+          {coords.lat != null && coords.lng != null ? (
             <div ref={mapRef} className="w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

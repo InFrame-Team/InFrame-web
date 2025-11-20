@@ -517,7 +517,10 @@ export default function MapPage() {
       let centerLng = 128.741;
       let usedMyLocation = false;
 
-      if (navigator.geolocation) {
+      if (focusLat != null && focusLng != null) {
+        centerLat = focusLat;
+        centerLng = focusLng;
+      } else if (navigator.geolocation) {
         try {
           const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
