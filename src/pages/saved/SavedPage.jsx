@@ -225,7 +225,7 @@ export default function SavedPage() {
         </div>
 
         {/* 개수 */}
-        <div className="px-4 pt-7 pb-1">
+        <div className="px-4 pt-7 pb-3">
           <p className="text-[14px] font-medium text-[#3A3A3A]">
             총 <span className="font-bold">{totalCount}</span>
             {unitLabel}

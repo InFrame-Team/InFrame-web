@@ -11,3 +11,9 @@ export async function fetchLikedExperiences() {
   const res = await api.get("/likes/experience");
   return res.data;
 }
+
+//  체험 하트 토글
+export async function toggleExperienceLike(experienceId) {
+  const res = await api.post(`/likes/experience/${experienceId}`);
+  return res.data;
+}
