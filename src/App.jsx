@@ -43,6 +43,7 @@ import HostProgramListPage from "./pages/host/HostProgramListPage";
 import HostPhotosPage from "./pages/host/HostPhotosPage";
 import MainPage from "./pages/MainPage";
 import StartPage from "./pages/StartPage";
+import SavedPage from "./pages/saved/SavedPage";
 
 function ExperienceCreateLayout() {
   return (
@@ -127,7 +128,7 @@ export default function App() {
             path="/my/reservations/:reservationId/cancel/done"
             element={<ReservationCancelDonePage />}
           />
-          ;
+          <Route path="/my/saved" element={<SavedPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
