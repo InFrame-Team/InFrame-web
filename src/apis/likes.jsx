@@ -5,3 +5,9 @@ export async function fetchLikedHosts() {
   const res = await api.get("/likes/host");
   return res.data;
 }
+
+//내가 '하트' 누른 체험 목록 조회
+export async function fetchLikedExperiences() {
+  const res = await api.get("/likes/experience");
+  return res.data;
+}

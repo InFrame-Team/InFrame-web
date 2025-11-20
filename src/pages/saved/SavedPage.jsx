@@ -6,48 +6,12 @@ import { useNavigate } from "react-router-dom";
 
 import fakeProfile from "../../assets/fakeProfile.svg";
 import fakeImg from "../../assets/fakeImg.svg";
-import { fetchLikedHosts } from "../../apis/likes";
+import { fetchLikedHosts, fetchLikedExperiences } from "../../apis/likes";
 
 const TABS = {
   HOST: "HOST",
   PRODUCT: "PRODUCT",
 };
-
-// 상품 쪽은 아직 API 미정이라 mock 유지
-const mockProducts = [
-  {
-    id: 1,
-    title: "한 입의 예술, 핸드메이드 초콜릿 클래스",
-    price: 50000,
-    mainImageUrl: fakeImg,
-    hostName: "정민호 호스트",
-    rating: 4.88,
-  },
-  {
-    id: 2,
-    title: "입문자를 위한 도자기 핸드 빌딩",
-    price: 35000,
-    mainImageUrl: fakeImg,
-    hostName: "이서윤 호스트",
-    rating: 4.36,
-  },
-  {
-    id: 3,
-    title: "나의 첫 브랜드 워크숍",
-    price: 30000,
-    mainImageUrl: fakeImg,
-    hostName: "김다연 호스트",
-    rating: 4.72,
-  },
-  {
-    id: 4,
-    title: "향기로 그리는 드로잉 캔들 클래스",
-    price: 40000,
-    mainImageUrl: fakeImg,
-    hostName: "윤소희 호스트",
-    rating: 4.55,
-  },
-];
 
 // ---- 카드 컴포넌트들 ----
 function SavedHostCard({ host }) {
@@ -70,6 +34,7 @@ function SavedHostCard({ host }) {
     <div
       role="button"
       className="w-full flex items-center justify-between gap-3 py-5 border-b border-[#F0F0F0]"
+      onClick={() => navigate(`/host/${host.hostId}`)}
     >
       {/* 왼쪽 텍스트 영역 */}
       <div className="flex-1 min-w-0 text-left">
@@ -77,9 +42,7 @@ function SavedHostCard({ host }) {
           {hostName}
         </p>
         {/* 소개 문구 필드가 생기면 여기에 매핑 */}
-        {/* <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">
-          {intro}
-        </p> */}
+        {/* <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">{intro}</p> */}
         <div className="flex items-center gap-1 mt-2">
           <AiFillStar className="w-[16px] h-[16px] text-[#F13030]" />
           <span className="text-[14px] font-medium text-[#3A3A3A]">
@@ -120,12 +83,20 @@ function SavedHostCard({ host }) {
 function SavedProductCard({ product }) {
   const [liked, setLiked] = useState(true);
 
+  const { title, hostName, price, rating, imageUrls } = product;
+
+  const thumbnail = (imageUrls && imageUrls[0]) || fakeImg;
+
   return (
-    <div role="button" className="w-full text-left">
+    <div
+      role="button"
+      className="w-full text-left"
+      onClick={() => navigate(`/experience/${product.experienceId}`)}
+    >
       <div className="relative w-full rounded-[8px] overflow-hidden mb-3">
         <img
-          src={product.mainImageUrl || fakeImg}
-          alt={product.title}
+          src={thumbnail}
+          alt={title}
           className="w-full h-[160px] object-cover"
         />
         <button
@@ -145,19 +116,19 @@ function SavedProductCard({ product }) {
       </div>
 
       <p className="text-[16px] font-bold text-[#3A3A3A] mb-0.5">
-        {product.price.toLocaleString()}원
+        {price.toLocaleString()}원
       </p>
       <p className="text-[14px] font-medium text-[#6D6D6D] line-clamp-1 mb-1">
-        {product.title}
+        {title}
       </p>
       <div className="flex justify-between">
         <p className="text-[12px] font-medium text-[#A0A0A0] mb-0.5">
-          {product.hostName}
+          {hostName}
         </p>
         <div className="flex items-center gap-0.5">
           <AiFillStar className="text-[#A0A0A0] w-[10px] h-[10px]" />
           <span className="text-[10px] font-medium text-[#A0A0A0] mt-0.5">
-            {product.rating}
+            {rating?.toFixed(1)}
           </span>
         </div>
       </div>
@@ -174,26 +145,40 @@ export default function SavedPage() {
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsError, setHostsError] = useState(null);
 
+  const [experienceList, setExperienceList] = useState([]);
+  const [experiencesLoading, setExperiencesLoading] = useState(false);
+  const [experiencesError, setExperiencesError] = useState(null);
+
   useEffect(() => {
-    const loadHosts = async () => {
+    const load = async () => {
       try {
         setHostsLoading(true);
+        setExperiencesLoading(true);
         setHostsError(null);
-        const data = await fetchLikedHosts();
-        setHostList(data);
+        setExperiencesError(null);
+
+        const [hostsRes, expRes] = await Promise.all([
+          fetchLikedHosts(),
+          fetchLikedExperiences(),
+        ]);
+
+        setHostList(hostsRes);
+        setExperienceList(expRes);
       } catch (error) {
         console.error(error);
         setHostsError("저장한 호스트를 불러오는 중 오류가 발생했습니다.");
+        setExperiencesError("저장한 체험을 불러오는 중 오류가 발생했습니다.");
       } finally {
         setHostsLoading(false);
+        setExperiencesLoading(false);
       }
     };
 
-    loadHosts();
+    load();
   }, []);
 
   const totalCount =
-    activeTab === TABS.HOST ? hostList.length : mockProducts.length;
+    activeTab === TABS.HOST ? hostList.length : experienceList.length;
   const unitLabel = activeTab === TABS.HOST ? "명" : "개";
 
   return (
@@ -271,11 +256,32 @@ export default function SavedPage() {
                 ))}
             </>
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-8">
-              {mockProducts.map((product) => (
-                <SavedProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              {experiencesLoading && (
+                <p className="text-[13px] text-[#A0A0A0] py-4">
+                  저장한 체험을 불러오는 중입니다...
+                </p>
+              )}
+              {experiencesError && (
+                <p className="text-[13px] text-[#F13030] py-4">
+                  {experiencesError}
+                </p>
+              )}
+              {!experiencesLoading &&
+                !experiencesError &&
+                experienceList.length === 0 && (
+                  <p className="text-[13px] text-[#A0A0A0] py-4">
+                    아직 저장한 체험이 없습니다.
+                  </p>
+                )}
+              {!experiencesLoading && !experiencesError && (
+                <div className="grid grid-cols-2 gap-x-3 gap-y-8">
+                  {experienceList.map((exp) => (
+                    <SavedProductCard key={exp.experienceId} product={exp} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
