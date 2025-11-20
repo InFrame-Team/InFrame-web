@@ -76,6 +76,7 @@ export default function HostProgramListPage() {
               {programs.map((p) => (
                 <HostProgramCard
                   key={p.experienceId}
+                  experienceId={p.experienceId}
                   mainImageUrl={p.mainImageUrl}
                   title={p.title}
                   price={p.price}
