@@ -1,5 +1,4 @@
 // src/pages/experience/ExperienceDetailPage.jsx
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
