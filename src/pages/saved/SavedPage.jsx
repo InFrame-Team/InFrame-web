@@ -21,14 +21,10 @@ function SavedHostCard({ host }) {
     hostName,
     profileImageUrl,
     experienceImageUrls,
+    hostIntro,
     averageRating,
     reviewCount,
   } = host;
-
-  const thumbnail =
-    (experienceImageUrls && experienceImageUrls[0]) ||
-    profileImageUrl ||
-    fakeProfile;
 
   return (
     <div
@@ -41,8 +37,10 @@ function SavedHostCard({ host }) {
         <p className="text-[21px] font-bold text-[#3A3A3A] mb-1.5">
           {hostName}
         </p>
-        {/* 소개 문구 필드가 생기면 여기에 매핑 */}
-        {/* <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">{intro}</p> */}
+
+        <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">
+          {hostIntro}
+        </p>
         <div className="flex items-center gap-1 mt-2">
           <AiFillStar className="w-[16px] h-[16px] text-[#F13030]" />
           <span className="text-[14px] font-medium text-[#3A3A3A]">
