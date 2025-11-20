@@ -142,7 +142,7 @@ export default function ExperienceDetailPage() {
     }
   };
 
-  // ✅ 로딩 / 에러 / 데이터 없음 분기 정리
+  // 로딩 / 에러 / 데이터 없음 분기 정리
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-white flex flex-col items-center">
