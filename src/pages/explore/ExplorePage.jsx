@@ -16,7 +16,7 @@ import news3Img from "../../assets/news3.png";
 
 // =================================================================
 
-// 🟢 HotHostCard 컴포넌트: 미리 로드된 데이터를 받아 렌더링 (Left side 디자인, Right side 데이터 구조)
+// 🟢 HotHostCard 컴포넌트: 미리 로드된 데이터를 받아 렌더링
 const HotHostCard = React.memo(({ item, onBooking }) => {
   // 3개 슬롯 고정 및 플레이스홀더 생성 로직
   const classList = [
@@ -29,7 +29,7 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
     }),
   ].slice(0, 3); // 항상 3개의 아이템을 보장
 
-  // 데이터 필드 설정 및 기본값 (hotList가 미리 처리했으므로 안정적임)
+  // 데이터 필드 설정 및 기본값
   const finalHostName = item.host || "Unknown Host";
   const finalRating = item.rating || "0.00";
   const finalReviews = item.reviews || 0;
@@ -49,7 +49,6 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
             src={bgSrc}
             alt={`${finalHostName} 배경`}
             className="w-full h-full object-cover"
-            // 이미지 로드 실패 시 대체 배경
             onError={(e) => {
               e.target.onerror = null;
               e.target.src =
@@ -62,7 +61,7 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
               {finalHostName}님
             </span>
           </div>
-          {/* 프로필 이미지 (배경 하단 중앙에 걸치도록 위치 조정) */}
+          {/* 프로필 이미지 */}
           <div className="absolute left-6 top-[75px]">
             <img
               src={finalAvatar}
@@ -78,11 +77,10 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
 
         {/* 2. 하단 흰색 영역 */}
         <div className="px-6 pt-10 pb-6 relative">
-          {/* 평점 영역 (흰색 영역 상단에 배치) */}
+          {/* 평점 영역 */}
           <div className="absolute top-2 left-[125px] flex items-center text-[15px] text-[#3A3A3A]">
             <AiFillStar className="text-[#F13030] mr-1 text-[18px]" />
-            {/* 평점은 소수점 두 자리까지 포맷 */}
-            <span className="">{finalRating}</span>
+            <span>{finalRating}</span>
             <span className="mx-2 text-[#C4C4C4]">·</span>
             <span className="decoration-[0.6px]">후기 {finalReviews}개</span>
           </div>
@@ -90,7 +88,7 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
           {/* 예약 바로가기 버튼 */}
           <button
             type="button"
-            onClick={onBooking}
+            onClick={() => onBooking && onBooking(item.id)} // ✅ 부모 콜백으로 hostId 전달
             className="w-full bg-[#3A3A3A] text-white text-[17px] font-semibold py-3 rounded-[12px] mt-5 mb-5 shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
           >
             예약 바로가기
@@ -99,10 +97,7 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
           {/* 클래스 리스트 */}
           <div className="space-y-5">
             {classList.map((cls, idx) => (
-              <div
-                key={cls.id || idx} // class ID가 있으면 사용, 없으면 index 사용
-                className="flex items-start"
-              >
+              <div key={cls.id || idx} className="flex items-start">
                 {/* 썸네일 */}
                 <div
                   className={`w-[70px] h-[70px] rounded-[16px] mr-4 shrink-0 ${
@@ -130,8 +125,8 @@ const HotHostCard = React.memo(({ item, onBooking }) => {
                 <div className="flex-1 min-w-0 pt-1">
                   {cls.isPlaceholder ? (
                     <>
-                      <div className="h-5 bg-[#EFEFEF] rounded w-3/4 mb-1"></div>
-                      <div className="h-4 bg-[#F4F4F4] rounded w-full"></div>
+                      <div className="h-5 bg-[#EFEFEF] rounded w-3/4 mb-1" />
+                      <div className="h-4 bg-[#F4F4F4] rounded w-full" />
                     </>
                   ) : (
                     <>
@@ -161,7 +156,7 @@ export default function ExplorePage() {
   const [hotList, setHotList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🟢 데이터 로딩 및 필터링 useEffect
+  // 🟢 데이터 로딩 및 필터링
   useEffect(() => {
     async function loadHotHosts() {
       setLoading(true);
@@ -169,16 +164,15 @@ export default function ExplorePage() {
       let currentUserId = null;
       let isCurrentUserHost = false;
 
-      // 1. 현재 사용자 정보 가져오기 (인증 상태 확인 및 ID, 권한 확인)
+      // 1. 현재 사용자 정보
       try {
         const meResult = await getMyInfo();
 
         if (meResult.success && meResult.data) {
           const user = meResult.data;
-          // ID 필드를 유연하게 처리
+
           currentUserId = user.id || user.user_id || user.userId || null;
 
-          // 권한 필드를 유연하게 처리하여 호스트 여부 판단
           let rawRole = (
             user.role ??
             user.roles ??
@@ -189,6 +183,7 @@ export default function ExplorePage() {
           )
             .toString()
             .toUpperCase();
+
           isCurrentUserHost =
             rawRole.includes("BUSINESS") || rawRole.includes("HOST");
 
@@ -208,17 +203,15 @@ export default function ExplorePage() {
         const hostMapResult = await getHostMap();
 
         if (hostMapResult.success && Array.isArray(hostMapResult.data)) {
-          // 3. 필터링: 현재 사용자가 호스트이고 ID를 알 때, 자신의 호스트 카드는 제외
+          // 3. 내 호스트 카드 제외
           const filteredHosts = hostMapResult.data.filter((host) => {
-            // 호스트 역할이 아니거나, 사용자 ID를 모르면 모두 통과
             if (!isCurrentUserHost || currentUserId === null) {
               return true;
             }
-            // 호스트의 userId와 현재 로그인 ID가 같으면 제외
             return String(host.userId) !== String(currentUserId);
           });
 
-          // 4. 데이터 추가 가공 (리뷰 및 체험 목록 로드) - N+1 쿼리 방지
+          // 4. 리뷰 + 체험 목록 가공
           const hostPromises = filteredHosts.map(async (host) => {
             // A. 리뷰 평점 계산
             const reviewResult = await getReviewsByHostId(host.hostId);
@@ -243,7 +236,7 @@ export default function ExplorePage() {
 
               if (Array.isArray(expListResult.data)) {
                 classes = expListResult.data.slice(0, 3).map((exp) => ({
-                  id: exp.experienceId, // 체험 ID 추가
+                  id: exp.experienceId,
                   title: exp.title,
                   desc: exp.description || "",
                   img: exp.mainImageUrl || "",
@@ -253,7 +246,6 @@ export default function ExplorePage() {
               console.error(`Host ID ${host.hostId} 체험 목록 조회 실패:`, e);
             }
 
-            // 최종 포맷된 호스트 객체 반환
             return {
               id: host.hostId,
               host: host.hostName,
@@ -263,7 +255,7 @@ export default function ExplorePage() {
               background:
                 host.companyLogoUrl ||
                 "https://placehold.co/340x160/F0F0F0/000000?text=Background",
-              classes: classes,
+              classes,
             };
           });
 
@@ -280,6 +272,7 @@ export default function ExplorePage() {
         setLoading(false);
       }
     }
+
     loadHotHosts();
   }, []);
 
@@ -293,7 +286,6 @@ export default function ExplorePage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!query.trim()) {
-      // alert() 대신 커스텀 메시지 사용을 권장합니다. 여기서는 console.log로 대체합니다.
       console.log("검색어를 입력해주세요.");
       return;
     }
@@ -304,9 +296,10 @@ export default function ExplorePage() {
     navigate(`/explore/result?query=${encodeURIComponent(text)}`);
   };
 
-  const handleBooking = () => {
-    console.log("예약 페이지로 이동합니다.");
-    // 실제 예약 페이지 URL로 navigate(e.g. /booking/${hostId})
+  // ✅ 예약 바로가기 콜백: hostId 받아서 이동
+  const handleBooking = (hostId) => {
+    if (!hostId) return;
+    navigate(`/host/${hostId}`);
   };
 
   const handleStoryClick = (link) => {
@@ -411,11 +404,10 @@ export default function ExplorePage() {
                 </div>
               ) : hotList.length > 0 ? (
                 hotList.map((item) => (
-                  // item.id를 key로 사용합니다.
                   <HotHostCard
                     key={item.id}
                     item={item}
-                    onBooking={handleBooking}
+                    onBooking={handleBooking} // ✅ 여기서 콜백 전달
                   />
                 ))
               ) : (
@@ -441,9 +433,7 @@ export default function ExplorePage() {
                     <img
                       src={story.img}
                       alt={story.title}
-                      className="w-full h-full object-cover
-                               transition-transform duration-300 ease-in-out
-                               hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 ease-in-out hover:scale-105"
                     />
                   </div>
                 </button>

@@ -851,23 +851,26 @@ function HostDashboardView({
             programs.map((program, index) => (
               <div
                 key={program.experienceId}
-                className={`flex items-center justify-between px-5 py-4 ${
+                className={`px-5 py-4 ${
                   index < programs.length - 1
                     ? "border-b border-neutral-100"
                     : ""
                 }`}
               >
-                <div className="flex justify-between items-end">
+                {/* 전체 영역을 flex로, 하단 정렬 */}
+                <div className="flex justify-between items-end w-full">
+                  {/* 왼쪽 타이틀 */}
                   <div className="flex flex-col gap-1">
                     <p className="text-[15px] font-medium text-[#1D1D1D]">
                       {program.title}
                     </p>
                   </div>
 
+                  {/* 오른쪽 하단 관리 버튼 */}
                   <button
                     type="button"
                     onClick={() => goProgramManage(program.experienceId)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-200 text-[13px] text-[#3F3F46] bg-white"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-200 text-[13px] text-[#3F3F46] bg-white self-end"
                   >
                     <LuFolder className="text-[16px]" />
                     <span>관리</span>
