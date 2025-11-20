@@ -41,6 +41,7 @@ import ReservationCancelDonePage from "./pages/reservation/ReservationCancelDone
 import HostDetailPage from "./pages/host/HostDetailPage";
 import HostProgramListPage from "./pages/host/HostProgramListPage";
 import HostPhotosPage from "./pages/host/HostPhotosPage";
+import RootEntry from "./pages/RootEntry";
 
 function ExperienceCreateLayout() {
   return (
@@ -55,7 +56,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<RootEntry />} />
           <Route path="/app" element={<MobileApp />} />
           {/* 탐색 탭 */}
           <Route path="/explore" element={<ExplorePage />} />
