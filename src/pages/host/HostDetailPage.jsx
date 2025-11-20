@@ -231,17 +231,17 @@ export default function HostDetailPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
 
               {/* 왼쪽 아래 텍스트 */}
-              <div className="absolute left-4 bottom-4">
+              <div className="absolute left-5 bottom-3">
                 <p className="text-white text-[21px] font-bold">
                   프로그램 엿보기
                 </p>
               </div>
 
-              {/* 오른쪽 아래 아이콘 (여기만 클릭 가능) */}
+              {/* 오른쪽 아래 아이콘 */}
               <div className="absolute right-4 bottom-4">
                 <button
                   type="button"
-                  onClick={() => navigate(`/host/${hostId}/programs`)}
+                  onClick={() => navigate(`/host/${hostId}/photos`)}
                   className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center"
                 >
                   <img src={programIcon1} alt="프로그램 아이콘" />
