@@ -3,7 +3,7 @@ import axios from "axios";
 /**기본 axios 객체(Access Token 미포함) */
 const api = axios.create({
   // 요청의 기본 URL 지정. 모든 API는 이 주소를 기준으로 호출
-  baseURL: "http://13.125.136.155:8080/api/v1",
+  baseURL: "https://13.125.136.155:8080/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
