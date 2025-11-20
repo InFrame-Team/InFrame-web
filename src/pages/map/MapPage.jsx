@@ -113,6 +113,8 @@ export default function MapPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const focusHostId = location.state?.focusHostId;
+  const focusLat = location.state?.focusLat;
+  const focusLng = location.state?.focusLng;
 
   const params = new URLSearchParams(location.search);
   const categoryFromQuery = params.get("category");
@@ -239,6 +241,21 @@ export default function MapPage() {
       });
     }
   };
+
+  // 🔹 /map 으로 들어올 때 focusLat/focusLng 가 있으면 해당 좌표로 이동
+  useEffect(() => {
+    if (!mapReady) return;
+    if (focusLat == null || focusLng == null) return;
+    if (!window.kakao || !window.kakao.maps) return;
+
+    const { kakao } = window;
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const pos = new kakao.maps.LatLng(Number(focusLat), Number(focusLng));
+    map.setLevel(3);
+    map.panTo(pos);
+  }, [mapReady, focusLat, focusLng]);
 
   // ---------- 특정 호스트로 포커스 (예약내역 → 길찾기) ----------
   useEffect(() => {
