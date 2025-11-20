@@ -439,7 +439,7 @@ export default function MapPage() {
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-neutral-200 z-20 pointer-events-auto">
         <div className="grid grid-cols-5 text-[11px]">
           {[
-            { label: "홈", icon: HomeIcon, onClick: () => navigate("/app") },
+            { label: "홈", icon: HomeIcon, onClick: () => navigate("/main") },
             {
               label: "즐겨찾기",
               icon: HeartIcon,

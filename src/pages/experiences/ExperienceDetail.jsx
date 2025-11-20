@@ -166,7 +166,7 @@ export default function ExperienceDetailPage() {
             </button>
             <button
               aria-label="홈"
-              onClick={() => navigate("/app")}
+              onClick={() => navigate("/main")}
               className="w-9 h-9 flex items-center justify-center"
             >
               <RiHome5Line size={22} className="text-[#3A3A3A]" />
@@ -215,7 +215,7 @@ export default function ExperienceDetailPage() {
               </button>
               <button
                 aria-label="홈"
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/main")}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
               >
                 <RiHome5Line size={22} />

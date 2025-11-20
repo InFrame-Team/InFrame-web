@@ -24,7 +24,7 @@ export default function SigninEmail() {
       const accessToken = res.data?.accessToken;
       if (accessToken) {
         saveLogin(accessToken);
-        navigate("/app", { replace: true }); // 로그인 후 이동하는 페이지 수정 필요
+        navigate("/main", { replace: true });
       } else {
         alert("토큰을 받지 못했습니다. 잠시 후 다시 시도해주세요.");
       }
