@@ -1,8 +1,23 @@
 import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import createSuccessImg from "../../../assets/createSuccessImg.png";
 import StepHeader from "../../../components/experience_create/StepHeader.jsx";
 
 export default function Step4() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const experienceId = location.state?.experienceId;
+
+  const handleComplete = () => {
+    if (!experienceId) {
+      alert("체험 정보가 없습니다. 메인으로 이동합니다.");
+      navigate("/app");
+      return;
+    }
+    navigate(`/experiences/${experienceId}`);
+  };
+
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
       <div className="w-full max-w-[480px] relative">
@@ -30,12 +45,18 @@ export default function Step4() {
           </p>
         </main>
 
-        {/* 하단 버튼 -> 완료 후 리디렉트 경로 지정해야함!! */}
+        {/* 하단 버튼 */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur px-5 pb-6 pt-3">
           <button
             type="button"
-            disabled
-            className="w-full h-[48px] rounded-[10px] text-[16px] font-bold bg-[#3A3A3A] text-white"
+            onClick={handleComplete}
+            disabled={!experienceId}
+            className={`w-full h-[48px] rounded-[10px] text-[16px] font-bold
+              ${
+                experienceId
+                  ? "bg-[#3A3A3A] text-white"
+                  : "bg-[#EDEDED] text-[#B1B1B1] cursor-not-allowed"
+              }`}
           >
             완료
           </button>
