@@ -76,11 +76,13 @@ export default function HostProgramListPage() {
               {programs.map((p) => (
                 <HostProgramCard
                   key={p.experienceId}
+                  experienceId={p.experienceId}
                   mainImageUrl={p.mainImageUrl}
                   title={p.title}
                   price={p.price}
                   durationInHours={formatDuration(p.durationInHours)}
                   rating={p.rating}
+                  isLiked={p.isLiked}
                   onClick={() => {
                     navigate(`/experiences/${p.experienceId}`);
                   }}

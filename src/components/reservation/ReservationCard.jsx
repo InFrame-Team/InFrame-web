@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
+import { toggleHostLike } from "../../apis/likes";
 
 export default function ReservationCard({
   reservation,
@@ -9,7 +10,6 @@ export default function ReservationCard({
   onClickContactHost,
 }) {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
 
   const {
     id,
@@ -24,7 +24,15 @@ export default function ReservationCard({
     reviewWritten,
     status,
     experienceId,
+    hostId,
+    isHostLiked,
   } = reservation;
+
+  const [liked, setLiked] = useState(!!isHostLiked);
+
+  useEffect(() => {
+    setLiked(!!isHostLiked);
+  }, [isHostLiked]);
 
   const isCancelled = status === "CANCELLED";
   const isReserved = status === "RESERVED";
@@ -56,7 +64,6 @@ export default function ReservationCard({
     if (isCompleted && !reviewWritten && onClickReview) {
       onClickReview(reservation);
     }
-
     // RESERVED / CANCELLED 의 "길찾기"는 아직 동작 없음 (추후 연동)
   };
 
@@ -74,6 +81,22 @@ export default function ReservationCard({
       // 같은 건으로 예약하기 → 체험 상세로 이동
       if (!experienceId) return;
       navigate(`/experiences/${experienceId}`);
+    }
+  };
+
+  // 호스트 좋아요 토글
+  const handleToggleLike = async () => {
+    if (!hostId) return;
+
+    const next = !liked;
+    setLiked(next);
+
+    try {
+      await toggleHostLike(hostId);
+    } catch (err) {
+      console.error(err);
+      setLiked(!next);
+      alert("호스트 좋아요 처리 중 오류가 발생했어요.");
     }
   };
 
@@ -122,8 +145,8 @@ export default function ReservationCard({
         </div>
         <button
           type="button"
-          aria-label="관심 추가"
-          onClick={() => setLiked((prev) => !prev)}
+          aria-label="호스트 좋아요"
+          onClick={handleToggleLike}
           className="w-8 h-8 flex items-center justify-center self-start mt-[2px]"
         >
           {liked ? (

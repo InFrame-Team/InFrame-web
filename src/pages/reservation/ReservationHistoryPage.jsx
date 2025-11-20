@@ -63,6 +63,7 @@ export default function ReservationHistoryPage() {
             experienceThumbnailUrl: item.experienceThumbnailUrl,
             totalParticipants: item.totalParticipants,
             caution: item.caution,
+            isHostLiked: item.isHostLiked,
           };
         });
 
@@ -185,6 +186,7 @@ export default function ReservationHistoryPage() {
               ))}
           </div>
         </main>
+
         {/* 호스트 연락 시트 */}
         <HostContactSheet
           open={contactSheetOpen}
