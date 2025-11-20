@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoChevronBack } from "react-icons/io5";
 import { AiFillStar } from "react-icons/ai";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
@@ -6,42 +6,14 @@ import { useNavigate } from "react-router-dom";
 
 import fakeProfile from "../../assets/fakeProfile.svg";
 import fakeImg from "../../assets/fakeImg.svg";
+import { fetchLikedHosts } from "../../apis/likes";
 
 const TABS = {
   HOST: "HOST",
   PRODUCT: "PRODUCT",
 };
 
-const mockHosts = [
-  {
-    id: 1,
-    name: "정민호 호스트",
-    subtitle: "공예 강사 / 가족 공예",
-    profileImageUrl: fakeProfile,
-    rating: 4.7,
-    reviewCount: 1820,
-    thumbnail: fakeImg,
-  },
-  {
-    id: 2,
-    name: "이서윤 호스트",
-    subtitle: "공예 강사 / 도자기 공예",
-    profileImageUrl: fakeProfile,
-    rating: 4.8,
-    reviewCount: 2301,
-    thumbnail: fakeImg,
-  },
-  {
-    id: 3,
-    name: "최하늘 호스트",
-    subtitle: "공예 강사 / 비누·향초·디퓨저 제작",
-    profileImageUrl: fakeProfile,
-    rating: 5.0,
-    reviewCount: 1929,
-    thumbnail: fakeImg,
-  },
-];
-
+// 상품 쪽은 아직 API 미정이라 mock 유지
 const mockProducts = [
   {
     id: 1,
@@ -81,26 +53,40 @@ const mockProducts = [
 function SavedHostCard({ host }) {
   const [liked, setLiked] = useState(true);
 
+  const {
+    hostName,
+    profileImageUrl,
+    experienceImageUrls,
+    averageRating,
+    reviewCount,
+  } = host;
+
+  const thumbnail =
+    (experienceImageUrls && experienceImageUrls[0]) ||
+    profileImageUrl ||
+    fakeProfile;
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
       className="w-full flex items-center justify-between gap-3 py-5 border-b border-[#F0F0F0]"
     >
       {/* 왼쪽 텍스트 영역 */}
       <div className="flex-1 min-w-0 text-left">
         <p className="text-[21px] font-bold text-[#3A3A3A] mb-1.5">
-          {host.name}
+          {hostName}
         </p>
-        <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">
-          {host.subtitle}
-        </p>
-        <div className="flex items-center gap-1">
+        {/* 소개 문구 필드가 생기면 여기에 매핑 */}
+        {/* <p className="text-[12px] text-[#3A3A3A] mb-4 line-clamp-2">
+          {intro}
+        </p> */}
+        <div className="flex items-center gap-1 mt-2">
           <AiFillStar className="w-[16px] h-[16px] text-[#F13030]" />
           <span className="text-[14px] font-medium text-[#3A3A3A]">
-            {host.rating}
+            {averageRating?.toFixed(1)}
           </span>
           <span className="text-[14px] font-medium text-[#3A3A3A] ml-1.5">
-            후기 {host.reviewCount.toLocaleString()}개
+            후기 {reviewCount?.toLocaleString()}개
           </span>
         </div>
       </div>
@@ -108,8 +94,8 @@ function SavedHostCard({ host }) {
       {/* 오른쪽 이미지 영역 */}
       <div className="relative w-[88px] h-[88px] rounded-[5px] overflow-hidden flex-shrink-0">
         <img
-          src={host.thumbnail || host.profileImageUrl || fakeProfile}
-          alt={host.name}
+          src={thumbnail}
+          alt={hostName}
           className="w-full h-full object-cover"
         />
         <button
@@ -127,7 +113,7 @@ function SavedHostCard({ host }) {
           )}
         </button>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -135,7 +121,7 @@ function SavedProductCard({ product }) {
   const [liked, setLiked] = useState(true);
 
   return (
-    <button type="button" className="w-full text-left">
+    <div role="button" className="w-full text-left">
       <div className="relative w-full rounded-[8px] overflow-hidden mb-3">
         <img
           src={product.mainImageUrl || fakeImg}
@@ -175,16 +161,40 @@ function SavedProductCard({ product }) {
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
+// ---- 메인 페이지 ----
 export default function SavedPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(TABS.HOST);
 
+  const [hostList, setHostList] = useState([]);
+  const [hostsLoading, setHostsLoading] = useState(false);
+  const [hostsError, setHostsError] = useState(null);
+
+  useEffect(() => {
+    const loadHosts = async () => {
+      try {
+        setHostsLoading(true);
+        setHostsError(null);
+        const data = await fetchLikedHosts();
+        setHostList(data);
+      } catch (error) {
+        console.error(error);
+        setHostsError("저장한 호스트를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setHostsLoading(false);
+      }
+    };
+
+    loadHosts();
+  }, []);
+
   const totalCount =
-    activeTab === TABS.HOST ? mockHosts.length : mockProducts.length;
+    activeTab === TABS.HOST ? hostList.length : mockProducts.length;
+  const unitLabel = activeTab === TABS.HOST ? "명" : "개";
 
   return (
     <div className="min-h-[100dvh] bg-white flex justify-center">
@@ -232,18 +242,34 @@ export default function SavedPage() {
         {/* 개수 */}
         <div className="px-4 pt-7 pb-1">
           <p className="text-[14px] font-medium text-[#3A3A3A]">
-            총 <span className="font-bold">{totalCount}</span>명
+            총 <span className="font-bold">{totalCount}</span>
+            {unitLabel}
           </p>
         </div>
 
         {/* 리스트 영역 */}
         <main className="px-4 pb-24">
           {activeTab === TABS.HOST ? (
-            <div>
-              {mockHosts.map((host) => (
-                <SavedHostCard key={host.id} host={host} />
-              ))}
-            </div>
+            <>
+              {hostsLoading && (
+                <p className="text-[13px] text-[#A0A0A0] py-4">
+                  저장한 호스트를 불러오는 중입니다...
+                </p>
+              )}
+              {hostsError && (
+                <p className="text-[13px] text-[#F13030] py-4">{hostsError}</p>
+              )}
+              {!hostsLoading && !hostsError && hostList.length === 0 && (
+                <p className="text-[13px] text-[#A0A0A0] py-4">
+                  아직 저장한 호스트가 없습니다.
+                </p>
+              )}
+              {!hostsLoading &&
+                !hostsError &&
+                hostList.map((host) => (
+                  <SavedHostCard key={host.hostId} host={host} />
+                ))}
+            </>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-8">
               {mockProducts.map((product) => (
