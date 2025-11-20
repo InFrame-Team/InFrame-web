@@ -6,7 +6,12 @@ import { useNavigate } from "react-router-dom";
 
 import fakeProfile from "../../assets/fakeProfile.svg";
 import fakeImg from "../../assets/fakeImg.svg";
-import { fetchLikedHosts, fetchLikedExperiences } from "../../apis/likes";
+import {
+  fetchLikedHosts,
+  fetchLikedExperiences,
+  toggleHostLike,
+  toggleExperienceLike,
+} from "../../apis/likes";
 
 const TABS = {
   HOST: "HOST",
@@ -14,23 +19,36 @@ const TABS = {
 };
 
 // ---- 카드 컴포넌트들 ----
-function SavedHostCard({ host }) {
+function SavedHostCard({ host, onToggleLike }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(true);
 
   const {
+    hostId,
     hostName,
     profileImageUrl,
-    experienceImageUrls,
     hostIntro,
     averageRating,
     reviewCount,
   } = host;
 
+  const avatarSrc = profileImageUrl || fakeProfile;
+
+  const handleClickCard = () => {
+    navigate(`/host/${hostId}`);
+  };
+
+  const handleClickHeart = (e) => {
+    e.stopPropagation();
+    setLiked((prev) => !prev);
+    onToggleLike?.(hostId);
+  };
+
   return (
     <div
       role="button"
       className="w-full flex items-center justify-between gap-3 py-5 border-b border-[#F0F0F0]"
-      onClick={() => navigate(`/host/${host.hostId}`)}
+      onClick={handleClickCard}
     >
       {/* 왼쪽 텍스트 영역 */}
       <div className="flex-1 min-w-0 text-left">
@@ -55,17 +73,14 @@ function SavedHostCard({ host }) {
       {/* 오른쪽 이미지 영역 */}
       <div className="relative w-[88px] h-[88px] rounded-[5px] overflow-hidden flex-shrink-0">
         <img
-          src={profileImageUrl}
+          src={avatarSrc}
           alt={hostName}
           className="w-full h-full object-cover"
         />
         <button
           type="button"
           className="absolute top-1.5 right-1.5"
-          onClick={(e) => {
-            e.stopPropagation();
-            setLiked((prev) => !prev);
-          }}
+          onClick={handleClickHeart}
         >
           {liked ? (
             <FaHeart className="w-5 h-5 text-[#F13030]" />
@@ -78,19 +93,27 @@ function SavedHostCard({ host }) {
   );
 }
 
-function SavedProductCard({ product }) {
+function SavedProductCard({ product, onToggleLike }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(true);
 
-  const { title, hostName, price, rating, imageUrls } = product;
+  const { experienceId, title, hostName, price, rating, imageUrls } = product;
 
   const thumbnail = (imageUrls && imageUrls[0]) || fakeImg;
 
+  const handleClickCard = () => {
+    // 경험 상세 페이지 경로 (프로젝트에서 사용하는 경로에 맞춰서)
+    navigate(`/experiences/${experienceId}`);
+  };
+
+  const handleClickHeart = (e) => {
+    e.stopPropagation();
+    setLiked((prev) => !prev);
+    onToggleLike?.(experienceId);
+  };
+
   return (
-    <div
-      role="button"
-      className="w-full text-left"
-      onClick={() => navigate(`/experience/${product.experienceId}`)}
-    >
+    <div role="button" className="w-full text-left" onClick={handleClickCard}>
       <div className="relative w-full rounded-[8px] overflow-hidden mb-3">
         <img
           src={thumbnail}
@@ -100,10 +123,7 @@ function SavedProductCard({ product }) {
         <button
           type="button"
           className="absolute top-2 right-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            setLiked((prev) => !prev);
-          }}
+          onClick={handleClickHeart}
         >
           {liked ? (
             <FaHeart className="w-5 h-5 text-[#F13030]" />
@@ -174,6 +194,30 @@ export default function SavedPage() {
 
     load();
   }, []);
+
+  // 호스트 좋아요 토글 -> 해제 시 목록에서 제거
+  const handleToggleHostLike = async (hostId) => {
+    try {
+      await toggleHostLike(hostId);
+      setHostList((prev) => prev.filter((h) => h.hostId !== hostId));
+    } catch (e) {
+      console.error(e);
+      alert("호스트 좋아요 해제 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 체험 좋아요 토글 -> 해제 시 목록에서 제거
+  const handleToggleExperienceLike = async (experienceId) => {
+    try {
+      await toggleExperienceLike(experienceId);
+      setExperienceList((prev) =>
+        prev.filter((exp) => exp.experienceId !== experienceId)
+      );
+    } catch (e) {
+      console.error(e);
+      alert("체험 좋아요 해제 중 오류가 발생했습니다.");
+    }
+  };
 
   const totalCount =
     activeTab === TABS.HOST ? hostList.length : experienceList.length;
@@ -250,7 +294,11 @@ export default function SavedPage() {
               {!hostsLoading &&
                 !hostsError &&
                 hostList.map((host) => (
-                  <SavedHostCard key={host.hostId} host={host} />
+                  <SavedHostCard
+                    key={host.hostId}
+                    host={host}
+                    onToggleLike={handleToggleHostLike}
+                  />
                 ))}
             </>
           ) : (
@@ -275,7 +323,11 @@ export default function SavedPage() {
               {!experiencesLoading && !experiencesError && (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-8">
                   {experienceList.map((exp) => (
-                    <SavedProductCard key={exp.experienceId} product={exp} />
+                    <SavedProductCard
+                      key={exp.experienceId}
+                      product={exp}
+                      onToggleLike={handleToggleExperienceLike}
+                    />
                   ))}
                 </div>
               )}
