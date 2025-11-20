@@ -24,6 +24,8 @@ import HostBasicInfo from "./pages/host/HostBasicInfo";
 import HostComplete from "./pages/host/HostComplete";
 import HostProfileSettings from "./pages/host/HostProfileSettings";
 import HostLocationPicker from "./pages/host/HostLocationPicker";
+import TermsPage from "./pages/host/TermsPage"; // TermsPage 컴포넌트 import
+
 import ExplorePage from "./pages/explore/ExplorePage";
 import ExploreResultPage from "./pages/explore/ExploreResultPage";
 
@@ -81,6 +83,8 @@ export default function App() {
             path="/host/location-picker"
             element={<HostLocationPicker />}
           />
+          <Route path="/host/termspage" element={<TermsPage />} />
+
           <Route path="/signin" element={<SigninEntry />} />
           <Route path="/signin/email" element={<SigninEmail />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
@@ -128,7 +132,9 @@ export default function App() {
             path="/my/reservations/:reservationId/cancel/done"
             element={<ReservationCancelDonePage />}
           />
+
           <Route path="/my/saved" element={<SavedPage />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import api from "../../apis/api";
+import { getHostMap } from "../../apis/map";
 
 import BottomTab from "../../components/BottomTab";
 
@@ -10,6 +10,7 @@ import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 import { LuCrosshair } from "react-icons/lu";
 import { BiSolidMessageDetail } from "react-icons/bi";
 import { IoLocationSharp } from "react-icons/io5";
+import { FiRotateCw } from "react-icons/fi";
 
 const CATEGORY_ITEMS = [
   { key: "artisan", label: "장인" },
@@ -18,73 +19,33 @@ const CATEGORY_ITEMS = [
   { key: "artist", label: "예술가" },
 ];
 
-const DUMMY_HOSTS = [
-  {
-    id: "h1",
-    category: "artisan",
-    name: "이지섭",
-    title: "도자기 장인",
-    place: "경산시청 근처",
-    lat: 35.82075,
-    lng: 128.7415,
-    distance: 114,
-    price: "50,000원 ~",
-    reviews: 129,
-    avatar: "/host-potter.png",
-  },
-  {
-    id: "h2",
-    category: "youth",
-    name: "서지유",
-    title: "전시 기획자",
-    place: "중방동 전시공간",
-    lat: 35.8223,
-    lng: 128.7432,
-    distance: 420,
-    price: "40,000원 ~",
-    reviews: 28,
-    avatar: "/host-planner.png",
-  },
-  {
-    id: "h3",
-    category: "alley",
-    name: "최하늘",
-    title: "조향사",
-    place: "남매공원 인근 공방",
-    lat: 35.8218,
-    lng: 128.7385,
-    distance: 650,
-    price: "35,000원 ~",
-    reviews: 82,
-    avatar: "/host-perfumer.png",
-  },
-  {
-    id: "h4",
-    category: "artist",
-    name: "소성민",
-    title: "브랜드 컨설턴트",
-    place: "사동 카페거리",
-    lat: 35.8234,
-    lng: 128.7398,
-    distance: 900,
-    price: "30,000원 ~",
-    reviews: 52,
-    avatar: "/host-consultant.png",
-  },
-  {
-    id: "h5",
-    category: "artisan",
-    name: "강도윤",
-    title: "목공예 장인",
-    place: "정평동 목공방",
-    lat: 35.8188,
-    lng: 128.7423,
-    distance: 1200,
-    price: "45,000원 ~",
-    reviews: 63,
-    avatar: "/host-wood.png",
-  },
+// 🔹 가격 / 시간대 필터용 상수
+const MIN_PRICE = 0;
+const MAX_PRICE = 200000;
+const PRICE_STEP = 5000;
+
+const TIME_SLOTS = [
+  { key: "30m", label: "30분 내외", minMinutes: 0, maxMinutes: 60 },
+  { key: "1h", label: "1시간", minMinutes: 60, maxMinutes: 120 },
+  { key: "2h", label: "2시간", minMinutes: 120, maxMinutes: 180 },
+  { key: "3h", label: "3시간", minMinutes: 180, maxMinutes: 240 },
+  { key: "4h", label: "4시간", minMinutes: 240, maxMinutes: 300 },
+  { key: "5h", label: "5시간", minMinutes: 300, maxMinutes: 360 },
+  { key: "5h+", label: "5시간 이상", minMinutes: 360, maxMinutes: null },
 ];
+
+// 백엔드 category 값을 프론트에서 쓰는 key 로 매핑
+function mapBackendCategory(code) {
+  if (!code) return "artisan";
+  const upper = code.toString().toUpperCase();
+
+  if (upper === "MASTER_ARTISAN") return "artisan";
+  if (upper === "YOUTH_ENTREPRENEUR") return "youth";
+  if (upper === "ALLEY_MERCHANT") return "alley";
+  if (upper === "ARTIST") return "artist";
+
+  return "artisan";
+}
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -121,10 +82,28 @@ function ensureMyLocationStyles() {
   document.head.appendChild(style);
 }
 
+// 가격 라벨
+function formatPriceLabel(value, isMax = false) {
+  if (isMax && value >= MAX_PRICE) return "20만원+";
+  if (value === 0) return "0원";
+
+  const man = Math.floor(value / 10000);
+  const chun = Math.floor((value % 10000) / 1000);
+
+  let result = "";
+  if (man > 0) result += `${man}만`;
+  if (chun > 0) result += `${chun}천`;
+
+  return result + "원";
+}
+
 export default function MapPage() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+
+  // ✅ { [hostId]: { overlay, el, host } }
   const hostOverlaysRef = useRef({});
+
   const labelListRef = useRef(null);
   const labelItemRefs = useRef({});
   const myLocationOverlayRef = useRef(null);
@@ -147,49 +126,156 @@ export default function MapPage() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [myLocation, setMyLocation] = useState(null);
 
-  const [hosts, setHosts] = useState(DUMMY_HOSTS);
-
+  const [hosts, setHosts] = useState([]);
   const [mapReady, setMapReady] = useState(false);
 
+  // 🔹 필터 시트 상태 (NearbyListPage와 동일 패턴)
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState("price");
+  const [priceRange, setPriceRange] = useState([MIN_PRICE, MAX_PRICE]);
+
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [selectedField, setSelectedField] = useState(null);
+
+  // 가격 슬라이더용
+  const trackRef = useRef(null);
+  const [draggingHandle, setDraggingHandle] = useState(null);
+
+  // 가격 핸들 위치 %
+  const minPercent =
+    ((priceRange[0] - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100;
+  const maxPercent =
+    ((priceRange[1] - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100;
+
+  // 호스트 데이터 가져오기
   useEffect(() => {
     async function fetchHosts() {
-      try {
-        const res = await api.get("/host/list");
+      const result = await getHostMap();
 
-        const raw = res.data.hosts || res.data;
-
-        const mapped = raw.map((h) => ({
-          id: h.id,
-          category: h.category || "artisan",
-          name: h.businessName || h.name,
-          title: h.title || "",
-          place: h.addressBase || h.place || "",
-          lat: h.latitude,
-          lng: h.longitude,
-          distance: 0,
-          price: h.priceText || "가격 문의",
-          reviews: h.reviewCount ?? 0,
-          avatar: h.profileImageUrl || null,
-        }));
-
-        setHosts(mapped);
-      } catch (err) {
+      if (!result.success) {
         console.error(
-          "[MapPage] 호스트 목록 불러오기 실패, 더미 데이터 사용",
-          err
+          "[MapPage] host/map 실패:",
+          result.status,
+          result.message
         );
-        // 실패하면 DUMMY_HOSTS 그대로 사용
+        setHosts([]);
+        return;
       }
+
+      const raw = result.data;
+      console.log("[MapPage] host/map raw:", raw);
+
+      const mapped = raw.map((h, idx) => {
+        const latRaw = h.latitude ?? h.lat;
+        const lngRaw = h.longitude ?? h.lng;
+
+        const lat =
+          latRaw !== null && latRaw !== undefined ? Number(latRaw) : null;
+        const lng =
+          lngRaw !== null && lngRaw !== undefined ? Number(lngRaw) : null;
+
+        // 🔹 가격 숫자/텍스트 분리
+        const minPrice = h.minPrice ?? h.price ?? h.lowestPrice ?? null;
+        const numericPrice = minPrice != null ? Number(minPrice) : 0;
+        const priceNumber = Number.isNaN(numericPrice) ? 0 : numericPrice;
+
+        const priceText =
+          minPrice != null && !Number.isNaN(numericPrice)
+            ? `${priceNumber.toLocaleString()}원 ~`
+            : h.lowestPrice || h.priceText || "가격 문의";
+
+        // 🔹 체험 소요 시간(분) – 백엔드 필드 후보들
+        const durationMinutes =
+          h.durationMinutes ??
+          h.durationMin ??
+          h.experienceDuration ??
+          h.estimatedDuration ??
+          null;
+
+        return {
+          id: String(h.hostId ?? h.id ?? `host-${idx}`),
+          category: mapBackendCategory(h.category),
+          name: h.hostName || h.name || "이름 없는 호스트",
+          title: h.detailField || h.title || "",
+          place: h.addressBase || h.place || "",
+          lat,
+          lng,
+          distance: 0,
+          price: priceText,
+          priceNumber,
+          durationMinutes,
+          reviews: h.reviewCount ?? 0,
+          logoUrl: h.profileImageUrl || null,
+        };
+      });
+
+      console.log("[MapPage] mapped hosts:", mapped);
+      setHosts(mapped);
     }
 
     fetchHosts();
   }, []);
 
-  const displayedHosts = useMemo(() => {
-    let filtered = activeCategory
-      ? hosts.filter((h) => h.category === activeCategory)
-      : hosts;
+  // 가격 슬라이더 드래그 계산
+  const updatePriceByClientX = (handle, clientX) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    let ratio = (clientX - rect.left) / rect.width;
+    ratio = Math.max(0, Math.min(1, ratio));
 
+    const rawValue = MIN_PRICE + ratio * (MAX_PRICE - MIN_PRICE);
+    const stepped = Math.round(rawValue / PRICE_STEP) * PRICE_STEP;
+
+    if (handle === "min") {
+      setPriceRange(([min, max]) => {
+        const nextMin = Math.min(stepped, max - PRICE_STEP);
+        return [Math.max(MIN_PRICE, nextMin), max];
+      });
+    } else if (handle === "max") {
+      setPriceRange(([min, max]) => {
+        const nextMax = Math.max(stepped, min + PRICE_STEP);
+        return [min, Math.min(MAX_PRICE, nextMax)];
+      });
+    }
+  };
+
+  // 전역 마우스/터치 이벤트로 드래그 처리
+  useEffect(() => {
+    if (!draggingHandle) return;
+
+    const onMove = (e) => {
+      const clientX = e.touches?.[0]?.clientX ?? e.clientX;
+      if (clientX == null) return;
+      updatePriceByClientX(draggingHandle, clientX);
+    };
+
+    const stop = () => setDraggingHandle(null);
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onMove);
+    window.addEventListener("mouseup", stop);
+    window.addEventListener("touchend", stop);
+    window.addEventListener("touchcancel", stop);
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("mouseup", stop);
+      window.removeEventListener("touchend", stop);
+      window.removeEventListener("touchcancel", stop);
+    };
+  }, [draggingHandle]);
+
+  // 필터가 적용된 호스트 리스트
+  const displayedHosts = useMemo(() => {
+    let filtered = hosts;
+
+    // 카테고리 (상단 pill)
+    if (activeCategory) {
+      filtered = filtered.filter((h) => h.category === activeCategory);
+    }
+
+    // 검색어
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       filtered = filtered.filter((h) => {
@@ -201,6 +287,32 @@ export default function MapPage() {
       });
     }
 
+    // 시간대 필터 (durationMinutes)
+    if (selectedTimeSlot) {
+      const slot = TIME_SLOTS.find((s) => s.key === selectedTimeSlot);
+      if (slot) {
+        filtered = filtered.filter((h) => {
+          const d = h.durationMinutes;
+          if (d == null) return true; // 정보 없으면 필터에서 제외하지 않음
+          if (slot.maxMinutes == null) {
+            return d >= slot.minMinutes;
+          }
+          return d >= slot.minMinutes && d < slot.maxMinutes;
+        });
+      }
+    }
+
+    // 전문분야 (title 기준)
+    if (selectedField) {
+      filtered = filtered.filter((h) => h.title === selectedField);
+    }
+
+    // 가격 필터
+    filtered = filtered.filter(
+      (h) => h.priceNumber >= priceRange[0] && h.priceNumber <= priceRange[1]
+    );
+
+    // 거리 계산
     const withDistance = filtered.map((h) => {
       if (myLocation && h.lat && h.lng) {
         const d = haversineDistance(
@@ -215,7 +327,35 @@ export default function MapPage() {
     });
 
     return [...withDistance].sort((a, b) => a.distance - b.distance);
-  }, [hosts, activeCategory, searchQuery, myLocation]);
+  }, [
+    hosts,
+    activeCategory,
+    searchQuery,
+    myLocation,
+    selectedTimeSlot,
+    selectedField,
+    priceRange,
+  ]);
+
+  const totalCount = displayedHosts.length;
+
+  const [sheetHeight, setSheetHeight] = useState(0);
+  const sheetHeightRef = useRef(null);
+
+  useEffect(() => {
+    if (showFilterSheet && sheetHeightRef.current) {
+      // 높이 측정은 BottomSheet 내용이 완전히 렌더링된 후 비동기적으로 이루어져야 함
+      const timer = setTimeout(() => {
+        if (sheetHeightRef.current) {
+          const newHeight = sheetHeightRef.current.offsetHeight;
+          if (newHeight !== sheetHeight) {
+            setSheetHeight(newHeight);
+          }
+        }
+      }, 0); // 렌더링 후 바로 실행
+      return () => clearTimeout(timer);
+    }
+  }, [showFilterSheet, activeFilterTab, sheetHeight]);
 
   const createMyLocationOverlay = (lat, lng) => {
     const { kakao } = window;
@@ -320,7 +460,6 @@ export default function MapPage() {
     );
   };
 
-  // ---------- 지도 초기화 (1번만) ----------
   useEffect(() => {
     async function initMap() {
       const { kakao } = window;
@@ -390,6 +529,7 @@ export default function MapPage() {
             strokeColor: "none",
             fillColor: "#000000",
             fillOpacity: 0.45,
+            zIndex: 1,
           });
           maskPolygon.setMap(map);
 
@@ -400,6 +540,7 @@ export default function MapPage() {
             strokeOpacity: 0.9,
             fillColor: "transparent",
             fillOpacity: 0,
+            zIndex: 2,
           });
           borderPolygon.setMap(map);
 
@@ -434,30 +575,51 @@ export default function MapPage() {
     }
   }, []);
 
-  // ---------- hosts가 바뀔 때마다 마커 생성/갱신 ----------
+  // ---------- 호스트 마커 생성 ----------
   useEffect(() => {
     if (!mapReady || !window.kakao || !window.kakao.maps) return;
     const { kakao } = window;
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // 기존 마커 제거
-    Object.values(hostOverlaysRef.current).forEach(({ overlay }) =>
-      overlay.setMap(null)
-    );
+    // 기존 오버레이 제거
+    Object.values(hostOverlaysRef.current).forEach(({ overlay }) => {
+      if (overlay) overlay.setMap(null);
+    });
     hostOverlaysRef.current = {};
 
+    console.log("[MapPage] 마커 생성, hosts length:", hosts.length);
+
     hosts.forEach((host) => {
-      if (!host.lat || !host.lng) return;
+      if (host.lat == null || host.lng == null) {
+        console.warn("[MapPage] lat/lng 없음, 마커 스킵:", host);
+        return;
+      }
 
-      const pos = new kakao.maps.LatLng(host.lat, host.lng);
+      const lat = Number(host.lat);
+      const lng = Number(host.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        console.warn("[MapPage] lat/lng NaN, 마커 스킵:", host);
+        return;
+      }
 
+      console.log("[MapPage] marker position:", lat, lng, host.name);
+
+      const pos = new kakao.maps.LatLng(lat, lng);
+
+      // ✅ host 마커 DOM
       const el = document.createElement("div");
       el.className = "host-marker";
-      el.innerHTML = host.avatar
-        ? `<img src="${host.avatar}" alt="${host.name}" />`
+
+      const logoSrc =
+        host.logoUrl ||
+        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+
+      el.innerHTML = host.logoUrl
+        ? `<img src="${logoSrc}" alt="${host.name}" />`
         : `<span style="font-size:26px;">😊</span>`;
 
+      // 클릭 이벤트 (카드 선택)
       el.addEventListener("click", () => {
         setSelectedHostId((prev) => (prev === host.id ? null : host.id));
         setSheetExpanded(true);
@@ -467,25 +629,29 @@ export default function MapPage() {
         position: pos,
         content: el,
         yAnchor: 1,
+        zIndex: 1000,
+        clickable: true,
       });
+
       overlay.setMap(map);
 
       hostOverlaysRef.current[host.id] = { overlay, el, host };
     });
 
-    // 초기 선택 호스트
     if (!selectedHostId && hosts.length > 0) {
       setSelectedHostId(hosts[0].id);
     }
-  }, [hosts, mapReady]); // ← 지도 준비 + 호스트 로딩 이후
+  }, [hosts, mapReady]);
 
-  // ---------- 선택된 호스트에 맞춰 지도 패닝 ----------
+  // ---------- 선택된 호스트에 맞춰 지도 패닝 & 마커 강조 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.kakao) return;
 
-    Object.values(hostOverlaysRef.current).forEach(({ el }) => {
-      el.classList.remove("active");
+    // 모든 마커 active 제거
+    Object.values(hostOverlaysRef.current).forEach(({ el, overlay }) => {
+      if (el) el.classList.remove("active");
+      if (overlay) overlay.setZIndex(1000);
     });
 
     if (!selectedHostId) return;
@@ -493,7 +659,8 @@ export default function MapPage() {
     const item = hostOverlaysRef.current[selectedHostId];
     if (!item) return;
 
-    item.el.classList.add("active");
+    if (item.el) item.el.classList.add("active");
+    if (item.overlay) item.overlay.setZIndex(2000);
 
     const { kakao } = window;
     const pos = new kakao.maps.LatLng(item.host.lat, item.host.lng);
@@ -508,13 +675,22 @@ export default function MapPage() {
     map.panTo(pos);
   }, [selectedHostId, myLocation]);
 
+  // ---------- 카테고리/검색/필터에 따라 마커 숨기기/보이기 ----------
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
+    if (!displayedHosts.length) {
+      Object.values(hostOverlaysRef.current).forEach(({ overlay }) => {
+        if (overlay) overlay.setMap(map);
+      });
+      return;
+    }
+
     const visibleIds = new Set(displayedHosts.map((h) => h.id));
 
     Object.entries(hostOverlaysRef.current).forEach(([id, { overlay }]) => {
+      if (!overlay) return;
       if (visibleIds.has(id)) {
         overlay.setMap(map);
       } else {
@@ -529,8 +705,9 @@ export default function MapPage() {
       const first = displayedHosts[0];
       setSelectedHostId(first ? first.id : null);
     }
-  }, [activeCategory, searchQuery, displayedHosts, selectedHostId, mapReady]);
+  }, [displayedHosts, selectedHostId, mapReady]);
 
+  // ---------- 하단 카드 열려 있을 때 선택된 카드로 스크롤 ----------
   useEffect(() => {
     if (!sheetExpanded || !selectedHostId) return;
     const container = labelListRef.current;
@@ -543,109 +720,165 @@ export default function MapPage() {
     container.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
   }, [selectedHostId, sheetExpanded]);
 
+  // **********************************************
+  // ⭐ 목록 보기 버튼 영역을 완전히 분리하여 BottomSheet 위에 고정 (이미지 구현) ⭐
+  // **********************************************
+  // 기존의 목록 확장/축소 기능은 showFilterSheet가 닫혔을 때만 동작하도록 유지합니다.
+  // -----------------------------------------------------------------------
+
+  // MapPage.jsx (추정)
   return (
-    <div className="relative min-h-[100dvh] bg-white">
-      <div
-        ref={mapRef}
-        className="absolute inset-0"
-        style={{ minHeight: "100dvh" }}
-      />
+    <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 flex justify-center">
+      <div className="w-full max-w-[480px] bg-white relative">
+        {/* 지도 */}
+        <div
+          ref={mapRef}
+          className="absolute inset-0"
+          style={{ minHeight: "100dvh" }}
+        />
 
-      <div className="pointer-events-none relative z-10 flex flex-col min-h-[100dvh] pb-24">
-        {/* 상단 검색창 */}
-        <header className="pt-6 px-4 pointer-events-auto">
-          <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-2 bg-white rounded-[10px] shadow-md px-4 py-4">
-              <input
-                type="text"
-                placeholder="장소 · 호스트를 검색해보세요"
-                className="flex-1 bg-transparent text-[15px] placeholder:text-neutral-400 focus:outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                type="button"
-                className="text-[18px] text-neutral-500 px-1"
-                aria-label="검색"
-              >
-                <FaMagnifyingGlass />
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="flex items-center justify-center w-14 h-14 rounded-[10px] bg-[#7b7b7b] text-white shadow-md"
-              aria-label="필터 열기"
-            >
-              <TbAdjustmentsHorizontal size={25} />
-            </button>
-          </div>
-
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {CATEGORY_ITEMS.map((c) => {
-              const isActive = activeCategory === c.key;
-              return (
+        {/* 지도 위 UI (상단 검색창 포함) */}
+        <div className="pointer-events-none relative z-10 flex flex-col min-h-[100dvh] pb-24">
+          {/* 상단 검색창 */}
+          <header className="pt-6 px-4 pointer-events-auto">
+            <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center gap-2 bg-white rounded-[10px] shadow-md px-4 py-4">
+                <input
+                  type="text"
+                  placeholder="장소 · 호스트를 검색해보세요"
+                  className="flex-1 bg-transparent text-[15px] placeholder:text-neutral-400 focus:outline-none"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
                 <button
-                  key={c.key}
                   type="button"
-                  onClick={() =>
-                    setActiveCategory((prev) => (prev === c.key ? null : c.key))
-                  }
-                  className={[
-                    "shrink-0 px-4 py-1 rounded-full text-[13px] border bg-white",
-                    isActive
-                      ? "border-[#e64a45] text-[#e64a45] font-semibold"
-                      : "border-neutral-300 text-neutral-700",
-                  ].join(" ")}
+                  className="text-[18px] text-neutral-500 px-1"
+                  aria-label="검색"
                 >
-                  {c.label}
+                  <FaMagnifyingGlass />
                 </button>
-              );
-            })}
-          </div>
-        </header>
+              </div>
 
-        <div className="flex-1" />
-
-        {/* 하단 카드 + 내 위치 버튼 */}
-        <div className="pointer-events-auto fixed bottom-[70px] left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 flex flex-col gap-2">
-          <div className="w-full flex flex-col items-center mb-1">
-            <button
-              type="button"
-              onClick={() => setSheetExpanded((prev) => !prev)}
-              className="mb-1 text-black text-3xl leading-none"
-              aria-label="라벨 접기/펼치기"
-            >
-              {sheetExpanded ? <IoIosArrowDown /> : <IoIosArrowUp />}
-            </button>
-
-            <div className="relative w-full flex justify-center items-center">
               <button
                 type="button"
-                className="w-[150px] rounded-full bg-[#e64a45] text-white py-2.5 text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
+                className="flex items-center justify-center w-14 h-14 rounded-[10px] bg-[#7b7b7b] text-white shadow-md"
+                aria-label="필터 열기"
                 onClick={() => {
-                  const q = activeCategory ? `?category=${activeCategory}` : "";
-                  navigate(`/nearby${q}`);
+                  setActiveFilterTab("price");
+                  setShowFilterSheet(true);
                 }}
               >
-                목록 보기
-              </button>
-
-              <button
-                type="button"
-                className="absolute right-1 w-11 h-11 rounded-full bg-white shadow-[0_4px_10px_rgba(0,0,0,0.18)] border border-neutral-200 flex items-center justify-center"
-                aria-label="내 위치로 이동"
-                onClick={handleMoveToMyLocation}
-              >
-                <LuCrosshair className="text-neutral-700 text-xl" />
+                <TbAdjustmentsHorizontal size={25} />
               </button>
             </div>
+
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+              {CATEGORY_ITEMS.map((c) => {
+                const isActive = activeCategory === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() =>
+                      setActiveCategory((prev) =>
+                        prev === c.key ? null : c.key
+                      )
+                    }
+                    className={[
+                      "shrink-0 px-4 py-1 rounded-full text-[13px] border bg-white",
+                      isActive
+                        ? "border-[#e64a45] text-[#e64a45] font-semibold"
+                        : "border-neutral-300 text-neutral-700",
+                    ].join(" ")}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </header>
+
+          <div className="flex-1" />
+        </div>
+
+        {/* ⭐ 목록 보기 버튼 (유동적인 위치 처리) ⭐ */}
+        <div
+          className="fixed left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 z-[70]"
+          style={{
+            pointerEvents: "auto",
+            // [핵심 수정] BottomSheet의 측정된 높이를 기반으로 위치 계산
+            // 버튼의 중앙이 BottomSheet 상단 경계선에 오도록 계산 (-22px)
+            bottom: showFilterSheet
+              ? `${sheetHeight + 10}px` // ✅ sheetHeight에서 22px을 뺌 (버튼을 시트 상단 경계에 위치)
+              : "80px",
+            transition: "bottom 0.3s ease-out",
+          }}
+        >
+          <div className="w-full flex flex-col items-center mb-1">
+            {/* 필터 시트가 닫혔을 때만 모든 버튼 표시 */}
+            {!showFilterSheet ? (
+              <>
+                {/* 화살표 버튼 */}
+                <button
+                  type="button"
+                  onClick={() => setSheetExpanded((prev) => !prev)}
+                  className="mb-1 text-black text-3xl leading-none"
+                >
+                  {sheetExpanded ? <IoIosArrowDown /> : <IoIosArrowUp />}
+                </button>
+
+                <div className="relative w-full flex justify-center items-center">
+                  {/* 목록 보기 버튼 (기존 크기) */}
+                  <button
+                    type="button"
+                    className="mx-auto w-[150px] rounded-full bg-[#e64a45] text-white py-2.5
+               text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
+                    onClick={() => {
+                      const q = activeCategory
+                        ? `?category=${activeCategory}`
+                        : "";
+                      navigate(`/nearby${q}`);
+                    }}
+                  >
+                    목록 보기
+                  </button>
+
+                  {/* 내 위치 버튼 */}
+                  <button
+                    type="button"
+                    className="absolute right-11 w-11 h-11 rounded-full bg-white shadow 
+              border border-neutral-200 flex items-center justify-center"
+                    onClick={handleMoveToMyLocation}
+                  >
+                    <LuCrosshair className="text-neutral-700 text-xl" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              // 필터 시트가 열렸을 때: '목록 보기' 버튼만 중앙에 배치
+              <div className="relative w-full flex justify-center items-center">
+                <button
+                  type="button"
+                  className="mx-auto w-[200px] rounded-full bg-[#e64a45] text-white py-2.5
+               text-[15px] font-semibold shadow-[0_6px_16px_rgba(230,74,69,0.4)]"
+                  onClick={() => {
+                    const q = activeCategory
+                      ? `?category=${activeCategory}`
+                      : "";
+                    navigate(`/nearby${q}`);
+                  }}
+                >
+                  목록 보기
+                </button>
+              </div>
+            )}
           </div>
 
-          {sheetExpanded && (
+          {/* 목록 확장 (필터 시트가 닫혔을 때만 목록이 확장되도록 조건 추가) */}
+          {!showFilterSheet && sheetExpanded && (
             <div
               ref={labelListRef}
-              className="mt-1 flex gap-3 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
+              className="mt-2 flex gap-4 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
               style={{ padding: "0 calc((100% - 250px) / 2)" }}
             >
               {displayedHosts.map((host) => {
@@ -663,44 +896,49 @@ export default function MapPage() {
                       )
                     }
                     className={[
-                      "min-w-[250px] max-w-[250px] rounded-2xl bg-white border text-left px-4 py-2 shadow-sm transition-all duration-150 snap-center",
+                      "min-w-[300px] max-w-[300px] rounded-2xl bg-white border text-left px-6 py-4 shadow-sm transition-all duration-150 snap-center",
                       selected
                         ? "border-[#000000] shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
                         : "border-neutral-200",
                     ].join(" ")}
                   >
                     <div className="flex flex-row items-baseline gap-2">
-                      <span className="text-[17px] font-bold">{host.name}</span>
+                      <span className="text-[22px] font-bold">{host.name}</span>
                       {host.title && (
-                        <span className="text-[13px] text-neutral-500">
+                        <span className="text-[15px] text-[#919191]">
                           {host.title}
                         </span>
                       )}
                     </div>
 
                     <div className="mt-2 flex flex-row items-center text-[13px] text-neutral-500">
-                      <BiSolidMessageDetail className="text-[15px] mr-1" />
-                      <span>후기 {host.reviews}</span>
+                      <BiSolidMessageDetail className="text-[14px] text-[#919191] mr-1" />
+                      <span className="text-[#919191]">
+                        후기 {host.reviews}
+                      </span>
                     </div>
 
                     <div className="mt-0.5 flex flex-row items-center text-[13px] text-neutral-500">
-                      <IoLocationSharp className="text-[15px] mr-1" />
-                      <span className="mr-1">내 위치에서</span>
-                      <span className="text-[#e64a45] font-semibold">
-                        {host.distance}m
-                      </span>
+                      <IoLocationSharp className="text-[14px] text-[#919191] mr-1" />
+                      <span className="text-[#919191] mr-1">내 위치에서</span>
+                      <span className="text-[#F13030]">{host.distance}m</span>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[14px]">
                       <div className="flex items-center">
-                        <span className="text-[#e64a45] font-semibold mr-1">
+                        <span className="text-[#CD2F2F] font-semibold mr-1">
                           1인
                         </span>
-                        <span className="font-semibold">{host.price}</span>
+                        <span className="text-[3A3A3A] font-bold">
+                          {host.price}
+                        </span>
                       </div>
-                      <span className="px-3 py-1.5 rounded-full border border-neutral-300 text-[12px]">
+                      <button
+                        onClick={() => navigate(`/host/${host.id}`)}
+                        className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-[13px]"
+                      >
                         만나러 가기
-                      </span>
+                      </button>
                     </div>
                   </button>
                 );
@@ -708,9 +946,232 @@ export default function MapPage() {
             </div>
           )}
         </div>
-      </div>
 
-      <BottomTab />
+        {/* =============================== */}
+        {/* 필터 BottomSheet 전체 코드 (z-index 유지) */}
+        {/* =============================== */}
+
+        {/* 필터 BottomSheet */}
+        {showFilterSheet && (
+          <>
+            {/* Dimmed */}
+            <div
+              className="fixed inset-0 bg-black/40 z-[60]" // z-[60]
+              onClick={() => setShowFilterSheet(false)}
+            />
+
+            {/* BottomSheet 전체 */}
+            <div className="fixed inset-x-0 bottom-0 z-[61] flex justify-center">
+              {" "}
+              {/* z-[61] */}
+              <div
+                // [핵심 수정] BottomSheet 요소에 ref 연결 및 상단/하단 패딩 조정
+                ref={sheetHeightRef}
+                // pt-5 pb-6을 pt-3 pb-6으로 조정하여 탭과 버튼 간격을 좁힘
+                className="w-full max-w-[480px] bg-white rounded-t-3xl shadow-[0_-4px_16px_rgba(0,0,0,0.25)] pt-3 pb-6" // ✅ pt-5 -> pt-3
+              >
+                {/* ------------------ 탭 영역 ------------------ */}
+                <div className="flex justify-between items-center px-6 mb-3">
+                  {" "}
+                  {/* ✅ mb-5 -> mb-3 */}
+                  <div className="flex justify-center items-center gap-6 text-[16px] font-semibold">
+                    {["price", "time", "category", "field"].map((tab) => (
+                      <button
+                        key={tab}
+                        className={
+                          activeFilterTab === tab
+                            ? "text-black"
+                            : "text-neutral-300"
+                        }
+                        onClick={() => setActiveFilterTab(tab)}
+                      >
+                        {tab === "price"
+                          ? "가격"
+                          : tab === "time"
+                          ? "시간대"
+                          : tab === "category"
+                          ? "카테고리"
+                          : "전문분야"}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="text-2xl text-neutral-400"
+                    onClick={() => setShowFilterSheet(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* ------------------ 탭 콘텐츠 ------------------ */}
+                <div className="px-6 pb-4">
+                  {/* ============= 가격 탭 ============= */}
+                  {activeFilterTab === "price" && (
+                    <>
+                      <div className="flex justify-between font-semibold text-[#3A3A3A] text-[14px] mb-4">
+                        <span>{formatPriceLabel(priceRange[0])}</span>
+                        <span>{formatPriceLabel(priceRange[1], true)}</span>
+                      </div>
+
+                      {/* 슬라이더 */}
+                      <div
+                        ref={trackRef}
+                        className="relative h-10 cursor-pointer mt-2"
+                        onMouseDown={(e) => {
+                          const rect = trackRef.current.getBoundingClientRect();
+                          const mid =
+                            ((priceRange[0] + priceRange[1]) / 2 - MIN_PRICE) /
+                            (MAX_PRICE - MIN_PRICE);
+                          const clickRatio =
+                            (e.clientX - rect.left) / rect.width;
+                          const handle =
+                            clickRatio * 100 < mid * 100 ? "min" : "max";
+                          setDraggingHandle(handle);
+                          updatePriceByClientX(handle, e.clientX);
+                        }}
+                      >
+                        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[3px] bg-black rounded-full" />
+
+                        {/* 최소 핸들 */}
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white border-[3px] border-black"
+                          style={{ left: `${minPercent}%` }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setDraggingHandle("min");
+                            updatePriceByClientX("min", e.clientX);
+                          }}
+                        />
+
+                        {/* 최대 핸들 */}
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white border-[3px] border-black"
+                          style={{ left: `${maxPercent}%` }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setDraggingHandle("max");
+                            updatePriceByClientX("max", e.clientX);
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* ============= 시간대 탭 ============= */}
+                  {activeFilterTab === "time" && (
+                    <div className="flex flex-wrap gap-3 text-[15px]">
+                      {TIME_SLOTS.map((slot) => {
+                        const isActive = selectedTimeSlot === slot.key;
+                        return (
+                          <button
+                            key={slot.key}
+                            className={`px-3 py-1.5 rounded-full transition-all
+                  ${
+                    isActive
+                      ? "bg-white border border-[#2D7DF6] text-[#2D7DF6] font-semibold shadow"
+                      : "bg-[#F5F5F7] text-[#222222] border border-transparent"
+                  }`}
+                            onClick={() =>
+                              setSelectedTimeSlot((prev) =>
+                                prev === slot.key ? null : slot.key
+                              )
+                            }
+                          >
+                            {slot.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ============= 카테고리 탭 ============= */}
+                  {activeFilterTab === "category" && (
+                    <div className="flex flex-wrap gap-3 text-[15px]">
+                      {[
+                        { key: "artisan", label: "장인" },
+                        { key: "youth", label: "청년사업가" },
+                        { key: "alley", label: "골목상인" },
+                        { key: "artist", label: "예술가" },
+                      ].map((c) => (
+                        <button
+                          key={c.key}
+                          className={`px-3 py-1.5 rounded-full border ${
+                            activeCategory === c.key
+                              ? "bg-white border border-[#2D7DF6] text-[#2D7DF6] font-semibold shadow"
+                              : "bg-[#F5F5F7] text-[#222222] border border-transparent"
+                          }`}
+                          onClick={() =>
+                            setActiveCategory((prev) =>
+                              prev === c.key ? null : c.key
+                            )
+                          }
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ============= 전문분야 탭 ============= */}
+                  {activeFilterTab === "field" && (
+                    <div className="flex flex-wrap gap-3 text-[15px]">
+                      {[
+                        "공예·창작",
+                        "음식·디저트",
+                        "플라워·가드닝",
+                        "문화·전통 체험",
+                        "음악·예술",
+                        "라이프·힐링",
+                        "지역탐방·체험투어",
+                        "사진·콘텐츠",
+                      ].map((f) => (
+                        <button
+                          key={f}
+                          className={`px-3 py-1.5 rounded-full border ${
+                            selectedField === f
+                              ? "bg-white border border-[#2D7DF6] text-[#2D7DF6] font-semibold shadow"
+                              : "bg-[#F5F5F7] text-[#222222] border border-transparent"
+                          }`}
+                          onClick={() =>
+                            setSelectedField((prev) => (prev === f ? null : f))
+                          }
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ------------------ 하단 버튼 ------------------ */}
+                <div className="flex gap-3 px-6 mt-2">
+                  <button
+                    className="w-[70px] h-12 text-[#C9C9C9] rounded-lg bg-white border border-neutral-200 flex items-center justify-center text-[20px]"
+                    onClick={() => {
+                      setPriceRange([MIN_PRICE, MAX_PRICE]);
+                      setSelectedTimeSlot(null);
+                      setActiveCategory(null);
+                      setSelectedField(null);
+                    }}
+                  >
+                    <FiRotateCw />
+                  </button>
+
+                  <button
+                    className="flex-1 h-12 rounded-lg bg-[#3A3A3A] text-white text-[15px] font-semibold"
+                    onClick={() => setShowFilterSheet(false)}
+                  >
+                    {totalCount}명 검색
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <BottomTab />
+      </div>
     </div>
   );
 }
