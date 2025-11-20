@@ -38,6 +38,9 @@ import ReviewCreatePage from "./pages/reservation/ReviewCreatePage";
 import ReservationDetailPage from "./pages/reservation/ReservationDetailPage";
 import ReservationCancelPage from "./pages/reservation/ReservationCancelPage";
 import ReservationCancelDonePage from "./pages/reservation/ReservationCancelDonePage";
+import HostDetailPage from "./pages/host/HostDetailPage";
+import HostProgramListPage from "./pages/host/HostProgramListPage";
+import HostPhotosPage from "./pages/host/HostPhotosPage";
 
 function ExperienceCreateLayout() {
   return (
@@ -83,6 +86,14 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="onboarding" element={<Onboarding />} />
           </Route>
+          {/* 호스트 상세 정보 */}
+          <Route path="/host/:hostId" element={<HostDetailPage />} />
+          <Route
+            path="/host/:hostId/programs"
+            element={<HostProgramListPage />}
+          />
+          <Route path="/host/:hostId/photos" element={<HostPhotosPage />} />
+          {/* 체험 상세 페이지 */}
           <Route
             path="/experiences/:experienceId"
             element={<ExperienceDetail />}
