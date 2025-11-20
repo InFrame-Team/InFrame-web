@@ -57,7 +57,7 @@ function SavedHostCard({ host }) {
       {/* 오른쪽 이미지 영역 */}
       <div className="relative w-[88px] h-[88px] rounded-[5px] overflow-hidden flex-shrink-0">
         <img
-          src={thumbnail}
+          src={profileImageUrl}
           alt={hostName}
           className="w-full h-full object-cover"
         />
