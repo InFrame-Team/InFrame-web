@@ -435,7 +435,6 @@ export default function ExplorePage() {
               {storyList.map((story, index) => (
                 <button
                   key={index}
-                  onClick={() => handleStoryClick(story.link)}
                   className="w-[200px] shrink-0 focus:outline-none rounded-[20px]"
                 >
                   <div className="rounded-[20px] overflow-hidden h-[240px] relative">
