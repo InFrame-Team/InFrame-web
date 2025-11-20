@@ -112,6 +112,7 @@ export default function MapPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const focusHostId = location.state?.focusHostId;
 
   const params = new URLSearchParams(location.search);
   const categoryFromQuery = params.get("category");
@@ -238,6 +239,36 @@ export default function MapPage() {
       });
     }
   };
+
+  // ---------- 특정 호스트로 포커스 (예약내역 → 길찾기) ----------
+  useEffect(() => {
+    if (!mapReady) return;
+    if (!focusHostId) return;
+    if (!window.kakao || !window.kakao.maps) return;
+
+    const { kakao } = window;
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // host.id 는 String(hostId) 형태이므로 문자열로 비교
+    const target = hosts.find((h) => String(h.id) === String(focusHostId));
+
+    if (!target || target.lat == null || target.lng == null) {
+      console.warn("focusHostId로 호스트를 찾지 못했습니다.", focusHostId);
+      return;
+    }
+
+    const center = new kakao.maps.LatLng(
+      Number(target.lat),
+      Number(target.lng)
+    );
+    map.setLevel(3); // 조금 줌인해서 보여주기
+    map.panTo(center);
+
+    // 하단 카드 & 마커도 같이 선택 상태로
+    setSelectedHostId(target.id);
+    setSheetExpanded(true);
+  }, [mapReady, hosts, focusHostId]);
 
   // 전역 마우스/터치 이벤트로 드래그 처리
   useEffect(() => {
