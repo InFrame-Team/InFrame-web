@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  IoChevronBack,
+  IoChevronForward,
+  IoLocationSharp,
+} from "react-icons/io5";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import fakeProfile2 from "../../assets/fakeProfile2.png";
 import { fetchMyReservations } from "../../apis/reservations";
 import HostContactSheet from "../../components/reservation/HostContactSheet";
+import { getHostMap } from "../../apis/map"; // ✅ 지도용 호스트 목록 API
 
 function formatDateTimeKorean(isoString) {
   if (!isoString) return "-";
@@ -31,6 +36,7 @@ export default function ReservationDetailPage() {
   const navigate = useNavigate();
   const { reservationId } = useParams();
   const location = useLocation();
+
   const [reservation, setReservation] = useState(
     location.state?.reservation || null
   );
@@ -38,6 +44,14 @@ export default function ReservationDetailPage() {
   const [error, setError] = useState(null);
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
 
+  // ✅ 호스트 위치 정보 (위도, 경도, 기본 주소)
+  const [hostLocation, setHostLocation] = useState(null);
+  const [loadingHostLocation, setLoadingHostLocation] = useState(false);
+
+  // ✅ 카카오맵 컨테이너 ref
+  const mapContainerRef = useRef(null);
+
+  // ───────────────── 예약 상세 불러오기 ─────────────────
   useEffect(() => {
     // 리스트에서 state로 넘어온 값이 있으면 API 호출 안 함
     if (location.state?.reservation) return;
@@ -70,6 +84,92 @@ export default function ReservationDetailPage() {
     loadReservation();
     return () => controller.abort();
   }, [location.state, reservationId]);
+
+  // ───────────────── 호스트 위도/경도 조회 (/host/map) ─────────────────
+  useEffect(() => {
+    if (!reservation?.hostId) return;
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        setLoadingHostLocation(true);
+        const res = await getHostMap();
+
+        if (!mounted) return;
+        if (!res?.success || !Array.isArray(res.data)) {
+          setHostLocation(null);
+          return;
+        }
+
+        const found = res.data.find(
+          (h) => String(h.hostId) === String(reservation.hostId)
+        );
+
+        if (found) {
+          setHostLocation({
+            latitude: found.latitude,
+            longitude: found.longitude,
+            addressBase: found.addressBase,
+          });
+        } else {
+          setHostLocation(null);
+        }
+      } catch (e) {
+        console.error("호스트 위치 정보를 불러오는 중 오류:", e);
+        setHostLocation(null);
+      } finally {
+        if (mounted) setLoadingHostLocation(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [reservation?.hostId]);
+
+  // ───────────────── 카카오맵 렌더링 (host-marker 사용) ─────────────────
+  useEffect(() => {
+    if (!hostLocation) return;
+    if (!mapContainerRef.current) return;
+    if (!(window.kakao && window.kakao.maps)) return;
+
+    const { latitude, longitude } = hostLocation;
+    if (!latitude || !longitude) return;
+
+    const { kakao } = window;
+
+    const drawMap = () => {
+      const center = new kakao.maps.LatLng(latitude, longitude);
+      const options = { center, level: 3 };
+
+      const map = new kakao.maps.Map(mapContainerRef.current, options);
+
+      // 🔥 host-marker 커스텀 마커 HTML (프로필 이미지 적용)
+      const markerHtml = `
+        <div class="host-marker">
+          <img src="${
+            reservation?.hostProfileImageUrl || "/default-avatar.png"
+          }" alt="${reservation?.hostName || ""}" />
+        </div>
+      `;
+
+      const overlay = new kakao.maps.CustomOverlay({
+        position: center,
+        content: markerHtml,
+        yAnchor: 1,
+      });
+
+      overlay.setMap(map);
+    };
+
+    // kakao.maps.load 를 사용하는 경우 대비
+    if (kakao.maps.load) {
+      kakao.maps.load(drawMap);
+    } else {
+      drawMap();
+    }
+  }, [hostLocation, reservation]);
 
   const handleBack = () => {
     navigate(-1);
@@ -160,6 +260,17 @@ export default function ReservationDetailPage() {
       : 1;
 
   const perPersonPrice = finalPrice / safeParticipants;
+
+  // 🔹 주소 텍스트: 예약 → hostLocation 순서로 사용
+  const mainAddress =
+    reservation.address ||
+    reservation.location ||
+    reservation.addressLine1 ||
+    hostLocation?.addressBase ||
+    "경북 경산시 경안로42길 7, 2층";
+
+  const detailAddress =
+    reservation.addressDetail || reservation.detailAddress || "";
 
   const handleGoCancel = () => {
     if (isCancelled || isCompleted) return;
@@ -254,6 +365,35 @@ export default function ReservationDetailPage() {
               <div className="flex items-start">
                 <span className="w-[100px] text-[#969696]">예약 인원</span>
                 <p className="flex-1 text-[#3A3A3A]">{safeParticipants}명</p>
+              </div>
+            </div>
+          </section>
+
+          {/* 🔹 클래스 장소 (카카오맵 + host-marker) */}
+          <section className="px-5 pt-5 pb-4">
+            <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">
+              클래스 장소
+            </h2>
+
+            {/* 카카오맵 컨테이너 */}
+            <div className="w-full h-[200px] rounded-[12px] overflow-hidden bg-[#EDEDED] mb-3">
+              {loadingHostLocation ? (
+                <div className="w-full h-full flex items-center justify-center text-[13px] text-[#7A7A7A]">
+                  위치 정보를 불러오는 중...
+                </div>
+              ) : (
+                <div ref={mapContainerRef} className="w-full h-full" />
+              )}
+            </div>
+
+            {/* 주소 텍스트 */}
+            <div className="flex items-start gap-2">
+              <IoLocationSharp className="mt-[3px] text-[18px] text-neutral-400" />
+              <div className="flex-1 text-[15px] leading-[1.5]">
+                <p className="font-semibold text-[#555558]">{mainAddress}</p>
+                <p className="text-[13px] text-[#555558] mt-1">
+                  {detailAddress}
+                </p>
               </div>
             </div>
           </section>

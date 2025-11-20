@@ -8,6 +8,7 @@ export default function ReservationCard({
   reservation,
   onClickReview,
   onClickContactHost,
+  onClickDirections, // ✅ 길찾기 콜백
 }) {
   const navigate = useNavigate();
 
@@ -42,6 +43,8 @@ export default function ReservationCard({
   const showContactHost = isCancelled || isReserved;
 
   const avatarSrc = hostProfileImageUrl || fakeProfile2;
+
+  // 1차 버튼 라벨
   const primaryLabel =
     isReserved || isCancelled
       ? "길찾기"
@@ -51,7 +54,7 @@ export default function ReservationCard({
       ? "후기 작성"
       : "길찾기";
 
-  // secondary 버튼 라벨
+  // 2차 버튼 라벨
   const secondaryLabel = showContactHost
     ? "호스트에게 연락하기"
     : "같은 건으로 예약하기";
@@ -60,11 +63,17 @@ export default function ReservationCard({
   const primaryDisabled = isCompleted && reviewWritten;
 
   const handlePrimaryClick = () => {
-    // COMPLETED + 아직 리뷰 안 썼을 때만 리뷰 작성 페이지 이동
-    if (isCompleted && !reviewWritten && onClickReview) {
-      onClickReview(reservation);
+    // ✅ 1) 완료 + 아직 리뷰 안 썼을 때 → 리뷰 작성
+    if (isCompleted && !reviewWritten) {
+      onClickReview?.();
+      return;
     }
-    // RESERVED / CANCELLED 의 "길찾기"는 아직 동작 없음 (추후 연동)
+
+    // ✅ 2) 그 외(예약중/취소 등) → 길찾기
+    if (!isCompleted) {
+      onClickDirections?.();
+    }
+
   };
 
   const handleClickDetail = () => {
