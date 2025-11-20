@@ -1,3 +1,5 @@
+// src/components/experience/ExperienceDetailInfoSection.jsx
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdLocationOn } from "react-icons/md";
@@ -7,13 +9,12 @@ import { getHostMap } from "../../apis/map";
 
 function formatContactTime(start, end) {
   if (!start || !end) return null;
-
   const toHM = (t) => (typeof t === "string" ? t.slice(0, 5) : t);
   return `${toHM(start)} ~ ${toHM(end)}`;
 }
 
 export default function ExperienceDetailInfoSection({
-  location, // 주소 문자열
+  location,
   phoneNumber,
   experienceId,
   totalReviewCount,
@@ -23,7 +24,7 @@ export default function ExperienceDetailInfoSection({
   businessEmail,
   kakaoAddress,
 
-  // ✅ 새로 추가: 호스트 ID + (있으면) 위/경도
+  // 🔹 지도/길찾기용
   hostId,
   latitude,
   longitude,
@@ -33,13 +34,13 @@ export default function ExperienceDetailInfoSection({
   const markerOverlayRef = useRef(null);
   const navigate = useNavigate();
 
-  // ✅ 실제로 사용할 좌표 상태 (props → 우선, 없으면 getHostMap으로 채움)
+  // 실제 사용할 좌표 상태 (props 우선)
   const [coords, setCoords] = useState(() => ({
     lat: latitude != null ? Number(latitude) : null,
     lng: longitude != null ? Number(longitude) : null,
   }));
 
-  // props가 바뀌면 coords도 동기화
+  // props 변경 시 동기화
   useEffect(() => {
     setCoords({
       lat: latitude != null ? Number(latitude) : null,
@@ -47,10 +48,10 @@ export default function ExperienceDetailInfoSection({
     });
   }, [latitude, longitude]);
 
-  // ✅ hostId가 있고, coords가 비어있을 때 getHostMap으로 위경도 가져오기
+  // hostId 있고 좌표 없으면 getHostMap으로 좌표 보충
   useEffect(() => {
     if (!hostId) return;
-    if (coords.lat != null && coords.lng != null) return; // 이미 값 있으면 패스
+    if (coords.lat != null && coords.lng != null) return;
 
     let mounted = true;
 
@@ -58,7 +59,6 @@ export default function ExperienceDetailInfoSection({
       try {
         const res = await getHostMap();
         if (!mounted) return;
-
         if (!res?.success || !Array.isArray(res.data)) return;
 
         const found = res.data.find((h) => String(h.hostId) === String(hostId));
@@ -66,7 +66,6 @@ export default function ExperienceDetailInfoSection({
 
         const latRaw = found.latitude ?? found.lat;
         const lngRaw = found.longitude ?? found.lng;
-
         if (latRaw == null || lngRaw == null) return;
 
         setCoords({
@@ -83,7 +82,7 @@ export default function ExperienceDetailInfoSection({
     };
   }, [hostId, coords.lat, coords.lng]);
 
-  // 🔹 카카오맵 + host-marker 마커 렌더링
+  // ✅ 카카오맵 + host-marker
   useEffect(() => {
     if (!mapRef.current) return;
     if (coords.lat == null || coords.lng == null) return;
@@ -105,7 +104,7 @@ export default function ExperienceDetailInfoSection({
         markerOverlayRef.current = null;
       }
 
-      // ✅ host-marker DOM 생성 (index.css에 정의된 .host-marker 스타일 사용)
+      // host-marker DOM 생성 (index.css 의 .host-marker 사용)
       const el = document.createElement("div");
       el.className = "host-marker";
       el.innerHTML = `<span style="font-size:26px;">😊</span>`;
@@ -148,7 +147,7 @@ export default function ExperienceDetailInfoSection({
     };
   }, [coords.lat, coords.lng]);
 
-  // 🔹 길찾기 버튼 → /map 으로 이동 + 위도/경도 전달
+  // ✅ 길찾기 버튼: /map 으로 좌표 전달
   const handleDirections = () => {
     if (coords.lat == null || coords.lng == null) {
       alert("위치 정보를 찾을 수 없어요.");
@@ -170,7 +169,7 @@ export default function ExperienceDetailInfoSection({
       <section className="pt-6">
         <h2 className="text-[20px] font-bold text-[#3A3A3A] mb-3">장소</h2>
 
-        {/* ✅ 지도 영역: 카카오맵 + host-marker */}
+        {/* 지도 영역 */}
         <div className="w-full h-[170px] rounded-[10px] bg-[#F5F5F5] mb-5 overflow-hidden">
           {coords.lat != null && coords.lng != null ? (
             <div ref={mapRef} className="w-full h-full" />
@@ -199,7 +198,7 @@ export default function ExperienceDetailInfoSection({
           </span>
         </div>
 
-        {/* ✅ 길찾기 버튼 */}
+        {/* 길찾기 버튼 */}
         <button
           type="button"
           onClick={handleDirections}

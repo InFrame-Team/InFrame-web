@@ -1,17 +1,13 @@
+// src/pages/experience/ExperienceDetailPage.jsx
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  IoChevronBack,
-  IoChevronForward,
-  IoShareOutline,
-  IoMapOutline,
-} from "react-icons/io5";
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { AiFillStar } from "react-icons/ai";
 import BottomTab from "../../components/BottomTab";
 import { IoMdTime } from "react-icons/io";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { FaUser } from "react-icons/fa6";
-import { CiStar } from "react-icons/ci";
 import { RiHome5Line } from "react-icons/ri";
 import fakeImg from "../../assets/fakeImg.svg";
 import fakeProfile from "../../assets/fakeProfile.svg";
@@ -63,12 +59,9 @@ function mapApiToViewModel(api) {
     businessEmail: api.businessEmail,
     kakaoAddress: api.kakaoAddress,
 
+    // 🔹 지도/길찾기용
     hostId: api.hostId,
-
-  
-
-    latitude: api.latitude, // 백엔드 필드명이 다르면 여기만 맞춰줘
-
+    latitude: api.latitude,
     longitude: api.longitude,
   };
 }
@@ -81,10 +74,8 @@ export default function ExperienceDetailPage() {
   const [showTopBar, setShowTopBar] = useState(false);
   const [liked, setLiked] = useState(false);
 
-  // 탭 상태
   const [tab, setTab] = useState("reserve"); // "reserve" | "detail"
 
-  // 체험 상세 데이터
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -111,7 +102,6 @@ export default function ExperienceDetailPage() {
     (async () => {
       try {
         const res = await fetchExperienceDetail(experienceId, ac.signal);
-        // res = { success, data, message }
 
         if (!res.success) {
           console.error("체험 상세 조회 실패:", res.message, res.data);
@@ -150,7 +140,7 @@ export default function ExperienceDetailPage() {
     }
   };
 
-  // 로딩 / 에러 / 데이터 없음 분기 정리
+  // ───────── 로딩 / 에러 처리 ─────────
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-white flex flex-col items-center">
@@ -243,7 +233,7 @@ export default function ExperienceDetailPage() {
 
       {/* 본문 컨테이너 */}
       <div className="w-full max-w-[480px] pb-[160px]">
-        {/* 히어로 */}
+        {/* 히어로 이미지 */}
         <div ref={heroRef} className="relative">
           <img
             src={data.heroImage}
@@ -418,10 +408,7 @@ export default function ExperienceDetailPage() {
                 contactEndTime={data.contactEndTime}
                 businessEmail={data.businessEmail}
                 kakaoAddress={data.kakaoAddress}
-
-                // ✅ 지도용 필수 props 추가
-
-
+                // ✅ 지도용 필수 props
                 hostId={data.hostId}
                 latitude={data.latitude}
                 longitude={data.longitude}
