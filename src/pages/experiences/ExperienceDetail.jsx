@@ -64,7 +64,11 @@ function mapApiToViewModel(api) {
     kakaoAddress: api.kakaoAddress,
 
     hostId: api.hostId,
-    latitude: api.latitude,
+
+  
+
+    latitude: api.latitude, // 백엔드 필드명이 다르면 여기만 맞춰줘
+
     longitude: api.longitude,
   };
 }
@@ -414,7 +418,10 @@ export default function ExperienceDetailPage() {
                 contactEndTime={data.contactEndTime}
                 businessEmail={data.businessEmail}
                 kakaoAddress={data.kakaoAddress}
+
                 // ✅ 지도용 필수 props 추가
+
+
                 hostId={data.hostId}
                 latitude={data.latitude}
                 longitude={data.longitude}
