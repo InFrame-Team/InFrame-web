@@ -14,8 +14,7 @@ import {
   getLikedHosts,
   getLikedExperiences,
   toggleHostLike,
-  // toggleExperienceLike 함수는 현재 Experience 쪽에서 구현되지 않았으므로 주석 처리
-  // toggleExperienceLike,
+  toggleExperienceLike,
 } from "../apis/likes";
 
 export default function MainPage() {
@@ -167,8 +166,8 @@ export default function MainPage() {
 
   // ------------------------- 체험 하트 클릭 핸들러 -------------------------
 
-  // 체험 좋아요 핸들러 (현재 toggleExperienceLike API가 없다는 가정 하에 클라이언트 상태만 변경)
-  const handleExperienceLikeClick = (experienceId) => {
+  // 체험 좋아요 핸들러: 호스트와 동일하게 API 연동 + 재동기화
+  const handleExperienceLikeClick = async (experienceId) => {
     // ⚠️ 오류 방어 코드
     if (!experienceId) {
       console.error(
@@ -178,28 +177,40 @@ export default function MainPage() {
       return;
     }
 
-    // API 호출 전, UI를 먼저 업데이트합니다 (낙관적 업데이트)
     const wasLiked = experienceLikeState[experienceId];
-    const isNowLiked = !wasLiked;
+    const optimisticNewState = !wasLiked;
 
     // 1. 좋아요 상태 토글 (UI 즉시 반영)
     setExperienceLikeState((prev) => ({
       ...prev,
-      [experienceId]: isNowLiked,
+      [experienceId]: optimisticNewState,
     }));
 
-    // 2. experienceList 목록에서 제거/유지 (UI 즉시 반영)
+    // 2. 좋아요 취소 시 목록에서 제거 (UI 즉시 반영)
     if (wasLiked) {
-      // 좋아요를 취소하는 경우, 목록에서 제거
       setExperienceList((prevExps) =>
         prevExps.filter((e) => e.experienceId !== experienceId)
       );
     }
 
-    // 3. TODO: toggleExperienceLike API 호출 추가
-    console.warn(
-      `[체험 좋아요] ID ${experienceId}의 클라이언트 상태만 변경되었습니다. (API 호출 필요)`
-    );
+    // 3. 실제 서버에 토글 요청
+    try {
+      await toggleExperienceLike(experienceId);
+      console.log(
+        `[체험 좋아요] ID ${experienceId} 상태가 서버에 반영되었습니다. (취소: ${wasLiked})`
+      );
+
+      // 4. 서버 기준으로 다시 동기화
+      await loadInitialData();
+    } catch (error) {
+      console.error("체험 좋아요 토글 API 호출 실패:", error);
+      alert(
+        "체험 좋아요 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+      );
+
+      // 실패 시에도 전체 데이터 다시 불러와서 상태 복구
+      await loadInitialData();
+    }
   };
 
   // ------------------------- 나머지 UI용 데이터 -------------------------
