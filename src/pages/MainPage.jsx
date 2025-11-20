@@ -464,6 +464,7 @@ export default function MainPage() {
                           <img
                             // API 응답 구조에 맞게 필드명 사용
                             src={
+                              exp.imageUrls?.[0] ||
                               exp.experienceImageUrls?.[0] ||
                               exp.img ||
                               "/default-exp.png"
