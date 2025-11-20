@@ -42,3 +42,9 @@ export async function fetchHostDetail(hostId, signal) {
   });
   return res.data;
 }
+
+// 특정 호스트의 모든 체험 목록 조회
+export async function fetchHostProgramsByHost(hostId) {
+  const res = await api.get(`/host/experiences/host/${hostId}`);
+  return res.data;
+}
