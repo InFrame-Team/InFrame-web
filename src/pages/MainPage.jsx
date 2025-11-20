@@ -9,22 +9,14 @@ import { MdArrowForwardIos } from "react-icons/md";
 import { IoSearch } from "react-icons/io5";
 import { FaStar } from "react-icons/fa";
 
-// API 함수
-// toggleExperienceLike 함수는 현재 제공되지 않았으므로 주석 처리합니다.
+// API 함수 (경로가 올바른지 확인하세요)
 import {
   getLikedHosts,
   getLikedExperiences,
-  // toggleHostLike 함수는 import 했다고 가정합니다.
   toggleHostLike,
+  // toggleExperienceLike 함수는 현재 Experience 쪽에서 구현되지 않았으므로 주석 처리
+  // toggleExperienceLike,
 } from "../apis/likes";
-
-// 임시 함수 (toggleHostLike가 api 파일에 있다고 가정)
-// API 파일에 toggleHostLike가 없어서 오류가 나면 이 주석을 해제하고 사용하세요.
-// async function toggleHostLike(hostId) {
-//   console.log(`[Mock API] Host Like Toggled for ID: ${hostId}`);
-//   // 실제 API 호출 로직 (POST/DELETE)을 여기에 구현
-//   // try { await api.post(`/likes/host/${hostId}`); } catch (e) { throw e; }
-// }
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -38,9 +30,7 @@ export default function MainPage() {
   const [tab, setTab] = useState("host");
 
   // ------------------------- API 응답 데이터 상태 -------------------------
-  // 좋아요 누른 호스트 목록 (최근 2개)
   const [savedHosts, setSavedHosts] = useState([]);
-  // 좋아요 누른 체험 목록 (최근 2개)
   const [experienceList, setExperienceList] = useState([]);
 
   // 좋아요 상태를 저장 (최초 GET 응답으로 초기화됨)
@@ -59,6 +49,7 @@ export default function MainPage() {
   async function loadInitialData() {
     setIsLoading(true);
     setError(null);
+    let successCount = 0;
 
     try {
       // 1. 호스트 목록 조회 (GET /api/v1/likes/host)
@@ -67,47 +58,53 @@ export default function MainPage() {
       if (hostResult.success && hostResult.data) {
         const likedHosts = hostResult.data;
 
+        // 최근 2개만 표시
         const recentHosts = likedHosts.slice(0, 2);
         setSavedHosts(recentHosts);
 
-        // 2. 좋아요 상태 초기화
+        // 좋아요 상태 초기화 (현재 목록에 있는 호스트는 좋아요 상태로 가정)
         const initialHostLikes = {};
         recentHosts.forEach((h) => {
           initialHostLikes[h.hostId] = true;
         });
         setHostLikeState(initialHostLikes);
+        successCount++;
       } else {
-        // 데이터가 없거나 404/401이 아닌 단순 오류의 경우 에러 메시지를 콘솔에만 표시
         console.error("좋아요 호스트 목록 조회 실패:", hostResult.message);
-        setSavedHosts([]); // 실패 시 목록 초기화
-        setHostLikeState({}); // 실패 시 상태 초기화
-        if (hostResult.message === "로그인이 필요해요.") {
-          // setError(hostResult.message); // 로그인 필요 메시지를 표시하려면 주석 해제
-        }
+        setSavedHosts([]);
+        setHostLikeState({});
       }
 
-      // 3. 체험 목록 조회 (GET /api/v1/likes/experience)
+      // 2. 체험 목록 조회 (GET /api/v1/likes/experience)
       const expResult = await getLikedExperiences();
 
       if (expResult.success && expResult.data) {
         const likedExperiences = expResult.data;
 
+        // 최근 2개만 표시
         const recentExperiences = likedExperiences.slice(0, 2);
         setExperienceList(recentExperiences);
 
-        // 4. 좋아요 상태 초기화
+        // 좋아요 상태 초기화 (현재 목록에 있는 체험은 좋아요 상태로 가정)
         const initialExpLikes = {};
         recentExperiences.forEach((e) => {
           initialExpLikes[e.experienceId] = true;
         });
         setExperienceLikeState(initialExpLikes);
+        successCount++;
       } else {
         console.error("좋아요 체험 목록 조회 실패:", expResult.message);
-        setExperienceList([]); // 실패 시 목록 초기화
-        setExperienceLikeState({}); // 실패 시 상태 초기화
+        setExperienceList([]);
+        setExperienceLikeState({});
+      }
+
+      // 두 API 호출 중 하나라도 성공했다면 전체 에러 메시지는 표시하지 않음
+      if (successCount === 0) {
+        throw new Error("호스트와 체험 목록 모두를 불러오는 데 실패했습니다.");
       }
     } catch (e) {
       setError("초기 데이터를 불러오는 중 네트워크 오류가 발생했습니다.");
+      // 모든 상태 초기화
       setSavedHosts([]);
       setExperienceList([]);
       setHostLikeState({});
@@ -122,10 +119,10 @@ export default function MainPage() {
     loadInitialData();
   }, []); // 컴포넌트 마운트 시 한 번 실행
 
-  // ------------------------- 하트 클릭 핸들러 -------------------------
+  // ------------------------- 호스트 하트 클릭 핸들러 -------------------------
 
   const handleHostLikeClick = async (hostId) => {
-    // ⚠️ 오류 방어 코드 추가: hostId가 유효하지 않으면 즉시 종료합니다.
+    // ⚠️ 오류 방어 코드
     if (!hostId) {
       console.error(
         "오류: hostId가 누락되어 좋아요 토글을 실행할 수 없습니다."
@@ -152,14 +149,13 @@ export default function MainPage() {
 
     // 2. ✅ API 호출 (영구 저장)
     try {
-      // toggleHostLike는 좋아요 상태를 토글하는 POST/DELETE 역할을 한다고 가정
       await toggleHostLike(hostId);
       console.log(
         `[호스트 좋아요] ID ${hostId} 상태가 서버에 반영되었습니다. (취소: ${wasLiked})`
       );
 
-      // 3. ✅ 핵심 수정: API 호출 성공 시 최신 목록을 서버에서 다시 불러옵니다.
-      await loadInitialData(); // 목록 및 좋아요 상태 전체 갱신
+      // 3. ✅ API 호출 성공/실패 시 최신 목록을 서버에서 다시 불러와 상태를 재동기화합니다.
+      await loadInitialData();
     } catch (error) {
       console.error("좋아요 토글 API 호출 실패:", error);
       alert("좋아요 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
@@ -169,8 +165,11 @@ export default function MainPage() {
     }
   };
 
+  // ------------------------- 체험 하트 클릭 핸들러 -------------------------
+
+  // 체험 좋아요 핸들러 (현재 toggleExperienceLike API가 없다는 가정 하에 클라이언트 상태만 변경)
   const handleExperienceLikeClick = (experienceId) => {
-    // ⚠️ 오류 방어 코드 추가
+    // ⚠️ 오류 방어 코드
     if (!experienceId) {
       console.error(
         "오류: experienceId가 누락되어 좋아요 토글을 실행할 수 없습니다."
@@ -235,6 +234,7 @@ export default function MainPage() {
                 aria-label="메시지로 이동"
                 className="p-2 text-[22px] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
               >
+                {/* 메시지 아이콘 대신 검색 아이콘으로 변경 요청에 맞게 반영 */}
                 <IoSearch />
               </button>
             </div>
@@ -397,7 +397,7 @@ export default function MainPage() {
                           aria-pressed={hostLikeState[host.hostId]}
                           className="p-1 shrink-0 mt-1"
                         >
-                          {/* ✅ 좋아요 상태에 따라 FaHeart (채워진 하트)와 CiHeart (빈 하트) 토글 */}
+                          {/* 좋아요 상태에 따라 FaHeart (채워진 하트)와 CiHeart (빈 하트) 토글 */}
                           {hostLikeState[host.hostId] ? (
                             <FaHeart className="w-5 h-5 text-rose-600" />
                           ) : (
@@ -451,6 +451,7 @@ export default function MainPage() {
                         {/* 상품 카드: 160px 너비 */}
                         <div className="relative aspect-square">
                           <img
+                            // API 응답 구조에 맞게 필드명 사용
                             src={
                               exp.experienceImageUrls?.[0] ||
                               exp.img ||
@@ -479,7 +480,7 @@ export default function MainPage() {
                           </button>
                         </div>
 
-                        <div className="p-3 text-sm space-y-1">
+                        <div className="p-3 text-sm space-y-1 text-left">
                           {/* 가격 */}
                           <div className="text-[18px] font-bold text-neutral-900">
                             {exp.price

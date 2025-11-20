@@ -10,7 +10,6 @@ import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 import { LuCrosshair } from "react-icons/lu";
 import { BiSolidMessageDetail } from "react-icons/bi";
 import { IoLocationSharp } from "react-icons/io5";
-import { MdKeyboardArrowDown } from "react-icons/md";
 import { FiRotateCw } from "react-icons/fi";
 
 const CATEGORY_ITEMS = [

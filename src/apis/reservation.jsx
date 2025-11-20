@@ -21,3 +21,25 @@ export async function getMyReservations() {
     };
   }
 }
+
+export async function getHostReservations() {
+  try {
+    const { data } = await api.get("/host/reservations");
+
+    return {
+      success: true,
+      data: Array.isArray(data) ? data : [],
+    };
+  } catch (error) {
+    console.error("[getHostReservations] error:", error);
+
+    const message =
+      error.response?.data?.message ||
+      "호스트 예약 목록을 불러오는 중 문제가 발생했습니다.";
+
+    return {
+      success: false,
+      message,
+    };
+  }
+}

@@ -117,3 +117,20 @@ export async function toggleExperienceLike(experienceId) {
     };
   }
 }
+
+/**
+ * 특정 호스트에 대해 '좋아요'를 누르거나 취소합니다 (토글).
+ * @param {number} hostId - 좋아요를 누를 호스트의 ID
+ * @returns {Promise<any>}
+ */
+export async function toggleHostLike(hostId) {
+  if (!hostId) {
+    throw new Error("hostId가 필요합니다.");
+  }
+  // API 경로: POST /api/v1/likes/host/{hostId}
+  const endpoint = `likes/host/${hostId}`;
+
+  const res = await api.post(endpoint);
+  // 서버는 '하트 성공 또는 취소 성공' 이라는 문자열을 반환합니다.
+  return res.data;
+}

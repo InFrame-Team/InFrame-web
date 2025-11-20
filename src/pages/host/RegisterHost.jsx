@@ -4,15 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import BottomTab from "../../components/BottomTab";
 import doorImg from "../../assets/door.png";
+
 import { getMyInfo } from "../../apis/user";
-import { logout, deleteAccount } from "../../apis/auth";
+import { logout, deleteAccount, checkNickname } from "../../apis/auth";
 import { getMyPageInfo } from "../../apis/mypage";
 import { uploadProfileImage } from "../../apis/image";
-import { checkNickname } from "../../apis/auth";
 import { getMyReservations } from "../../apis/reservation";
 import { fetchMyHostProfile } from "../../apis/host";
-// ✅ 추가: 호스트 체험 목록 API 함수를 가져옵니다.
-// import { fetchMyExperienceList } from "../../apis/host";
 
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { FaUser } from "react-icons/fa6";
@@ -67,8 +65,6 @@ const MOCK_HOSTS_DATA = [
 /**
  * [가정] 사용자가 호스트 상세 페이지(`/host/:hostId`)를 방문했을 때
  * 이 함수를 호출하여 localStorage에 해당 호스트 정보를 저장한다고 가정합니다.
- * (실제 호스트 상세 페이지 컴포넌트에서 호출되어야 합니다.)
- * * @param {number} hostId - 호스트 ID
  */
 export const addRecentHost = (hostId) => {
   // Mock 데이터를 사용하여 호스트 정보 조회 (실제는 API 호출 필요)
@@ -284,15 +280,14 @@ function ProfileEditModal({ name, nickname, onClose }) {
                 className={`ml-3 px-4 py-1.5 rounded-full text-[13px] transition
                 ${
                   checking
-                    ? "bg-[#EFEFF1] text-[#B0B0B8] cursor-not-allowed" // 확인중
+                    ? "bg-[#EFEFF1] text-[#B0B0B8] cursor-not-allowed"
                     : checkResult === "ok"
-                    ? "bg-[#E0F2FF] text-[#2D7DF6]" // 사용가능
+                    ? "bg-[#E0F2FF] text-[#2D7DF6]"
                     : checkResult === "dup"
-                    ? "bg-[#FFE4E4] text-[#E54848]" // 사용불가
-                    : // 입력값이 있고, 아직 중복 확인을 하지 않았거나, 기존 닉네임과 다를 경우 -> 요청하신 #3A3A3A 색상 적용
-                    nick.trim() && nick.trim() !== nickname
+                    ? "bg-[#FFE4E4] text-[#E54848]"
+                    : nick.trim() && nick.trim() !== nickname
                     ? "bg-[#3A3A3A] text-white"
-                    : "bg-[#EFEFF1] text-[#B0B0B8]" // 기본/비활성화
+                    : "bg-[#EFEFF1] text-[#B0B0B8]"
                 }`}
               >
                 {checking
@@ -318,9 +313,7 @@ function ProfileEditModal({ name, nickname, onClose }) {
         <div className="absolute left-0 w-full px-5 pb-6 bg-white bottom-[10px]">
           <button
             type="button"
-            // ✅ 수정: disabled 속성 제거하여 항상 활성화
             onClick={handleComplete}
-            // ✅ 수정: 항상 활성화된 버튼 색상 적용
             className="w-full h-[50px] rounded-[14px] text-[15px] font-semibold bg-[#3A3A3A] text-white"
           >
             완료
@@ -330,6 +323,7 @@ function ProfileEditModal({ name, nickname, onClose }) {
     </div>
   );
 }
+
 /* -----------------------------------------------------
     🔥 공통 메뉴
 ----------------------------------------------------- */
@@ -431,7 +425,7 @@ function ParticipantView({ me }) {
     let mounted = true;
 
     (async () => {
-      // NOTE: getMyReservations는 목록을 반환하는 API라고 가정하고 사용
+      // GET /api/v1/reservation/me 호출
       const { success, data } = await getMyReservations();
       if (!mounted) return;
 
@@ -448,7 +442,6 @@ function ParticipantView({ me }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(RECENT_HOSTS_KEY);
-      // JSON.parse를 시도하고 실패하면 빈 배열로 설정
       const list = stored ? JSON.parse(stored) : [];
       setRecentHosts(
         Array.isArray(list) ? list.slice(0, MAX_RECENT_HOSTS) : []
@@ -487,9 +480,8 @@ function ParticipantView({ me }) {
 
   // [임시] 호스트 상세 페이지 이동 함수
   const goToHostDetail = (hostId) => {
-    // 실제 라우팅 로직
     navigate(`/host/${hostId}`);
-    // [참고] 실제 호스트 상세 페이지에서는 addRecentHost(hostId) 함수를 호출해야 합니다.
+    // 실제 상세 페이지에서 addRecentHost(hostId) 호출 필요
   };
 
   return (
@@ -544,7 +536,7 @@ function ParticipantView({ me }) {
         </div>
       </section>
 
-      {/* ✅ 수정: 최근 본 호스트 (localStorage 기반) */}
+      {/* 최근 내가 본 호스트 */}
       <section className="mb-6">
         <h2 className="text-[17px] font-bold mb-3">최근 내가 본 호스트</h2>
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
@@ -645,7 +637,7 @@ function ParticipantView({ me }) {
 
       <CommonMenu showActivity />
 
-      {/* 🔥 프로필 설정 모달 표시 */}
+      {/* 프로필 설정 모달 */}
       {showProfileEdit && (
         <ProfileEditModal
           name={name}
@@ -657,40 +649,9 @@ function ParticipantView({ me }) {
   );
 }
 
-/* -----------------------------------------------------
-   🔥 호스트 등록 화면
------------------------------------------------------ */
-function HostRegisterView() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="flex-1 px-6 mt-14 relative pb-28">
-      <p className="text-[15px] text-[#7C7C7F] mb-2">
-        당신의 이야기를 나눌 준비가 되셨나요?
-      </p>
-      <h1 className="text-[24px] font-bold leading-snug">
-        지금 로컬 호스트로
-        <br />
-        함께하세요.
-      </h1>
-
-      <div className="absolute bottom-40 right-6 flex flex-col items-end">
-        <img src={doorImg} className="w-[220px] mb-4 select-none" />
-        <button
-          onClick={() => navigate("/host/business-number")}
-          className="bg-[#F13030] text-white py-2.5 px-6 rounded-full shadow-md text-[15px] font-semibold"
-        >
-          호스트 가입
-        </button>
-      </div>
-    </main>
-  );
-}
-
 // 오늘 날짜를 YYYY-MM-DD 형식의 문자열로 반환하는 헬퍼 함수
 const getTodayDateString = () => {
   const today = new Date();
-  // 한국 시간 기준으로 날짜를 설정하여 시간대 차이로 인한 날짜 오류 방지 (선택 사항)
   today.setHours(0, 0, 0, 0);
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -707,14 +668,14 @@ function HostDashboardView({
   allReservations,
   hostExperiences,
 }) {
-  // ✅ hostExperiences prop 추가
   const navigate = useNavigate();
+
   const name = hostMeData?.hostName || me?.name || "호스트 이름";
   const intro = hostMeData?.description || me?.hostIntro || "호스트 소개 문구";
   const profileImageUrl =
     hostMeData?.profileImageUrl || me?.profileImageUrl || null;
 
-  // 오늘 일정 데이터 필터링 (기존 로직 유지)
+  // 오늘 일정 데이터 필터링
   const todayDateString = getTodayDateString();
   const todaySchedule = allReservations.find((r) => {
     const startDatePart = r.reservedStartTime
@@ -727,7 +688,6 @@ function HostDashboardView({
     if (!isoString) return "";
     try {
       const date = new Date(isoString);
-      // HH:mm 형식으로 포맷팅 (시간대 고려가 필요할 수 있으나, 일단 로컬 시간으로 표시)
       const timeOptions = {
         hour: "2-digit",
         minute: "2-digit",
@@ -761,12 +721,10 @@ function HostDashboardView({
     },
   ];
 
-  // ✅ 내 프로그램 목록: API 데이터 사용
-  // Experience List API 응답 구조:
-  // [ { experienceId: 0, title: "string", ... } ]
+  // 내 프로그램 목록
   const programs = hostExperiences || [];
 
-  // HostProfileSettings.jsx로 전달할 정보 (기존 로직 유지)
+  // HostProfileSettings.jsx로 전달할 정보
   const hostInfoForSettings = {
     businessNumber: me?.businessNumber,
     category: me?.category,
@@ -792,13 +750,12 @@ function HostDashboardView({
   };
 
   const goProgramManage = (programId) => {
-    // TODO: 실제 프로그램 관리 페이지 경로로 교체
     navigate(`/host/programs/${programId || ""}`);
   };
 
   return (
     <main className="flex-1 px-5 pt-4 pb-28 overflow-y-auto">
-      {/* ===== 상단 프로필 영역 ===== */}
+      {/* 상단 프로필 + 통계 */}
       <section className="mb-6 mt-4">
         <div className="flex items-center justify-between">
           <button
@@ -848,7 +805,7 @@ function HostDashboardView({
         </div>
       </section>
 
-      {/* ===== 오늘 일정 (API 데이터 적용) ===== */}
+      {/* 오늘 일정 */}
       <section className="mb-6">
         <h2 className="text-[17px] text-[#3A3A3A] font-bold mb-3">오늘 일정</h2>
 
@@ -872,7 +829,7 @@ function HostDashboardView({
         )}
       </section>
 
-      {/* ===== 내 프로그램 (API 데이터 적용) ===== */}
+      {/* 내 프로그램 */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-[17px] font-bold">내 프로그램</h2>
@@ -893,7 +850,7 @@ function HostDashboardView({
           {programs.length > 0 ? (
             programs.map((program, index) => (
               <div
-                key={program.experienceId} // experienceId 사용
+                key={program.experienceId}
                 className={`flex items-center justify-between px-5 py-4 ${
                   index < programs.length - 1
                     ? "border-b border-neutral-100"
@@ -901,7 +858,6 @@ function HostDashboardView({
                 }`}
               >
                 <div className="flex flex-col gap-1">
-                  {/* title 필드 사용 */}
                   <p className="text-[15px] font-medium text-[#1D1D1D]">
                     {program.title}
                   </p>
@@ -927,8 +883,38 @@ function HostDashboardView({
         </div>
       </section>
 
-      {/* 공통 메뉴 (약관 / 로그아웃 / 탈퇴) */}
+      {/* 공통 메뉴 */}
       <CommonMenu />
+    </main>
+  );
+}
+
+/* -----------------------------------------------------
+   🔥 호스트 등록 화면
+----------------------------------------------------- */
+function HostRegisterView() {
+  const navigate = useNavigate();
+
+  return (
+    <main className="flex-1 px-6 mt-14 relative pb-28">
+      <p className="text-[15px] text-[#7C7C7F] mb-2">
+        당신의 이야기를 나눌 준비가 되셨나요?
+      </p>
+      <h1 className="text-[24px] font-bold leading-snug">
+        지금 로컬 호스트로
+        <br />
+        함께하세요.
+      </h1>
+
+      <div className="absolute bottom-40 right-6 flex flex-col items-end">
+        <img src={doorImg} className="w-[220px] mb-4 select-none" />
+        <button
+          onClick={() => navigate("/host/business-number")}
+          className="bg-[#F13030] text-white py-2.5 px-6 rounded-full shadow-md text-[15px] font-semibold"
+        >
+          호스트 가입
+        </button>
+      </div>
     </main>
   );
 }
@@ -938,12 +924,14 @@ function HostDashboardView({
 ----------------------------------------------------- */
 export default function RegisterHost() {
   const [tab, setTab] = useState(null);
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(null); // 일반 사용자 정보 (getMyInfo)
   const [loadingMe, setLoadingMe] = useState(true);
   const [isHost, setIsHost] = useState(false);
+
   const [hostMeData, setHostMeData] = useState(null);
   const [allReservations, setAllReservations] = useState([]);
-  // ✅ 호스트 체험 목록 상태 추가
+
+  // 호스트 체험 목록
   const [hostExperiences, setHostExperiences] = useState([]);
 
   useEffect(() => {
@@ -996,10 +984,10 @@ export default function RegisterHost() {
             setHostMeData(hostRes);
           }
 
-          // ✅ 호스트 체험 목록 조회
+          // 호스트 체험 목록 조회
           const experienceRes = await fetchMyExperienceList(controller.signal);
           if (mounted && experienceRes.success) {
-            setHostExperiences(experienceRes.data); // ✅ 체험 목록 저장
+            setHostExperiences(experienceRes.data);
           }
         } catch (error) {
           if (error.name !== "AbortError") {
@@ -1010,7 +998,6 @@ export default function RegisterHost() {
 
       setIsHost(hostFlag);
       setTab(hostFlag ? "host" : "participant");
-
       setLoadingMe(false);
     })();
 
@@ -1058,7 +1045,6 @@ export default function RegisterHost() {
         ) : tab === "participant" ? (
           <ParticipantView me={me} />
         ) : isHost ? (
-          // ✅ HostDashboardView에 호스트 체험 목록 전달
           <HostDashboardView
             me={me}
             hostMeData={hostMeData}
@@ -1068,6 +1054,7 @@ export default function RegisterHost() {
         ) : (
           <HostRegisterView />
         )}
+
         {/* 하단 탭바 */}
         <BottomTab active="me" />
       </div>

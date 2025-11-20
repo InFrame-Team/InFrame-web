@@ -152,48 +152,27 @@ export default function HostProfileSettings() {
     }
   }, [intro, description, cancelPolicy, address, detail, startTime, endTime]);
 
-  // ✅ [수정] 사용자 정보 및 기존 호스트 정보 불러와서 상태에 반영 (state/draft가 없을 때 DB 정보 사용)
+  // 기존 DB 값 불러오기 (등록할 때 저장해 둔 내용 다시 채워 넣기)
   useEffect(() => {
     (async () => {
-      const { success, data, message } = await getMyInfo();
-      if (!success || !data) {
-        console.warn("[HostProfileSettings] getMyInfo 실패:", message);
-        return;
-      }
+      const { success, data } = await getMyInfo();
+      if (!success || !data) return;
 
-      setUserName(data.name || data.nickname || "");
+      setUserName(data.name || "");
 
-      // 1. 이미지 URL 로드 (state/draft에 이미지 URL이 없으므로 DB 정보가 최우선)
-      if (data.profileImageUrl) {
-        setProfileImageUrl(data.profileImageUrl);
-      }
-      if (data.companyLogoUrl) {
-        setCompanyLogoUrl(data.companyLogoUrl);
-      }
+      // ⭐ 항상 DB 값을 우선 반영함
+      setProfileImageUrl(data.profileImageUrl || null);
+      setCompanyLogoUrl(data.companyLogoUrl || null);
 
-      // 2. 입력 필드에 DB 정보 반영 (state/draft에도 값이 없을 경우에만 DB 정보로 채우기)
-      // 이 로직은 필수입니다. baseInfo(navigate state)가 없는 초기 진입 시 DB 정보를 로드합니다.
+      setIntro(data.description || ""); // 한 줄 소개
+      setDescription(data.detailedDescription || ""); // 상세 소개
+      setCancelPolicy(data.cancellationPolicy || "");
 
-      const apiDataMap = {
-        intro: data.description, // 짧은 소개
-        description: data.detailedDescription, // 긴 상세 소개
-        cancelPolicy: data.cancellationPolicy,
-        address: data.addressBase,
-        detail: data.addressDetail,
-        startTime: data.contactStartTime,
-        endTime: data.contactEndTime,
-      };
+      setAddress(data.addressBase || "");
+      setDetail(data.addressDetail || "");
 
-      // 현재 상태가 비어 있고, API 데이터에 값이 있다면 DB 값으로 채웁니다.
-      setIntro((prev) => prev || apiDataMap.intro || "");
-      setDescription((prev) => prev || apiDataMap.description || "");
-      setCancelPolicy((prev) => prev || apiDataMap.cancelPolicy || "");
-      setAddress((prev) => prev || apiDataMap.address || "");
-      setDetail((prev) => prev || apiDataMap.detail || "");
-
-      // 시간은 기본값이 있거나 state/draft에서 가져왔을 수 있으므로, API 데이터에 값이 있다면 덮어씁니다.
-      setStartTime((prev) => apiDataMap.startTime || prev);
-      setEndTime((prev) => apiDataMap.endTime || prev);
+      setStartTime(data.contactStartTime || "09:00");
+      setEndTime(data.contactEndTime || "18:00");
     })();
   }, []);
 
@@ -372,7 +351,7 @@ export default function HostProfileSettings() {
               <button
                 type="button"
                 onClick={() => profileInputRef.current?.click()}
-                className="relative w-16 h-16 rounded-full bg-[#F0F0F0] flex items-center justify-center overflow-visible"
+                className="relative w-16 h-16 rounded-full bg-[#F0F0F0] border border-neutral-300 flex items-center justify-center overflow-visible"
               >
                 {profileImageUrl ? (
                   <img
