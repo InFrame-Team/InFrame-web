@@ -134,7 +134,7 @@ export default function HostDetailPage() {
               <button
                 type="button"
                 aria-label="홈"
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/main")}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white/70"
               >
                 <RiHome5Line size={22} />

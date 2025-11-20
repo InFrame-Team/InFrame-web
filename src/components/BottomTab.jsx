@@ -9,7 +9,7 @@ export default function BottomTab() {
   const location = useLocation();
 
   const tabs = [
-    { label: "홈", icon: HiHome, path: "/app" },
+    { label: "홈", icon: HiHome, path: "/main" },
     { label: "탐색", icon: MdStars, path: "/explore" },
     { label: "인물지도", icon: IoLocationSharp, path: "/map" },
     { label: "마이페이지", icon: FaUser, path: "/register-host" },

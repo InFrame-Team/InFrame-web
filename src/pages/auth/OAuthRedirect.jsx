@@ -23,7 +23,7 @@ export default function OAuthRedirect() {
     // setAuth({ isLoggedIn: true, token, ... })
 
     // 3) 메인으로 이동
-    navigate("/app", { replace: true });
+    navigate("/main", { replace: true });
   }, [search, navigate]);
 
   return <div>로그인 처리 중입니다...</div>;
