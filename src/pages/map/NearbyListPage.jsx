@@ -420,7 +420,7 @@ export default function NearbyListPage() {
               <button
                 key={item.key}
                 type="button"
-                className="flex items-center justify-between gap-1 px-2 py-1.5 rounded-full border border-[#E9E9EC] bg-white text-[13px]"
+                className="flex items-center justify-between gap-1 px-1.5 py-1 rounded-full border border-[#E9E9EC] bg-white text-[10px]"
                 onClick={() => {
                   setActiveFilterTab(item.key);
                   setShowFilterSheet(true);
