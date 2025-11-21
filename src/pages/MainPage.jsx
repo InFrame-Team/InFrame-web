@@ -22,7 +22,6 @@ export default function MainPage() {
 
   const goMessages = () => navigate("/messages");
   const goCategory = (key) => navigate(`/map?category=${key}`);
-  const goHostMore = () => navigate("/host/ezisub"); // 상세 페이지
   const goNearbyMap = () => navigate("/map");
   const goExperienceDetail = (expId) => navigate(`/experiences/${expId}`);
 
@@ -39,6 +38,11 @@ export default function MainPage() {
   // 로딩 및 에러 상태
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const goHostDetail = (hostId) => {
+    if (!hostId) return;
+    navigate(`/host/${hostId}`);
+  };
 
   // ------------------------- 데이터 로딩 로직 (useEffect) -------------------------
 
@@ -371,7 +375,12 @@ export default function MainPage() {
                     >
                       {/* 상단 호스트 정보 */}
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
+                        {/* 클릭하면 호스트 상세로 이동 */}
+                        <button
+                          type="button"
+                          onClick={() => goHostDetail(host.hostId)}
+                          className="flex items-center gap-3 text-left"
+                        >
                           <img
                             src={
                               host.avatar ||
@@ -391,14 +400,15 @@ export default function MainPage() {
                                 "전통을 익히고, 트렌드를 빚어내요."}
                             </div>
                           </div>
-                        </div>
+                        </button>
+
+                        {/* 오른쪽 하트 버튼은 그대로 유지 */}
                         <button
                           type="button"
                           onClick={() => handleHostLikeClick(host.hostId)}
                           aria-pressed={hostLikeState[host.hostId]}
                           className="p-1 shrink-0 mt-1"
                         >
-                          {/* 좋아요 상태에 따라 FaHeart (채워진 하트)와 CiHeart (빈 하트) 토글 */}
                           {hostLikeState[host.hostId] ? (
                             <FaHeart className="w-5 h-5 text-rose-600" />
                           ) : (
