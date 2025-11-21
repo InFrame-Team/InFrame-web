@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { LuCalendarDays } from "react-icons/lu";
 import Calendar from "../Calendar";
 import { fetchAvailableSlots, createReservation } from "../../apis/experiences";
+import { useNavigate } from "react-router-dom";
 
 /* 날짜 포맷 */
 const toYYYYMMDD = (d) =>
@@ -20,6 +21,7 @@ export default function ReservationSection({
   price, // 인당 가격
   showContent = true,
 }) {
+  const navigate = useNavigate();
   const pricePerPerson = price ?? 50000;
 
   // 날짜 스트립 (오늘 ~ +10일)
@@ -171,6 +173,7 @@ export default function ReservationSection({
       setReserveLoading(true);
       await createReservation(payload, ac.signal);
       alert("예약이 완료되었습니다.");
+      navigate("/my/reservations");
     } catch (e) {
       const status = e.response?.status;
       const serverMsg =
