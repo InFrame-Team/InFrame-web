@@ -295,7 +295,7 @@ export default function MainPage() {
                   호스트 만나기
                 </div>
 
-                <div className="text-[12px] font-medium opacity-90 mt-5">
+                <div className="text-[9px] font-medium opacity-90 mt-5">
                   나와 가까이 있는 호스트를 만나보세요!
                 </div>
               </div>
