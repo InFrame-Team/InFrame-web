@@ -29,16 +29,19 @@ const TIME_SLOTS = [
   { key: "5h+", label: "5시간 이상", minMinutes: 360, maxMinutes: null },
 ];
 
-// 백엔드 category 값을 프론트에서 쓰는 key 로 매핑
 function mapBackendCategory(code) {
   if (!code) return "artisan";
   const upper = code.toString().toUpperCase();
 
   if (upper === "MASTER_ARTISAN") return "artisan";
-  if (upper === "YOUTH_ENTREPRENEUR") return "youth";
-  if (upper === "ALLEY_MERCHANT") return "alley";
+
+  // 🟡 백엔드 실제 코드와 맞추기
+  if (upper === "YOUNG_ENTREPRENEUR") return "youth";
+  if (upper === "LOCAL_MERCHANT" || upper === "LOCAL_MERCHANT") return "alley";
+
   if (upper === "ARTIST") return "artist";
 
+  // 혹시 모르는 값은 일단 장인으로
   return "artisan";
 }
 
@@ -112,10 +115,11 @@ export default function MapPage() {
   const focusLng = location.state?.focusLng;
 
   const [fieldOptions, setFieldOptions] = useState([]);
-  const params = new URLSearchParams(location.search);
-  const categoryFromQuery = params.get("category");
 
-  const [categoryOptions, setCategoryOptions] = useState([]); // enums/categories 결과
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const params = new URLSearchParams(location.search);
+  const categoryFromQuery = params.get("category"); // artisan / youth / alley / artist
+
   const [activeCategory, setActiveCategory] = useState(categoryFromQuery);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -191,7 +195,7 @@ export default function MapPage() {
 
         return {
           id: String(h.hostId ?? h.id ?? `host-${idx}`),
-          category: h.category ?? null,
+          category: mapBackendCategory(h.category),
           name: h.hostName || h.name || "이름 없는 호스트",
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
@@ -854,18 +858,19 @@ export default function MapPage() {
 
             <div className="mt-2 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {categoryOptions.map((c) => {
-                const isActive = activeCategory === c.code;
+                // 백엔드 코드 → 프론트 키로 변환 (artisan / youth / alley / artist)
+                const key = mapBackendCategory(c.code);
+                const isActive = activeCategory === key;
+
                 return (
                   <button
                     key={c.code}
                     type="button"
                     onClick={() =>
-                      setActiveCategory((prev) =>
-                        prev === c.code ? null : c.code
-                      )
+                      setActiveCategory((prev) => (prev === key ? null : key))
                     }
                     className={[
-                      "shrink-0 px-4 py-1 rounded-full text-[13px] border bg-white",
+                      "shrink-0 px-3 py-1 rounded-full text-[13px] border bg-white",
                       isActive
                         ? "border-[#e64a45] text-[#e64a45] font-semibold"
                         : "border-neutral-300 text-neutral-700",
