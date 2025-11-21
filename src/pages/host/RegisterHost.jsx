@@ -463,9 +463,9 @@ function ParticipantView({ me }) {
   const reviewCount = myPage?.reviewCount ?? 0;
 
   const stats = [
-    { label: "예약내역", value: reservationCount, active: true },
-    { label: "저장", value: savedCount },
-    { label: "후기", value: reviewCount },
+    { key: "reservations", label: "예약내역", value: reservationCount },
+    { key: "saved", label: "저장", value: savedCount },
+    { key: "reviews", label: "후기", value: reviewCount },
   ];
 
   const formatRelativeText = (isoString) => {
@@ -517,22 +517,42 @@ function ParticipantView({ me }) {
 
         {/* 통계 */}
         <div className="mt-4 flex justify-between text-center text-[13px]">
-          {stats.map((item, idx) => (
-            <div key={item.label} className="relative flex-1">
-              <div className="mt-1 text-neutral-500">{item.label}</div>
-              <div
-                className={`text-[16px] font-semibold ${
-                  idx === 0 ? "text-[#e64a45]" : "text-[#3A3A3A]"
+          {stats.map((item, idx) => {
+            const isClickable =
+              item.key === "reservations" || item.key === "saved";
+
+            const handleClick = () => {
+              if (item.key === "reservations") {
+                navigate("/my/reservations");
+              } else if (item.key === "saved") {
+                navigate("/my/saved");
+              }
+            };
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={isClickable ? handleClick : undefined}
+                className={`relative flex-1 ${
+                  isClickable ? "cursor-pointer" : "cursor-default"
                 }`}
               >
-                {item.value}
-              </div>
+                <div className="mt-1 text-neutral-500">{item.label}</div>
+                <div
+                  className={`text-[16px] font-semibold ${
+                    idx === 0 ? "text-[#e64a45]" : "text-[#3A3A3A]"
+                  }`}
+                >
+                  {item.value}
+                </div>
 
-              {idx < stats.length - 1 && (
-                <div className="absolute top-1/2 right-0 h-8 w-px -translate-y-1/2 bg-neutral-200"></div>
-              )}
-            </div>
-          ))}
+                {idx < stats.length - 1 && (
+                  <div className="absolute top-1/2 right-0 h-8 w-px -translate-y-1/2 bg-neutral-200" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </section>
 
