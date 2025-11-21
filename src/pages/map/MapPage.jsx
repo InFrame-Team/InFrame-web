@@ -641,6 +641,20 @@ export default function MapPage() {
     }
   }, []);
 
+  function formatDistance(meters) {
+    if (meters == null) return "";
+
+    // 1km 미만이면 m 그대로
+    if (meters < 1000) {
+      return `${meters}m`;
+    }
+
+    // 1km 이상이면 1.5km 처럼 소수 1자리
+    const km = meters / 1000;
+    const rounded = Math.round(km * 10) / 10; // 소수 1자리 반올림
+    return `${rounded.toFixed(1)}km`;
+  }
+
   // ---------- 호스트 마커 생성 ----------
   useEffect(() => {
     if (!mapReady || !window.kakao || !window.kakao.maps) return;
@@ -989,7 +1003,9 @@ export default function MapPage() {
                     <div className="mt-0.5 flex flex-row items-center text-[13px] text-neutral-500">
                       <IoLocationSharp className="text-[14px] text-[#919191] mr-1" />
                       <span className="text-[#919191] mr-1">내 위치에서</span>
-                      <span className="text-[#F13030]">{host.distance}m</span>
+                      <span className="text-[#F13030]">
+                        {formatDistance(host.distance)}
+                      </span>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[14px]">

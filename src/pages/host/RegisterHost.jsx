@@ -53,38 +53,38 @@ export async function fetchMyExperienceList(signal) {
 const RECENT_HOSTS_KEY = "recentViewedHosts";
 const MAX_RECENT_HOSTS = 5;
 
-// Mock 데이터 (실제 호스트 ID와 이름, 이미지 URL 필요)
-const MOCK_HOSTS_DATA = [
-  { id: 1, name: "유다빈", profileImageUrl: "/host-avatar-1.png" },
-  { id: 2, name: "김소현", profileImageUrl: "/host-avatar-2.png" },
-  { id: 3, name: "최정민", profileImageUrl: "/host-avatar-3.png" },
-  { id: 4, name: "민서린", profileImageUrl: "/host-avatar-4.png" },
-  { id: 5, name: "박서현", profileImageUrl: "/host-avatar-5.png" },
-];
-
 /**
  * [가정] 사용자가 호스트 상세 페이지(`/host/:hostId`)를 방문했을 때
  * 이 함수를 호출하여 localStorage에 해당 호스트 정보를 저장한다고 가정합니다.
  */
-export const addRecentHost = (hostId) => {
-  // Mock 데이터를 사용하여 호스트 정보 조회 (실제는 API 호출 필요)
-  const host = MOCK_HOSTS_DATA.find((h) => h.id === hostId);
+// ✅ host 객체를 받아서 localStorage에 저장하도록 수정
+export const addRecentHost = (host) => {
   if (!host) return;
+
+  // 백엔드 구조에 따라 id 또는 hostId를 사용
+  const id = host.id ?? host.hostId;
+  if (!id) return;
+
+  const name = host.name ?? host.hostName ?? "이름 없는 호스트";
+  const profileImageUrl = host.profileImageUrl ?? host.companyLogoUrl ?? null;
 
   try {
     const stored = localStorage.getItem(RECENT_HOSTS_KEY);
     let recentHosts = stored ? JSON.parse(stored) : [];
 
-    // 1. 기존 목록에서 현재 호스트 ID를 가진 항목 제거 (최신화 목적)
-    recentHosts = recentHosts.filter((h) => h.id !== hostId);
+    // 같은 id가 이미 있으면 제거
+    recentHosts = recentHosts.filter((h) => h.id !== id);
 
-    // 2. 새 호스트 정보를 목록 맨 앞에 추가
-    recentHosts.unshift(host);
+    // 맨 앞에 최신 호스트 추가
+    recentHosts.unshift({
+      id,
+      name,
+      profileImageUrl,
+    });
 
-    // 3. 최대 개수(5개)로 자르기
+    // 최대 5개까지만 유지
     recentHosts = recentHosts.slice(0, MAX_RECENT_HOSTS);
 
-    // 4. localStorage에 저장
     localStorage.setItem(RECENT_HOSTS_KEY, JSON.stringify(recentHosts));
   } catch (e) {
     console.error("Error saving recent host to localStorage:", e);
@@ -812,7 +812,7 @@ function HostDashboardView({
         {todaySchedule ? (
           <div className="rounded-2xl bg-white border border-neutral-200 px-5 py-4 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
             <p className="text-[15px] font-semibold text-[#3A3A3A] mb-1">
-              {todaySchedule.experienceName || "예약된 프로그램"}
+              {todaySchedule.experienceTitle || "예약된 프로그램"}
             </p>
             <p className="text-[13px] text-neutral-500">
               {`오늘 ${formattedStartTime(
@@ -867,14 +867,6 @@ function HostDashboardView({
                   </div>
 
                   {/* 오른쪽 하단 관리 버튼 */}
-                  <button
-                    type="button"
-                    onClick={() => goProgramManage(program.experienceId)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-200 text-[13px] text-[#3F3F46] bg-white self-end"
-                  >
-                    <LuFolder className="text-[16px]" />
-                    <span>관리</span>
-                  </button>
                 </div>
               </div>
             ))
