@@ -12,14 +12,7 @@ import { BiSolidMessageDetail } from "react-icons/bi";
 import { IoLocationSharp } from "react-icons/io5";
 import { FiRotateCw } from "react-icons/fi";
 
-import { fetchDetailFields } from "../../apis/enums";
-
-const CATEGORY_ITEMS = [
-  { key: "artisan", label: "장인" },
-  { key: "youth", label: "청년사업가" },
-  { key: "alley", label: "골목상인" },
-  { key: "artist", label: "예술가" },
-];
+import { fetchDetailFields, fetchCategoryEnums } from "../../apis/enums";
 
 // 🔹 가격 / 시간대 필터용 상수
 const MIN_PRICE = 0;
@@ -122,10 +115,8 @@ export default function MapPage() {
   const params = new URLSearchParams(location.search);
   const categoryFromQuery = params.get("category");
 
-  const [activeCategory, setActiveCategory] = useState(() => {
-    const exists = CATEGORY_ITEMS.some((c) => c.key === categoryFromQuery);
-    return exists ? categoryFromQuery : null;
-  });
+  const [categoryOptions, setCategoryOptions] = useState([]); // enums/categories 결과
+  const [activeCategory, setActiveCategory] = useState(categoryFromQuery);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHostId, setSelectedHostId] = useState(null);
@@ -200,7 +191,7 @@ export default function MapPage() {
 
         return {
           id: String(h.hostId ?? h.id ?? `host-${idx}`),
-          category: mapBackendCategory(h.category),
+          category: h.category ?? null,
           name: h.hostName || h.name || "이름 없는 호스트",
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
@@ -221,6 +212,18 @@ export default function MapPage() {
     }
 
     fetchHosts();
+  }, []);
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await fetchCategoryEnums();
+        // data: [{ code: "MASTER_ARTISAN", description: "장인" }, ...] 이런 형태라고 가정
+        setCategoryOptions(data);
+      } catch (e) {
+        console.error("[MapPage] categories 로드 실패:", e);
+      }
+    }
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -329,9 +332,10 @@ export default function MapPage() {
   const displayedHosts = useMemo(() => {
     let filtered = hosts;
 
-    // 카테고리 (상단 pill)
     if (activeCategory) {
-      filtered = filtered.filter((h) => h.category === activeCategory);
+      filtered = filtered.filter(
+        (h) => String(h.category) === String(activeCategory)
+      );
     }
 
     // 검색어
@@ -835,15 +839,15 @@ export default function MapPage() {
             </div>
 
             <div className="mt-2 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-              {CATEGORY_ITEMS.map((c) => {
-                const isActive = activeCategory === c.key;
+              {categoryOptions.map((c) => {
+                const isActive = activeCategory === c.code;
                 return (
                   <button
-                    key={c.key}
+                    key={c.code}
                     type="button"
                     onClick={() =>
                       setActiveCategory((prev) =>
-                        prev === c.key ? null : c.key
+                        prev === c.code ? null : c.code
                       )
                     }
                     className={[
@@ -853,7 +857,7 @@ export default function MapPage() {
                         : "border-neutral-300 text-neutral-700",
                     ].join(" ")}
                   >
-                    {c.label}
+                    {c.description}
                   </button>
                 );
               })}
