@@ -238,17 +238,7 @@ export default function MainPage() {
               aria-hidden
             />
 
-            <div className="flex items-center gap-1 text-neutral-600">
-              <button
-                type="button"
-                onClick={goMessages}
-                aria-label="메시지로 이동"
-                className="p-2 text-[22px] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
-              >
-                {/* 메시지 아이콘 대신 검색 아이콘으로 변경 요청에 맞게 반영 */}
-                <IoSearch />
-              </button>
-            </div>
+            <div className="flex items-center gap-1 text-neutral-600"></div>
           </div>
         </header>
 
@@ -318,7 +308,7 @@ export default function MainPage() {
                 <button
                   className="text-[#919191] text-[20px]"
                   aria-label="더보기"
-                  onClick={() => navigate("/favorites")}
+                  onClick={() => navigate("/my/saved")}
                 >
                   <MdArrowForwardIos />
                 </button>
@@ -422,18 +412,12 @@ export default function MainPage() {
                         {(host.experiences || host.experienceImageUrls)
                           ?.slice(0, 3)
                           .map((exp, index) => (
-                            <button
-                              key={exp.id || index}
-                              onClick={goHostMore}
-                              className="aspect-[4/3] rounded-xl overflow-hidden bg-neutral-100"
-                            >
-                              <img
-                                src={typeof exp === "string" ? exp : exp.img}
-                                alt={`체험 이미지 ${index + 1}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </button>
+                            <img
+                              src={typeof exp === "string" ? exp : exp.img}
+                              alt={`체험 이미지 ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
                           ))}
                       </div>
                     </article>
