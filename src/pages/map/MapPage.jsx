@@ -12,6 +12,8 @@ import { BiSolidMessageDetail } from "react-icons/bi";
 import { IoLocationSharp } from "react-icons/io5";
 import { FiRotateCw } from "react-icons/fi";
 
+import { fetchDetailFields } from "../../apis/enums";
+
 const CATEGORY_ITEMS = [
   { key: "artisan", label: "장인" },
   { key: "youth", label: "청년사업가" },
@@ -116,6 +118,7 @@ export default function MapPage() {
   const focusLat = location.state?.focusLat;
   const focusLng = location.state?.focusLng;
 
+  const [fieldOptions, setFieldOptions] = useState([]);
   const params = new URLSearchParams(location.search);
   const categoryFromQuery = params.get("category");
 
@@ -201,6 +204,7 @@ export default function MapPage() {
           name: h.hostName || h.name || "이름 없는 호스트",
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
+          detailFieldCode: h.detailField ?? null,
           lat,
           lng,
           distance: 0,
@@ -219,6 +223,13 @@ export default function MapPage() {
     fetchHosts();
   }, []);
 
+  useEffect(() => {
+    async function loadFields() {
+      const data = await fetchDetailFields(); // signal 인자 없어도 됨
+      setFieldOptions(data);
+    }
+    loadFields();
+  }, []);
   // 가격 슬라이더 드래그 계산
   const updatePriceByClientX = (handle, clientX) => {
     if (!trackRef.current) return;
@@ -955,9 +966,11 @@ export default function MapPage() {
                   >
                     <div className="flex flex-row items-baseline gap-2">
                       <span className="text-[22px] font-bold">{host.name}</span>
-                      {host.title && (
-                        <span className="text-[15px] text-[#919191]">
-                          {host.title}
+                      {host.detailFieldCode && (
+                        <span className="text-[13px] text-neutral-500">
+                          {fieldOptions.find(
+                            (f) => f.code === host.detailFieldCode
+                          )?.description || ""}
                         </span>
                       )}
                     </div>

@@ -11,6 +11,7 @@ import { FiRotateCw } from "react-icons/fi";
 
 // API 함수 (경로가 올바른지 확인하세요)
 import { getHostMap } from "../../apis/map";
+import { fetchDetailFields } from "../../apis/enums";
 
 const MIN_PRICE = 0;
 const MAX_PRICE = 200000;
@@ -97,6 +98,8 @@ export default function NearbyListPage() {
   const [hosts, setHosts] = useState([]);
   const [loadingHosts, setLoadingHosts] = useState(false);
 
+  const [fieldOptions, setFieldOptions] = useState([]);
+
   // 정렬 기준 (기본: 거리 가까운 순)
   const [sortKey, setSortKey] = useState("distance");
 
@@ -132,6 +135,14 @@ export default function NearbyListPage() {
         () => {}
       );
     }
+  }, []);
+
+  useEffect(() => {
+    async function loadFields() {
+      const data = await fetchDetailFields(); // signal 인자 없어도 됨
+      setFieldOptions(data);
+    }
+    loadFields();
   }, []);
 
   // BottomSheet 높이 동적 측정 useEffect
@@ -202,6 +213,7 @@ export default function NearbyListPage() {
           id: String(h.hostId ?? h.id ?? `host-${idx}`),
           category: mapBackendCategory(h.category),
           name: h.hostName || h.name || "이름 없는 호스트",
+          detailFieldCode: h.detailField ?? null,
           title: h.detailField || h.title || "",
           place: h.addressBase || h.place || "",
           lat,
@@ -420,7 +432,7 @@ export default function NearbyListPage() {
               <button
                 key={item.key}
                 type="button"
-                className="flex items-center justify-between gap-1 px-1.5 py-1 rounded-full border border-[#E9E9EC] bg-white text-[10px]"
+                className="flex items-center justify-between gap-1 px-2 py-1 rounded-full border border-[#E9E9EC] bg-white text-[12px]"
                 onClick={() => {
                   setActiveFilterTab(item.key);
                   setShowFilterSheet(true);
@@ -512,9 +524,12 @@ export default function NearbyListPage() {
                 <div>
                   <div className="flex flex-row items-baseline gap-2">
                     <span className="text-[18px] font-bold">{host.name}</span>
-                    {host.title && (
+
+                    {host.detailFieldCode && (
                       <span className="text-[13px] text-neutral-500">
-                        {host.title}
+                        {fieldOptions.find(
+                          (f) => f.code === host.detailFieldCode
+                        )?.description || ""}
                       </span>
                     )}
                   </div>
