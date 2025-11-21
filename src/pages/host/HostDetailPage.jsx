@@ -11,6 +11,7 @@ import { fetchHostDetail, fetchHostProgramsByHost } from "../../apis/host";
 import { toggleHostLikes } from "../../apis/likes";
 import BottomTab from "../../components/BottomTab";
 import HostProgramCard from "../../components/host/HostProgramCard";
+import { addRecentHost } from "./RegisterHost";
 
 const toHM = (time) => (typeof time === "string" ? time.slice(0, 5) : time);
 const formatDuration = (hours) => {
@@ -60,6 +61,15 @@ export default function HostDetailPage() {
 
     load();
   }, [hostId]);
+
+  useEffect(() => {
+    if (!host) return;
+
+    const id = host.id ?? host.hostId;
+    if (!id) return;
+
+    addRecentHost(host);
+  }, [host]);
 
   const handleToggleLike = async () => {
     if (!hostId) return;
