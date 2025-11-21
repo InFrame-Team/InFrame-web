@@ -221,8 +221,13 @@ export default function Step1() {
 
     (async () => {
       try {
-        const data = await fetchMyHostProfile(controller.signal);
-        setHost(data);
+        const res = await fetchMyHostProfile();
+        if (res?.success && res.data) {
+          setHost(res.data);
+        } else {
+          console.warn("호스트 정보가 없습니다:", res?.message);
+          setHost(null);
+        }
       } catch (e) {
         if (e?.name !== "CanceledError") {
           console.error("호스트 정보 불러오기 실패:", e);
